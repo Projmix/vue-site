@@ -5,7 +5,7 @@ import axios from "axios"
 export const useLayoutStore = defineStore("layout", {
     state: () => ({
         layout: null,
-        background: `url('/src/assets/images/${window.location.hostname}/ft-bg1.jpg')`,
+        //background: `url('/src/assets/images/${window.location.hostname}/ft-bg1.jpg')`,
         logo: `/src/assets/images/${window.location.hostname}/logo1.png`,
         logo2: `/src/assets/images/${window.location.hostname}/logo2.png`
     }),
@@ -69,10 +69,12 @@ export const useLayoutStore = defineStore("layout", {
           .then(() => { console.log('Загружен: waypoints.min.js'); return this.loadScript('/src/assets/js/jquery.countdown.min.js'); })
           .then(() => { console.log('Загружен: jquery.countdown.min.js'); return this.loadScript('/src/assets/js/isotope.pkgd.min.js'); })
           .then(() => { console.log('Загружен: isotope.pkgd.min.js'); return this.loadScript('/src/assets/js/jquery.magnific-popup.min.js'); })
-          .then(() => { console.log('Загружен: jquery.magnific-popup.min.js'); return this.loadScript('/src/assets/js/main.js'); })
+          .then(() => { console.log('Загружен: jquery.magnific-popup.min.js'); return this.loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyBtmXSwv4YmAKtcZyyad9W7D4AC08z0Rb4'); })
+          .then(() => { console.log('Загружен: maps.googleapis.com'); return this.loadScript('/src/assets/js/main.js'); })
           .then(() => { console.log('Загружен: main.js'); })
           .catch(error => console.error('Ошибка загрузки скриптов', error));
-      
+          
+
       }
     },
 })

@@ -2347,7 +2347,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   padding-left: 7.5px;
   padding-right: 7.5px;
 }
-.row.gutters-15.full-width {
+/* .row.gutters-15.full-width {
   padding-left: 0;
   padding-right: 0;
   margin-right: -22.5px;
@@ -2358,11 +2358,8 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
     margin-right: -15px;
     margin-left: -15px;
   }
-}
-.row.gutters.full-width {
-  margin-right: -30px;
-  margin-left: -30px;
-}
+} */
+
 .row.no-gutters {
   margin-right: 0;
   margin-left: 0;

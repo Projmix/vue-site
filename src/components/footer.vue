@@ -28,10 +28,11 @@ export default {
     script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
     document.head.appendChild(script);
 
-    const scriptLidrekon = document.createElement('script');
-    scriptLidrekon.type = 'text/javascript';
-    scriptLidrekon.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
-    document.head.appendChild(scriptLidrekon);
+    // Режим для слабовидящих
+    // const scriptLidrekon = document.createElement('script');
+    // scriptLidrekon.type = 'text/javascript';
+    // scriptLidrekon.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
+    // document.head.appendChild(scriptLidrekon);
 
     // Инициализация Google Translate
     window.googleTranslateElementInit = function () {
@@ -73,62 +74,135 @@ export default {
 <template>
   <!-- footer v2 section-->
   <footer class="ht-footer full-width-ft" :style="{ 'background': background }">
-    <div class="row">
-      <div class="flex-parent-ft">
-        <div class="flex-child-ft item1">
-          <router-link to="/"><img class="logo main-logo" :src="logo" alt=""></router-link>
-          
-          <div class="d-flex align-items-center">
-            <ul class="langsList">
-                <li><a notranslate class="language-item__link" href="#googtrans/ru"><span translate="no">РУС</span></a></li>
-                <li><a notranslate class="language-item__link" href="#googtrans/en"><span translate="no">ENG</span></a></li>
-                <li><a notranslate class="language-item__link" href="#googtrans/be"><span translate="no">БЕЛ</span></a></li>
-            </ul>
+    <div class="footer-layout2">
+      <div class="footer-top-area footer-box-layout">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-lg-3">
+              <div class="widget">
+                <a class="footer-widget-logo" href="index.html">
+                  <img class="img-fluid" src="../assets/images/logo.png" alt="logo">
+                </a>
+                <div class="footer-widget-about">
+                  <p>Fummy text of the printing antypesetting industry. Lorem Ipsum heen the industry's
+                    standard dummy text ever since theype.</p>
+                </div>
+                <div class="footer-widget-contact">
+                  <a href="tel:+5647-345-2224">5647-345-2224</a>
+                </div>
+                <div class="footer-widget-social">
+                  <ul>
+                    <li>
+                      <a href="#" title="facebook">
+                        <i class="fa fa-facebook" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" title="twitter">
+                        <i class="fa fa-twitter" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" title="google-plus">
+                        <i class="fa fa-google-plus" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" title="linkedin">
+                        <i class="fa fa-linkedin" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" title="pinterest">
+                        <i class="fa fa-pinterest" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" title="rss">
+                        <i class="fa fa-rss" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3">
+              <div class="widget">
+                <h3 class="widgettitle">Need Help</h3>
+                <div class="footer-widget-menu">
+                  <ul>
+                    <li>
+                      <a href="#">Online Chatting</a>
+                    </li>
+                    <li>
+                      <a href="#">FAQ’s</a>
+                    </li>
+                    <li>
+                      <a href="#">24/7 Client Support</a>
+                    </li>
+                    <li>
+                      <a href="#">Others</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3">
+              <div class="widget">
+                <h3 class="widgettitle">Useful Links</h3>
+                <div class="footer-widget-menu">
+                  <ul>
+                    <li>
+                      <a href="#">Home</a>
+                    </li>
+                    <li>
+                      <a href="#">About Us</a>
+                    </li>
+                    <li>
+                      <a href="#">Help</a>
+                    </li>
+                    <li>
+                      <a href="#">Terms &amp; Privecy</a>
+                    </li>
+                    <li>
+                      <a href="#">Support</a>
+                    </li>
+                    <li>
+                      <a href="#">Payment Policy</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3">
+              <div class="widget">
+                <h3 class="widgettitle">Newsletter</h3>
+                <div class="footer-widget-newsletter">
+                  <p>Rimply dummy text the printing and typesetting in sum has been the industry's
+                    standar.</p>
+                  <div class="input-group stylish-input-group">
+                    <input type="email" placeholder="E-mail address" name="email" class="form-control" required="">
+                    <span class="input-group-addon">
+                      <button type="submit">
+                        <i class="fa fa-angle-right" aria-hidden="true"></i>
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div class="d-flex align-items-center">
-            <ul class="langsList">
-                <li><a href="#" id="specialButton">Версия для слабовидящих</a></li>
-            </ul>
-          </div>
-
-          <a href="https://www.slivki.by/"><img class="logo" src="/src/assets/images/slivki.svg" alt="slivki" style="margin-left: -15px;width:200px;"></a>
         </div>
-        <div class="flex-child-ft item2">
-          <h4>Быстрые ссылки</h4>
-          <ul v-if="layout && layout.footer && layout.footer.quick_links">
-            <li v-for="link in layout.footer.quick_links.filter(item => item.url != 'http://качество-услуг.бел')" :key="link"><a :href="link.url">{{ link.name }}</a></li> 
-          </ul>
-        </div>
-        <div class="flex-child-ft item3">
-          <h4>Обращения</h4>
-          <ul>
-            <li><a href="http://качество-услуг.бел">Оцените качество услуг</a></li>  
-          </ul>
-        </div>
-        <div class="flex-child-ft item4">
-          <div class="images-wrapper">
-            <a href="https://president.gov.by/ru/documents/ukaz-no-1-ot-3-anvara-2025-g"><img class="logo" src="/src/assets/images/blago_year.jpg" alt="Год благоустройства" width="200" height="100"></a>
-          </div>
-          <div class="images-wrapper">
-            <a href="#" style="pointer-events:none;"><img class="logo" src="/src/assets/images/80let.jpg" alt="80 лет" width="200" height="100"></a>
-          </div>
-        </div>
-        
       </div>
-      <div class="ft-copyright" v-if="layout && layout.copyright">
-        <div class="ft-left">
-          <p>{{ layout.copyright }}</p>
-        </div>
-        <div class="backtotop">
-          <p><a href="#" id="back-to-top">Вверх  <i class="ion-ios-arrow-thin-up"></i></a></p>
-        </div>
+      <div class="footer-bottom-area footer-box-layout">
+        <p>© 2018 eventalk. All Rights Reserved. Designed by
+          <a target="_blank" href="https://radiustheme.com">
+            RadiusTheme</a>
+        </p>
       </div>
     </div>
   </footer>
   <!-- end of footer v2 section-->
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -24,7 +24,7 @@ export default {
     const logo2 = computed(() => layoutStore.getLogo2);
 
     const layout = computed(() => layoutStore.getLayout);
-    
+
     onMounted(() => {
       // Инициализация jQuery-плагинов только после того, как DOM готов
       if (window.$ && typeof window.$.fn.meanmenu === 'function') {
@@ -64,7 +64,7 @@ export default {
         });
 
         result = result.filter(perf => ((moment().startOf('day').unix() + 86400) <= perf.start_timestamp));
-        
+
         if (result.length > 8) {
           result = result.slice(0, 8);
         }
@@ -102,34 +102,34 @@ export default {
         'orange',
         'green'
       ],
-      
+
     };
   },
   methods: {
     async getAfisha() {
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/kino`;
       const params = {
-          lang: import.meta.env.VITE_API_LANG,
-          jsonld: import.meta.env.VITE_API_JSONLD,
-          ignoreEndTime: 0,
-          cityId: import.meta.env.VITE_API_CITY_ID,
-          date: moment().startOf('day').unix(),
+        lang: import.meta.env.VITE_API_LANG,
+        jsonld: import.meta.env.VITE_API_JSONLD,
+        ignoreEndTime: 0,
+        cityId: import.meta.env.VITE_API_CITY_ID,
+        date: moment().startOf('day').unix(),
 
-          onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-          domain: import.meta.env.VITE_API_DOMAIN,
-          distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-          // expand: 'sessions'
-          
+        onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+        domain: import.meta.env.VITE_API_DOMAIN,
+        distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
+        // expand: 'sessions'
 
-          // ignoreEndTime: 1,
-          // home_sort: 1,
-          // limit: 12,
-          // onlyData:0,
+
+        // ignoreEndTime: 1,
+        // home_sort: 1,
+        // limit: 12,
+        // onlyData:0,
       };
 
-      
-      await this.$axios.get(apiUrl, { params }).then(response => {
 
+      await this.$axios.get(apiUrl, { params }).then(response => {
+        console.log('API AFISHA:', response.data);
         this.afisha = response.data;
 
         useHead({
@@ -155,6 +155,9 @@ export default {
     strTimestampToHumanTime(timestamp) {
       return moment(timestamp * 1000).format('DD.MM.YYYY');
     },
+    formatDate(date, format = 'DD MMM') {
+      return moment(date).format(format);
+    },
   },
   beforeMount() {
     this.layoutLoaded
@@ -173,187 +176,579 @@ export default {
 
 <template>
   <main>
-      <!--preloading-->
-      <div id="preloader" v-if="loading">
-          <img class="logo" :src="logo2" alt="" width="119" height="58">
-          <div id="status">
-              <span></span>
-              <span></span>
-          </div>
+    <!--preloading-->
+    <div id="preloader" v-if="loading">
+      <img class="logo" :src="logo2" alt="" width="119" height="58">
+      <div id="status">
+        <span></span>
+        <span></span>
       </div>
+    </div>
 
-      <headerSection />
+    <headerSection />
 
-      <div class="slider sliderv2" :style="{ 'background': background }">
-        <div class="container">
-          <div class="row">
-              <Splide class="slider-single-item" v-if="afisha.data">
-                <!-- <SplideSlide :options="splideOptionsBanner" class="movie-item" v-for="event in afisha.data.kino.events.filter(item => item.images.length)" :key="event"> -->
-                <SplideSlide :options="splideOptionsBanner" class="movie-item" v-for="event in ((afisha.data.currentDate.length > 5) ? afisha.data.currentDate.slice(-5) : afisha.data.currentDate)" :key="event">
-                  <div class="row">
-                    <div class="col-md-8 col-sm-12 col-xs-12">
-                      <div class="title-in">
-                        <div class="cate" v-if="event.types && event.types.length">
-                          <span v-bind:class="tagColors[index]" v-for="(tag, index) in event.types" :key="tag"><a href="#">{{ tag.name }}</a></span>
-                        </div>
-                        <div class="slide-title"><router-link :to="`/event/${event.id}`">{{ event.name }}<br>
-                        <span></span></router-link></div>
-          
-                        <br>
-                        <div class="mv-details">
-                          <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{ event.kinopoiskRank.toFixed(1) }}</span> /10</p>
-                          <ul class="mv-infor" :style="{ 'margin-left': event.kinopoiskRank ? 'revert-layer' : '2rem', 'list-style': 'disc' }">
-                            <li v-if="event.duration">  Продолжительность: {{ event.duration }} мин. </li>
-                            <li v-if="event.minAge">  Возраст: {{ event.minAge }}+  </li>
-                            <li v-if="event.showFrom">  Начало продаж: {{ strTimestampToHumanTime(event.showFrom) }}</li>
-                          </ul>
-                        </div>
-                        <div class="btn-transform transform-vertical">
-                        <div><router-link :to="`/event/${event.id}`" class="item item-1 redbtn">Подробнее</router-link></div>
-                        <div><router-link :to="`/event/${event.id}`" class="item item-2 redbtn hvrbtn">Подробнее</router-link></div>
-                      </div>		
-                      </div>
-                    </div>
-                    <div class="col-md-4 col-sm-12 col-xs-12">
-                      <div class="mv-img-2">
-                        <router-link :to="`/event/${event.id}`"><img :src="event.image['300x430']" alt=""></router-link>
-                      </div>
-                    </div>
-                  </div>	
-                </SplideSlide>
-                
-              </Splide>
+    <!-- Slider Area Start Here -->
+    <div class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
+      <div class="bend niceties preview-1">
+        <div id="ensign-nivoslider-3" class="slides">
+          <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-1" />
+          <img src="@/assets/images/slider/slide4-2.jpg" alt="slider" title="#slider-direction-2" />
+          <img src="@/assets/images/slider/slide4-3.jpg" alt="slider" title="#slider-direction-3" />
+        </div>
+        <div id="slider-direction-1" class="t-cn slider-direction">
+          <div class="slider-content s-tb slide-1">
+            <div class="title-container s-tb-c title-light">
+              <div class="container text-left">
+                <div class="slider-big-text first-line">
+                  <p>Application</p>
+                </div>
+                <div class="slider-big-text second-line">
+                  <p>Developer Meetup 2018</p>
+                </div>
+                <div class="slider-btn-area forth-line margin-t-30">
+                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+        <div id="slider-direction-2" class="t-cn slider-direction">
+          <div class="slider-content s-tb slide-2">
+            <div class="title-container s-tb-c title-light">
+              <div class="container text-left">
+                <div class="slider-big-text first-line">
+                  <p>Application</p>
+                </div>
+                <div class="slider-big-text second-line">
+                  <p>Developer Meetup 2018</p>
+                </div>
+                <div class="slider-btn-area forth-line margin-t-30">
+                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="slider-direction-3" class="t-cn slider-direction">
+          <div class="slider-content s-tb slide-3">
+            <div class="title-container s-tb-c title-light">
+              <div class="container text-left">
+                <div class="slider-big-text first-line">
+                  <p>Application</p>
+                </div>
+                <div class="slider-big-text second-line">
+                  <p>Developer Meetup 2018</p>
+                </div>
+                <div class="slider-btn-area forth-line margin-t-30">
+                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="movie-items full-width" style="padding-bottom: 0;">
+    </div>
+    <!-- Slider Area End Here -->
+    <!-- Countdown Area Start Here -->
+    <section>
+      <div class="container-fluid">
+        <div class="row no-gutters full-width">
+          <div class="col-lg-4">
+            <div class="height-100 d-flex align-items-center bg-primary">
+              <div class="upcoming-event-layout2 zindex-up">
+                <h2>East Tobaco</h2>
+                <div class="event-location">26 Street, London</div>
+                <div class="event-date">17 October - 22 Octber, 2018</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-8">
+            <div class="countdown-layout1">
+              <div id="countdown"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Countdown Area End Here -->
+    <!-- About Area Start Here -->
+    <section class="section-space-custom-less30 bg-common bg-accent"
+      style="background-image: url(img/figure/figure3.png);">
+      <div class="container-fluid">
+        <div class="about-layout3">
+          <img src="@/assets/images/about/about-logo.png" alt="logo" class="img-fluid">
+          <p>Emply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard
+            dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled
+            simply dummy text of the rinting and typesetting industry.standard dummy text ever since.Emply
+            dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard
+            when an unknown printer took.</p>
+        </div>
+      </div>
+    </section>
+    <!-- About Page Area End Here -->
+    <!-- Schedule Area Start Here -->
+    <section class="section-space-top-default bg-light">
+      <div class="container-fluid">
+        <div class="section-heading title-black color-dark text-center">
+          <h2>Event Schedule &amp; Agenda</h2>
+          <p>Dorem ipsum dolor sit. Incidunt laborum beatae earum nihil odio consequatur</p>
+        </div>
+        <div class="row no-gutters full-width">
+          <div class="col-xl-4 col-lg-4 col-md-12">
+            <div class="schedule-layout4 bg-common"
+              style="background-image: url(@/assets/images/schedule/schedule-back1.jpg);">
+              <div class="item-content zindex-up">
+                <ul>
+                  <li>
+                    <h3 class="title title-bold color-light hover-yellow size-xl">
+                      <a href="single-event.html">17 October, 2018</a>
+                    </h3>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-xl">Linex StartUp</h3>
+                    <p>10.00 pm - 11.00pm</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Steven John</h3>
+                    <p>Speaker</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Hall</h3>
+                    <p>CityCafe</p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4 col-lg-4 col-md-12">
+            <div class="schedule-layout4 bg-common"
+              style="background-image: url(@/assets/images/schedule/schedule-back2.jpg);">
+              <div class="item-content zindex-up">
+                <ul>
+                  <li>
+                    <h3 class="title title-bold color-light hover-yellow size-xl">
+                      <a href="single-event.html">18 October, 2018</a>
+                    </h3>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-xl">Admin Dashboard</h3>
+                    <p>10.00 pm - 11.00pm</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Lara Josef</h3>
+                    <p>Speaker</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Hall</h3>
+                    <p>Oporajita</p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4 col-lg-4 col-md-12">
+            <div class="schedule-layout4 bg-common"
+              style="background-image: url(@/assets/images/schedule/schedule-back3.jpg);">
+              <div class="item-content zindex-up">
+                <ul>
+                  <li>
+                    <h3 class="title title-bold color-light hover-yellow size-xl">
+                      <a href="single-event.html">10 October, 2018</a>
+                    </h3>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-xl">Linex StartUp</h3>
+                    <p>10.00 pm - 11.00pm</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Justin Teak</h3>
+                    <p>Speaker</p>
+                  </li>
+                  <li>
+                    <h3 class="title title-regular color-light size-lg">Hall</h3>
+                    <p>CityCafe</p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Schedule Area End Here -->
+    <!-- Speaker Area Start Here (Сегодня в кино) -->
+    <section class="section-space-default bg-light overlay-icon-layout4"
+      v-if="afisha && afisha.data && afisha.data.currentDate.length">
+      <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
+        <div class="section-heading title-black color-dark text-center">
+          <h2>Сегодня в кино</h2>
+          <p>Актуальные фильмы на сегодня</p>
+        </div>
+        <div class="row gutters full-width menu-list">
+          <div
+            v-for="event in ((afisha.data.currentDate.length > 8) ? afisha.data.currentDate.slice(0, 8) : afisha.data.currentDate)"
+            :key="event.id" class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 menu-item">
+            <div class="speaker-layout3">
+              <img :src="event.image['300x430']" :alt="event.name" class="img-fluid" />
+              <div class="item-title">
+                <h3 class="title title-medium color-light hover-yellow size-md">
+                  <router-link :to="`/event/${event.id}`">{{ event.name }}</router-link>
+                </h3>
+                <div class="text-left title-light size-md color-light">{{ event.genre }}</div>
+              </div>
+              <div class="item-social">
+                <ul>
+                  <li>
+                    <span v-if="event.kinopoisk_rank" class="kp-rating">
+                      <span class="kp-star">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="#fad03b"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <polygon
+                            points="10,1 12.59,7.36 19.51,7.64 14,12.14 15.82,19.02 10,15.6 4.18,19.02 6,12.14 0.49,7.64 7.41,7.36" />
+                        </svg>
+                      </span>
+                      <span class="kp-value">{{ event.kinopoisk_rank.toFixed(1) }}</span>
+                      <span class="kp-max">/10</span>
+                    </span>
+                  </li>
+                  <li>
+                    <a href="#" title="twitter">
+                      <i class="fa fa-twitter" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" title="linkedin">
+                      <i class="fa fa-linkedin" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" title="pinterest">
+                      <i class="fa fa-pinterest" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                </ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="row">
-          <div class="col-md-12">
-            <h1 style="color:#fff;text-align: center;">Киноафиша Бобруйска — кинотеатры "Товарищ" и "Мир"</h1>
+          <div class="col-12 text-center">
+            <a href="#" title="More Speakers"
+              class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow margin-t-30">More Speakers</a>
           </div>
         </div>
       </div>
-      
-      <div class="movie-items full-width" v-if="afisha && afisha.data">
+    </section>
+    <!-- End Speaker Area -->
+    <!-- Progress Area Start Here -->
+    <section class="section-space-md bg-common progress-bg-color"
+      style="background-image: url(@/assets/images/figure/figure6.png);">
+      <div class="container-fluid">
+        <div class="row no-gutters">
+          <div class="col-lg-4 col-12">
+            <div class="progress-layout2">
+              <div class="media media-none-mb">
+                <div class="item-icon">
+                  <i class="fa fa-map-marker" aria-hidden="true"></i>
+                </div>
+                <div class="media-body">
+                  <h3>Tobacco, London</h3>
+                  <p>PO Box 16122 Collins Street West Victoria 8007 Newyork</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-12">
+            <div class="progress-layout2">
+              <div class="media media-none-mb">
+                <div class="item-icon">
+                  <i class="fa fa-users" aria-hidden="true"></i>
+                </div>
+                <div class="media-body">
+                  <h3>30+ Speakers</h3>
+                  <p>PO Box 16122 Collins Street West Victoria 8007 Newyork</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-12">
+            <div class="progress-layout2">
+              <div class="media media-none-mb">
+                <div class="item-icon">
+                  <i class="fa fa-clone" aria-hidden="true"></i>
+                </div>
+                <div class="media-body">
+                  <h3>15+ Main Sponsor</h3>
+                  <p>PO Box 16122 Collins Street West Victoria 8007 Newyork</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Progress Area End Here -->
+    <!-- Pricing Plan Area Start Here -->
+    <section class="section-space-default-less30 overlay-icon-layout2 bg-common bg-accent"
+      style="background-image: url(@/assets/images/figure/figure5.png);">
+      <div class="container zindex-up">
+        <div class="section-heading title-black color-dark text-center">
+          <h2>Ticket Price &amp; Plan</h2>
+          <p>Dorem ipsum dolor sit. Incidunt laborum beatae earum nihil odio consequatur officiis tempore</p>
+        </div>
         <div class="row">
-          <div class="col-md-12">
-
-            <div>
-              <div v-if="afisha.data && afisha.data.currentDate.length">
-                <div class="title-hd">
-                  <router-link to="/events?type=today"><h2>Сегодня в кино</h2></router-link>
-                  <router-link to="/events?type=today" class="viewall">Все <i class="ion-ios-arrow-right"></i></router-link>
+          <div class="col-md-4 col-sm-12">
+            <div class="price-table-layout1">
+              <div class="item-wrapper">
+                <div class="item-title">
+                  <h3 class="title-medium color-dark text-uppercase">Personal Plan</h3>
                 </div>
-                <div class="tabs">
-                  <div class="tab-content">
-                      <div id="tab1-h2" class="tab active">
-                          <div class="row">
-                            <Splide :options="splideOptionsEvents" class="slick-multiItem2 splide" >
-                              <!-- <SplideSlide class="slide-it" v-for="event in afisha.data.top.events" :key="event"> -->
-                              <SplideSlide class="slide-it" v-for="event in ((afisha.data.currentDate.length > 8) ? afisha.data.currentDate.slice(0, 8) : afisha.data.currentDate)" :key="event">
-                                <div class="movie-item">
-                                  <div class="mv-img" @click="$router.push(`/event/${event.id}`)">
-                                    <img :src="event.image['300x430']" alt="">
-                                  </div>
-                                  <div class="hvr-inner">
-                                    <router-link :to="`/event/${event.id}`"> Купить <i class="ion-android-arrow-dropright"></i> </router-link>
-                                  </div>
-                                  <div class="title-in">
-                                    <h6><router-link :to="`/event/${event.id}`">{{event.name}}</router-link></h6>
-                                    <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{event.kinopoiskRank.toFixed(1)}}</span> /10</p>
-                                  </div>
-                                </div>
-                              </SplideSlide>
-                            </Splide>
-                          </div>
-                      </div>
-                      
-                  </div>
+                <div class="item-price">49
+                  <span class="currency">$</span>
                 </div>
-              </div>
-              <div v-if="soonFilms.length">
-                <div class="title-hd">
-                  <router-link to="/events?type=soon"><h2>Скоро в кино</h2></router-link>
-                  <router-link to="/events?type=soon" class="viewall">Все <i class="ion-ios-arrow-right"></i></router-link>
+                <div class="item-body">
+                  <ul>
+                    <li>Entrance</li>
+                    <li>Coffee Break</li>
+                    <li>Certificate</li>
+                    <li>Workshop</li>
+                  </ul>
                 </div>
-                <div class="tabs">
-                  <div class="tab-content">
-                      <div id="tab1-h2" class="tab active">
-                          <div class="row">
-                            <Splide :options="splideOptionsEvents" class="slick-multiItem2 splide" >
-                              <!-- <SplideSlide class="slide-it" v-for="event in afisha.data.top.events" :key="event"> -->
-                              <SplideSlide class="slide-it" v-for="event in soonFilms" :key="event">
-                                <div class="movie-item">
-                                  <div class="mv-img" @click="$router.push(`/event/${event.id}`)">
-                                    <img :src="event.image['300x430']" alt="">
-                                  </div>
-                                  <div class="hvr-inner">
-                                    <router-link :to="`/event/${event.id}`"> Купить <i class="ion-android-arrow-dropright"></i> </router-link>
-                                  </div>
-                                  <div class="title-in">
-                                    <h6><router-link :to="`/event/${event.id}`">{{event.name}}</router-link></h6>
-                                    <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{event.kinopoiskRank.toFixed(1)}}</span> /10</p>
-                                  </div>
-                                </div>
-                              </SplideSlide>
-                            </Splide>
-                          </div>
-                      </div>
-                      
-                  </div>
-                </div>
+                <a href="#" title="Buy Ticket" class="btn-fill size-md color-yellow border-radius-5">Buy Ticket</a>
               </div>
             </div>
-            
-
-           
-            
+          </div>
+          <div class="col-md-4 col-sm-12">
+            <div class="price-table-layout1">
+              <div class="item-wrapper">
+                <div class="item-title">
+                  <h3 class="title-medium color-dark text-uppercase">Business Plan</h3>
+                </div>
+                <div class="item-price">69
+                  <span class="currency">$</span>
+                </div>
+                <div class="item-body">
+                  <ul>
+                    <li>Entrance</li>
+                    <li>Coffee Break</li>
+                    <li>Certificate</li>
+                    <li>Workshop</li>
+                  </ul>
+                </div>
+                <a href="#" title="Buy Ticket" class="btn-fill size-md color-primary border-radius-5">Buy Ticket</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-12">
+            <div class="price-table-layout1">
+              <div class="item-wrapper">
+                <div class="item-title">
+                  <h3 class="title-medium color-dark text-uppercase">Premium Plan</h3>
+                </div>
+                <div class="item-price">99
+                  <span class="currency">$</span>
+                </div>
+                <div class="item-body">
+                  <ul>
+                    <li>Entrance</li>
+                    <li>Coffee Break</li>
+                    <li>Certificate</li>
+                    <li>Workshop</li>
+                  </ul>
+                </div>
+                <a href="#" title="Buy Ticket" class="btn-fill size-md color-green border-radius-5">Buy Ticket</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-     
-      <!-- latest new v2 section-->
-      <div class="latestnew full-width">
+    </section>
+    <!-- Pricing Plan Area End Here -->
+    <!-- Sponsonrs Area Start Here -->
+    <section class="section-space-default bg-light">
+      <div class="container">
+        <div class="section-heading title-black color-dark text-center">
+          <h2>Offcial Sponsonrs &amp; Partner</h2>
+          <p>Check Who Makes This Event Possible!</p>
+        </div>
+        <div class="sponsonrs-layout1">
           <div class="row">
-            <div class="col-md-12">
-              <!-- <div class="ads adsv2" v-if="afisha.data && afisha.data.topSlider">
-                <img :src="afisha.data.topSlider.items[0].image['original']" alt="">
-              </div> -->
-              <div class="title-hd">
-                <router-link to="/posts"><h2>Последние новости</h2></router-link>
-                <router-link to="/posts" class="viewall">Все новости <i class="ion-ios-arrow-right"></i></router-link>
-              </div>
-              <!-- <div class="latestnewv2" v-if="afisha.data.posts"> -->
-              <div class="latestnewv2" v-if="afisha && afisha.postsAll">
-                <!-- <div class="blog-item-style-2" v-for="post in afisha.posts" :key="post"> -->
-                <div class="blog-item-style-2" v-for="post in afisha.postsAll" :key="post">
-                  <router-link :to="`/post/${post.slug}`"><img :src="post.image['1300x560']" alt=""></router-link>
-                  <div class="blog-it-infor">
-                    <h3><router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link></h3>
-                    <span class="time">{{ post.publishedAt }}</span>
-                    <p v-html="post.shortContent"></p>
-                  </div>
-                </div>
-                
-                
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand1.png" alt="brand" class="img-fluid">
+                </a>
               </div>
             </div>
-            
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand2.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand3.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand4.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand5.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand6.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand7.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+              <div class="sponsonrs-box">
+                <a href="#">
+                  <img src="@/assets/images/brand/brand8.png" alt="brand" class="img-fluid">
+                </a>
+              </div>
+            </div>
           </div>
-        
-      </div>
-      <!--end of latest new v2 section-->
-
-      <div class="movie-items full-width">
-        <div class="row" style="border: 1px solid #abb7c4;">
-          <div class="col-md-12" style="padding: 12px 15px;">
-            <h3 style="color: #abb7c4;font-size: 14px;line-height: inherit;">Добро пожаловать на официальный сайт киноафиши города Бобруйска! Здесь вы найдете актуальное расписание фильмов в кинотеатрах "Товарищ" и "Мир". Удобный интерфейс позволяет быстро выбрать интересующий сеанс, посмотреть трейлер, прочитать описание и купить билеты онлайн. Следите за новинками проката и не пропустите лучшие премьеры!</h3>
+        </div>
+        <div class="row">
+          <div class="col-12 text-center">
+            <a href="#" title="Become a Sponsors"
+              class="btn-fill size-lg border-radius-5 color-yellow margin-t-30">Become a Sponsors</a>
           </div>
         </div>
       </div>
+    </section>
+    <!-- Sponsonrs Area End Here -->
+    <!-- Call To Action Area Start Here -->
+    <section class="overlay-primary90 overlay-icon-layout1 section-space-default"
+      style="background-image: url(img/figure/figure1.jpg);">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="call-to-action-layout1 zindex-up">
+              <h2>Get Your Ticket Now</h2>
+              <p>Adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliquat enim
+                ad minim veniam, quis nostrud exercitation.</p>
+              <a href="#" title="Buy Tickets" class="btn-fill size-lg border-radius-5 color-yellow">Buy Tickets</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Call To Action Area End Here -->
 
-      <footerSection />
-      
-    </main>
+    <!-- Blog Area Start Here -->
+    <section class="section-space-default-less30 bg-common bg-accent"
+      v-if="afisha && afisha.postsAll && afisha.postsAll.length">
+      <div class="container-fluid">
+        <div class="section-heading title-black color-dark text-center">
+          <h2>Последние новости</h2>
+          <p>Новости и обновления киноафиши</p>
+        </div>
+        <div class="row gutters-15 full-width">
+          <div v-for="post in afisha.postsAll" :key="post.slug" class="col-xl-4 col-lg-5 col-md-6 col-sm-6">
+            <div class="blog-layout3 overlay-gradient">
+              <router-link :to="`/post/${post.slug}`">
+                <img :src="post.image['1300x560']" :alt="post.title" class="img-fluid width-100">
+              </router-link>
+              <div class="item-date-wrap">
+                <div class="item-date">
+                  {{ formatDate(post.publishedAt, 'DD MMM') }}
+                </div>
+              </div>
+              <div class="item-content">
+                <div class="item-title">
+                  <h3 class="title-medium color-light hover-yellow">
+                    <router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link>
+                  </h3>
+                </div>
+                <div class="item-deccription">
+                  <p v-html="post.shortContent"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- End Blog Area -->
+    <!-- Map Area Start Here -->
+    <section class="full-width-container">
+      <div class="container-fluid">
+        <div class="google-map-area">
+          <div id="googleMap" style="width:100%; height:496px;"></div>
+          <div class="upcoming-event-layout1">
+            <h2>Marketing
+              <br> Conferance 2018
+            </h2>
+            <div class="date">17 - 25 Oct, 2018</div>
+            <p>Tobacco Dock, London</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Map Area End Here -->
+
+
+    <footerSection />
+
+  </main>
 </template>
+
+
+<style scoped>
+.kp-rating {
+  display: inline-flex;
+  align-items: center;
+  background: #fff7e0;
+  color: #222;
+  border-radius: 1.2em;
+  padding: 0.15em 0.7em 0.15em 0.4em;
+  font-weight: 600;
+  font-size: 1.04em;
+  box-shadow: 0 2px 8px 0 rgba(250, 208, 59, 0.09);
+  margin-right: 0.5em;
+}
+
+.kp-rating .kp-star {
+  margin-right: 0.35em;
+  display: flex;
+  align-items: center;
+}
+
+.kp-rating .kp-value {
+  color: #fad03b;
+  font-weight: 700;
+  font-size: 1.08em;
+  margin-right: 0.15em;
+  letter-spacing: 0.01em;
+}
+
+.kp-rating .kp-max {
+  color: #b7a96d;
+  font-size: 0.97em;
+  margin-left: 0.08em;
+}
+</style>
