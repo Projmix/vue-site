@@ -1,0 +1,52 @@
+.btn-social {
+    font-size: 20px; /* Увеличение размера текста */
+    padding: 15px 30px; /* Увеличение внутренних отступов для крупных кнопок */
+    color: #fff; /* Белый цвет текста */
+    border-radius: 5px; /* Сглаженные углы */
+    margin: 10px;
+    display: inline-block;
+    text-align: center;
+    width: 250px; /* Ширина кнопки */
+    margin-left: 0;
+}
+
+/* ВКонтакте */
+.btn-vk {
+    background-color: #4a76a8; /* Синий цвет ВКонтакте */
+}
+
+.btn-vk:hover {
+    background-color: #3b5f8d; /* Цвет при наведении */
+}
+
+/* Instagram */
+.btn-instagram {
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+}
+
+.btn-instagram:hover {
+    background: linear-gradient(45deg, #d3832b, #cf5c32, #c2233c, #b11e56, #a31a75);
+}
+
+/* Telegram */
+.btn-telegram {
+    background-color: #0088cc; /* Цвет Telegram */
+}
+
+.btn-telegram:hover {
+    background-color: #006699; /* Цвет при наведении */
+}
+
+/* TikTok */
+.btn-tiktok {
+    background-color: #010101; /* Черный цвет TikTok */
+}
+
+.btn-tiktok:hover {
+    background-color: #333333; /* Цвет при наведении */
+}
+
+/* Иконки */
+.fa {
+    margin-right: 10px; /* Отступ между иконкой и текстом */
+}
