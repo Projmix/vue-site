@@ -39,12 +39,10 @@ export default {
           scrollSpeed: 900,
         });
       }
-      // Добавьте другие плагины по аналогии
     });
 
     onBeforeUnmount(() => {
-      // Здесь можно добавить очистку, если требуется для плагинов
-      // Например, $(...).meanmenu('destroy');
+      // destroy
     });
 
     return {

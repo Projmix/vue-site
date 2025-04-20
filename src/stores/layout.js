@@ -64,12 +64,18 @@ export const useLayoutStore = defineStore("layout", {
           .then(() => { console.log('Загружен: jquery.nivo.slider.js'); return this.loadScript('/src/assets/vendor/slider/home.js'); })
           .then(() => { console.log('Загружен: home.js'); return this.loadScript('/src/assets/js/jquery.meanmenu.min.js'); })
           .then(() => { console.log('Загружен: jquery.meanmenu.min.js'); return this.loadScript('/src/assets/js/jquery.scrollUp.min.js'); })
-          .then(() => { console.log('Загружен: jquery.scrollUp.min.js'); return this.loadScript('/src/assets/js/jquery.counterup.min.js'); })
-          .then(() => { console.log('Загружен: jquery.counterup.min.js'); return this.loadScript('/src/assets/js/waypoints.min.js'); })
-          .then(() => { console.log('Загружен: waypoints.min.js'); return this.loadScript('/src/assets/js/jquery.countdown.min.js'); })
-          .then(() => { console.log('Загружен: jquery.countdown.min.js'); return this.loadScript('/src/assets/js/isotope.pkgd.min.js'); })
-          .then(() => { console.log('Загружен: isotope.pkgd.min.js'); return this.loadScript('/src/assets/js/jquery.magnific-popup.min.js'); })
-          .then(() => { console.log('Загружен: jquery.magnific-popup.min.js'); return this.loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyBtmXSwv4YmAKtcZyyad9W7D4AC08z0Rb4'); })
+          .then(() => { console.log('Загружен: jquery.scrollUp.min.js'); 
+          // return this.loadScript('/src/assets/js/jquery.counterup.min.js'); })
+          // .then(() => { console.log('Загружен: jquery.counterup.min.js');
+          // return this.loadScript('/src/assets/js/waypoints.min.js'); })
+          // .then(() => { console.log('Загружен: waypoints.min.js');
+          return this.loadScript('/src/assets/js/jquery.countdown.min.js'); })
+          .then(() => { console.log('Загружен: jquery.countdown.min.js'); 
+          //   return this.loadScript('/src/assets/js/isotope.pkgd.min.js'); })
+          // .then(() => { console.log('Загружен: isotope.pkgd.min.js'); 
+          // return this.loadScript('/src/assets/js/jquery.magnific-popup.min.js'); })
+          // .then(() => { console.log('Загружен: jquery.magnific-popup.min.js'); 
+          return this.loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyBtmXSwv4YmAKtcZyyad9W7D4AC08z0Rb4'); })
           .then(() => { console.log('Загружен: maps.googleapis.com'); return this.loadScript('/src/assets/js/main.js'); })
           .then(() => { console.log('Загружен: main.js'); })
           .catch(error => console.error('Ошибка загрузки скриптов', error));

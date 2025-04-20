@@ -43,31 +43,31 @@
     /*-------------------------------------
     Tooltips
     -------------------------------------*/
-    headerNsliderResize();
-    var priceSlider = document.getElementById('price-range-filter');
-    if (priceSlider) {
-        noUiSlider.create(priceSlider, {
-            start: [20, 80],
-            connect: true,
-            /*tooltips: true,*/
-            range: {
-                'min': 0,
-                'max': 100
-            },
-            format: wNumb({
-                decimals: 0
-            }),
-        });
-        var marginMin = document.getElementById('price-range-min'),
-            marginMax = document.getElementById('price-range-max');
-        priceSlider.noUiSlider.on('update', function(values, handle) {
-            if (handle) {
-                marginMax.innerHTML = "$" + values[handle];
-            } else {
-                marginMin.innerHTML = "$" + values[handle];
-            }
-        });
-    }
+    // headerNsliderResize();
+    // var priceSlider = document.getElementById('price-range-filter');
+    // if (priceSlider) {
+    //     noUiSlider.create(priceSlider, {
+    //         start: [20, 80],
+    //         connect: true,
+    //         /*tooltips: true,*/
+    //         range: {
+    //             'min': 0,
+    //             'max': 100
+    //         },
+    //         format: wNumb({
+    //             decimals: 0
+    //         }),
+    //     });
+    //     var marginMin = document.getElementById('price-range-min'),
+    //         marginMax = document.getElementById('price-range-max');
+    //     priceSlider.noUiSlider.on('update', function(values, handle) {
+    //         if (handle) {
+    //             marginMax.innerHTML = "$" + values[handle];
+    //         } else {
+    //             marginMin.innerHTML = "$" + values[handle];
+    //         }
+    //     });
+    // }
 
     // Tooltips
     $(document).on('mouseover', '.speaker-img-tooltip',
@@ -136,28 +136,28 @@
     /*-------------------------------------
     Popup
     -------------------------------------*/
-    var yPopup = $(".popup-youtube");
-    if (yPopup.length) {
-        yPopup.magnificPopup({
-            disableOn: 700,
-            type: 'iframe',
-            mainClass: 'mfp-fade',
-            removalDelay: 160,
-            preloader: false,
-            fixedContentPos: false
-        });
-    }
-    if ($('.zoom-gallery').length) {
-        $('.zoom-gallery').each(function () { // the containers for all your galleries
-            $(this).magnificPopup({
-                delegate: 'a.ne-zoom', // the selector for gallery item
-                type: 'image',
-                gallery: {
-                    enabled: true
-                }
-            });
-        });
-    }
+    // var yPopup = $(".popup-youtube");
+    // if (yPopup.length) {
+    //     yPopup.magnificPopup({
+    //         disableOn: 700,
+    //         type: 'iframe',
+    //         mainClass: 'mfp-fade',
+    //         removalDelay: 160,
+    //         preloader: false,
+    //         fixedContentPos: false
+    //     });
+    // }
+    // if ($('.zoom-gallery').length) {
+    //     $('.zoom-gallery').each(function () { // the containers for all your galleries
+    //         $(this).magnificPopup({
+    //             delegate: 'a.ne-zoom', // the selector for gallery item
+    //             type: 'image',
+    //             gallery: {
+    //                 enabled: true
+    //             }
+    //         });
+    //     });
+    // }
 
     /*-------------------------------------
      Jquery Serch Box
@@ -252,10 +252,10 @@
     /*-------------------------------------
     // jquery zoom activation code
     -------------------------------------*/
-    var ecomZoom = $('.ex1');
-    if (ecomZoom.length) {
-        $('.ex1').zoom();
-    }
+    // var ecomZoom = $('.ex1');
+    // if (ecomZoom.length) {
+    //     $('.ex1').zoom();
+    // }
 
     /*-------------------------------------
      Jquery Scollup
@@ -351,53 +351,53 @@
             $(this).remove();
         });
 
-        /*-------------------------------------
-         jQuery for Isotope initialization
-         -------------------------------------*/
-        var iso_container = $('.ne-isotope');
-        if (iso_container.length > 0) {
+        // /*-------------------------------------
+        //  jQuery for Isotope initialization
+        //  -------------------------------------*/
+        // var iso_container = $('.ne-isotope');
+        // if (iso_container.length > 0) {
 
-            iso_container.each(function () {
-                var $container = $(this),
-                    selector = $container.find('.isotope-classes-tab a.current').attr('data-filter');
-                // Isotope initialization
-                var $isotope = $container.find('.featuredContainer').isotope({
-                    filter: selector,
-                    animationOptions: {
-                        duration: 750,
-                        easing: 'linear',
-                        queue: false
-                    }
-                });
+        //     iso_container.each(function () {
+        //         var $container = $(this),
+        //             selector = $container.find('.isotope-classes-tab a.current').attr('data-filter');
+        //         // Isotope initialization
+        //         var $isotope = $container.find('.featuredContainer').isotope({
+        //             filter: selector,
+        //             animationOptions: {
+        //                 duration: 750,
+        //                 easing: 'linear',
+        //                 queue: false
+        //             }
+        //         });
 
-                // Isotope filter
-                $container.find('.isotope-classes-tab').on('click', 'a', function () {
+        //         // Isotope filter
+        //         $container.find('.isotope-classes-tab').on('click', 'a', function () {
 
-                    var $this = $(this);
-                    $this.parent('.isotope-classes-tab').find('a').removeClass('current');
-                    $this.addClass('current');
-                    var selector = $this.attr('data-filter');
-                    $isotope.isotope({
-                        filter: selector,
-                        animationOptions: {
-                            duration: 750,
-                            easing: 'linear',
-                            queue: false
-                        }
-                    });
-                    return false;
+        //             var $this = $(this);
+        //             $this.parent('.isotope-classes-tab').find('a').removeClass('current');
+        //             $this.addClass('current');
+        //             var selector = $this.attr('data-filter');
+        //             $isotope.isotope({
+        //                 filter: selector,
+        //                 animationOptions: {
+        //                     duration: 750,
+        //                     easing: 'linear',
+        //                     queue: false
+        //                 }
+        //             });
+        //             return false;
 
-                });
+        //         });
 
-            });
-        }
+        //     });
+        // }
 
         /*-------------------------------------
          Countdown activation code
         -------------------------------------*/
         var eventCounter = $('#countdown');
         if (eventCounter.length) {
-            eventCounter.countdown('2020/05/03', function(e) {
+            eventCounter.countdown('2025/05/03', function(e) {
                 $(this).html(e.strftime("<div class='countdown-section'><h2>%D</h2> <h3>day%!D</h3> </div><div class='countdown-section'><h2>%H</h2> <h3>Hour%!H</h3> </div><div class='countdown-section'><h2>%M</h2> <h3>Minutes</h3> </div><div class='countdown-section'><h2>%S</h2> <h3>Second</h3> </div>"))
 
             });
@@ -406,40 +406,40 @@
         /*-------------------------------------
          jQuery for Isotope initialization
          -------------------------------------*/
-        var $container = $('.ne-isotope-all');
-        if ($container.length > 0) {
+        // var $container = $('.ne-isotope-all');
+        // if ($container.length > 0) {
 
-            var selector = $container.find('.isotope-classes-tab a.current').attr('data-filter');
-            console.log(selector);
-            // Isotope initialization
-            var $isotope = $container.find('.featuredContainer').isotope({
-                filter: selector,
-                animationOptions: {
-                    duration: 750,
-                    easing: 'linear',
-                    queue: false
-                }
-            });
+        //     var selector = $container.find('.isotope-classes-tab a.current').attr('data-filter');
+        //     console.log(selector);
+        //     // Isotope initialization
+        //     var $isotope = $container.find('.featuredContainer').isotope({
+        //         filter: selector,
+        //         animationOptions: {
+        //             duration: 750,
+        //             easing: 'linear',
+        //             queue: false
+        //         }
+        //     });
 
-            // Isotope filter
-            $container.find('.isotope-classes-tab').on('click', 'a', function () {
+        //     // Isotope filter
+        //     $container.find('.isotope-classes-tab').on('click', 'a', function () {
 
-                var $this = $(this);
-                $this.parent('.isotope-classes-tab').find('a').removeClass('current');
-                $this.addClass('current');
-                var selector = $this.attr('data-filter');
-                $isotope.isotope({
-                    filter: selector,
-                    animationOptions: {
-                        duration: 750,
-                        easing: 'linear',
-                        queue: false
-                    }
-                });
-                return false;
+        //         var $this = $(this);
+        //         $this.parent('.isotope-classes-tab').find('a').removeClass('current');
+        //         $this.addClass('current');
+        //         var selector = $this.attr('data-filter');
+        //         $isotope.isotope({
+        //             filter: selector,
+        //             animationOptions: {
+        //                 duration: 750,
+        //                 easing: 'linear',
+        //                 queue: false
+        //             }
+        //         });
+        //         return false;
 
-            });
-        }
+        //     });
+        // }
     });
 
     /*-------------------------------------
@@ -543,77 +543,77 @@
     /*-------------------------------------
      Carousel slider initiation
      -------------------------------------*/
-    $('.et-carousel').each(function () {
-        var carousel = $(this),
-            loop = carousel.data('loop'),
-            items = carousel.data('items'),
-            margin = carousel.data('margin'),
-            stagePadding = carousel.data('stage-padding'),
-            autoplay = carousel.data('autoplay'),
-            autoplayTimeout = carousel.data('autoplay-timeout'),
-            smartSpeed = carousel.data('smart-speed'),
-            dots = carousel.data('dots'),
-            nav = carousel.data('nav'),
-            navSpeed = carousel.data('nav-speed'),
-            rXsmall = carousel.data('r-x-small'),
-            rXsmallNav = carousel.data('r-x-small-nav'),
-            rXsmallDots = carousel.data('r-x-small-dots'),
-            rXmedium = carousel.data('r-x-medium'),
-            rXmediumNav = carousel.data('r-x-medium-nav'),
-            rXmediumDots = carousel.data('r-x-medium-dots'),
-            rSmall = carousel.data('r-small'),
-            rSmallNav = carousel.data('r-small-nav'),
-            rSmallDots = carousel.data('r-small-dots'),
-            rMedium = carousel.data('r-medium'),
-            rMediumNav = carousel.data('r-medium-nav'),
-            rMediumDots = carousel.data('r-medium-dots'),
-            rLarge = carousel.data('r-Large'),
-            rLargeNav = carousel.data('r-Large-nav'),
-            rLargeDots = carousel.data('r-Large-dots'),
-            center = carousel.data('center');
-        carousel.owlCarousel({
-            loop: (loop ? true : false),
-            items: (items ? items : 4),
-            lazyLoad: true,
-            margin: (margin ? margin : 0),
-            autoplay: (autoplay ? true : false),
-            autoplayTimeout: (autoplayTimeout ? autoplayTimeout : 1000),
-            smartSpeed: (smartSpeed ? smartSpeed : 250),
-            dots: (dots ? true : false),
-            nav: (nav ? true : false),
-            navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>'],
-            navSpeed: (navSpeed ? true : false),
-            center: (center ? true : false),
-            responsiveClass: true,
-            responsive: {
-                0: {
-                    items: (rXsmall ? rXsmall : 1),
-                    nav: (rXsmallNav ? true : false),
-                    dots: (rXsmallDots ? true : false)
-                },
-                480: {
-                    items: (rXmedium ? rXmedium : 2),
-                    nav: (rXmediumNav ? true : false),
-                    dots: (rXmediumDots ? true : false)
-                },
-                768: {
-                    items: (rSmall ? rSmall : 3),
-                    nav: (rSmallNav ? true : false),
-                    dots: (rSmallDots ? true : false)
-                },
-                992: {
-                    items: (rMedium ? rMedium : 4),
-                    nav: (rMediumNav ? true : false),
-                    dots: (rMediumDots ? true : false)
-                },
-                1200: {
-                    items: (rLarge ? rLarge : 5),
-                    nav: (rLargeNav ? true : false),
-                    dots: (rLargeDots ? true : false)
-                }
-            }
-        });
-    });
+    // $('.et-carousel').each(function () {
+    //     var carousel = $(this),
+    //         loop = carousel.data('loop'),
+    //         items = carousel.data('items'),
+    //         margin = carousel.data('margin'),
+    //         stagePadding = carousel.data('stage-padding'),
+    //         autoplay = carousel.data('autoplay'),
+    //         autoplayTimeout = carousel.data('autoplay-timeout'),
+    //         smartSpeed = carousel.data('smart-speed'),
+    //         dots = carousel.data('dots'),
+    //         nav = carousel.data('nav'),
+    //         navSpeed = carousel.data('nav-speed'),
+    //         rXsmall = carousel.data('r-x-small'),
+    //         rXsmallNav = carousel.data('r-x-small-nav'),
+    //         rXsmallDots = carousel.data('r-x-small-dots'),
+    //         rXmedium = carousel.data('r-x-medium'),
+    //         rXmediumNav = carousel.data('r-x-medium-nav'),
+    //         rXmediumDots = carousel.data('r-x-medium-dots'),
+    //         rSmall = carousel.data('r-small'),
+    //         rSmallNav = carousel.data('r-small-nav'),
+    //         rSmallDots = carousel.data('r-small-dots'),
+    //         rMedium = carousel.data('r-medium'),
+    //         rMediumNav = carousel.data('r-medium-nav'),
+    //         rMediumDots = carousel.data('r-medium-dots'),
+    //         rLarge = carousel.data('r-Large'),
+    //         rLargeNav = carousel.data('r-Large-nav'),
+    //         rLargeDots = carousel.data('r-Large-dots'),
+    //         center = carousel.data('center');
+    //     carousel.owlCarousel({
+    //         loop: (loop ? true : false),
+    //         items: (items ? items : 4),
+    //         lazyLoad: true,
+    //         margin: (margin ? margin : 0),
+    //         autoplay: (autoplay ? true : false),
+    //         autoplayTimeout: (autoplayTimeout ? autoplayTimeout : 1000),
+    //         smartSpeed: (smartSpeed ? smartSpeed : 250),
+    //         dots: (dots ? true : false),
+    //         nav: (nav ? true : false),
+    //         navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>'],
+    //         navSpeed: (navSpeed ? true : false),
+    //         center: (center ? true : false),
+    //         responsiveClass: true,
+    //         responsive: {
+    //             0: {
+    //                 items: (rXsmall ? rXsmall : 1),
+    //                 nav: (rXsmallNav ? true : false),
+    //                 dots: (rXsmallDots ? true : false)
+    //             },
+    //             480: {
+    //                 items: (rXmedium ? rXmedium : 2),
+    //                 nav: (rXmediumNav ? true : false),
+    //                 dots: (rXmediumDots ? true : false)
+    //             },
+    //             768: {
+    //                 items: (rSmall ? rSmall : 3),
+    //                 nav: (rSmallNav ? true : false),
+    //                 dots: (rSmallDots ? true : false)
+    //             },
+    //             992: {
+    //                 items: (rMedium ? rMedium : 4),
+    //                 nav: (rMediumNav ? true : false),
+    //                 dots: (rMediumDots ? true : false)
+    //             },
+    //             1200: {
+    //                 items: (rLarge ? rLarge : 5),
+    //                 nav: (rLargeNav ? true : false),
+    //                 dots: (rLargeDots ? true : false)
+    //             }
+    //         }
+    //     });
+    // });
 
     /*-------------------------------------
      Window onLoad and onResize event trigger
@@ -720,71 +720,71 @@
     /*-------------------------------------
      Masonry
      -------------------------------------*/
-     if($('.masonry-items').length){
-        $('.masonry-items').masonry({
-            itemSelector: '.masonry-item',
-            columnWidth: '.masonry-item',
-        });
-     }
+    //  if($('.masonry-items').length){
+    //     $('.masonry-items').masonry({
+    //         itemSelector: '.masonry-item',
+    //         columnWidth: '.masonry-item',
+    //     });
+    //  }
     
     /*-------------------------------------
      Input Quantity Up & Down activation code
      -------------------------------------*/
-    $('#quantity-holder,#quantity-holder2').on('click', '.quantity-plus', function() {
+    // $('#quantity-holder,#quantity-holder2').on('click', '.quantity-plus', function() {
 
-        var $holder = $(this).parents('.quantity-holder');
-        var $target = $holder.find('input.quantity-input');
-        var $quantity = parseInt($target.val(), 10);
-        if ($.isNumeric($quantity) && $quantity > 0) {
-            $quantity = $quantity + 1;
-            $target.val($quantity);
-        } else {
-            $target.val($quantity);
-        }
+    //     var $holder = $(this).parents('.quantity-holder');
+    //     var $target = $holder.find('input.quantity-input');
+    //     var $quantity = parseInt($target.val(), 10);
+    //     if ($.isNumeric($quantity) && $quantity > 0) {
+    //         $quantity = $quantity + 1;
+    //         $target.val($quantity);
+    //     } else {
+    //         $target.val($quantity);
+    //     }
 
-    }).on('click', '.quantity-minus', function() {
+    // }).on('click', '.quantity-minus', function() {
 
-        var $holder = $(this).parents('.quantity-holder');
-        var $target = $holder.find('input.quantity-input');
-        var $quantity = parseInt($target.val(), 10);
-        if ($.isNumeric($quantity) && $quantity >= 2) {
-            $quantity = $quantity - 1;
-            $target.val($quantity);
-        } else {
-            $target.val(1);
-        }
+    //     var $holder = $(this).parents('.quantity-holder');
+    //     var $target = $holder.find('input.quantity-input');
+    //     var $quantity = parseInt($target.val(), 10);
+    //     if ($.isNumeric($quantity) && $quantity >= 2) {
+    //         $quantity = $quantity - 1;
+    //         $target.val($quantity);
+    //     } else {
+    //         $target.val(1);
+    //     }
 
-    });
+    // });
 
-    $('.menu-trigger').on('click', function() {
-        var targetHolder = $('#main-nav-wrap'),
-            target = $('#main-nav', targetHolder),
-            targetMenu = target.find(' > ul').not('.temp-main-nav'),
-            $tempMenu = target.find('ul.temp-main-nav'),
-            self = $(this);
-        if ($tempMenu.length) {
-            self.find('i').removeClass('flaticon-unchecked').addClass('flaticon-menu');
-            $tempMenu.animate({ top: '-100%' }, 500, function() {
-                $(this).animate({ opacity: 0 }, 200, function() {
-                    $(this).remove()
-                });
-            });
-        } else {
-            self.find('i').removeClass('flaticon-menu').addClass('flaticon-unchecked');
-            var tempMenu = targetMenu.clone();
-            tempMenu.css({
-                visibility: 'visible',
-                position: 'absolute',
-                top: '-100%',
-                left: 0,
-                opacity: 0,
-                width: targetMenu.outerWidth()
-            }).addClass('temp-main-nav');
-            target.append(tempMenu);
-            tempMenu.animate({ opacity: 1 }, 200, function() {
-                $(this).animate({ top: 0 }, 500);
-            });
-        }
-    });
+    // $('.menu-trigger').on('click', function() {
+    //     var targetHolder = $('#main-nav-wrap'),
+    //         target = $('#main-nav', targetHolder),
+    //         targetMenu = target.find(' > ul').not('.temp-main-nav'),
+    //         $tempMenu = target.find('ul.temp-main-nav'),
+    //         self = $(this);
+    //     if ($tempMenu.length) {
+    //         self.find('i').removeClass('flaticon-unchecked').addClass('flaticon-menu');
+    //         $tempMenu.animate({ top: '-100%' }, 500, function() {
+    //             $(this).animate({ opacity: 0 }, 200, function() {
+    //                 $(this).remove()
+    //             });
+    //         });
+    //     } else {
+    //         self.find('i').removeClass('flaticon-menu').addClass('flaticon-unchecked');
+    //         var tempMenu = targetMenu.clone();
+    //         tempMenu.css({
+    //             visibility: 'visible',
+    //             position: 'absolute',
+    //             top: '-100%',
+    //             left: 0,
+    //             opacity: 0,
+    //             width: targetMenu.outerWidth()
+    //         }).addClass('temp-main-nav');
+    //         target.append(tempMenu);
+    //         tempMenu.animate({ opacity: 1 }, 200, function() {
+    //             $(this).animate({ top: 0 }, 500);
+    //         });
+    //     }
+    // });
 
 })(jQuery);
