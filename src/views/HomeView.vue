@@ -1,0 +1,359 @@
+<script>
+import { reactive, toRaw, onMounted, onBeforeUnmount } from 'vue';
+import headerSection from '../components/header.vue';
+import footerSection from '../components/footer.vue';
+import { useLayoutStore } from "../stores/layout.js";
+import { computed } from 'vue';
+import { Splide, SplideSlide } from '@splidejs/vue-splide';
+import { useHead } from '@vueuse/head';
+import '@splidejs/vue-splide/css';
+import moment from 'moment';
+import ru from 'moment/locale/ru';
+export default {
+  name: "Home",
+  components: {
+    headerSection,
+    footerSection,
+    Splide,
+    SplideSlide,
+  },
+  setup() {
+    const layoutStore = useLayoutStore();
+    const background = computed(() => layoutStore.getBackground);
+    const logo = computed(() => layoutStore.getLogo);
+    const logo2 = computed(() => layoutStore.getLogo2);
+
+    const layout = computed(() => layoutStore.getLayout);
+    
+    onMounted(() => {
+      // Инициализация jQuery-плагинов только после того, как DOM готов
+      if (window.$ && typeof window.$.fn.meanmenu === 'function') {
+        $('nav#dropdown').meanmenu({
+          siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
+        });
+      }
+      if (window.$ && typeof window.$.scrollUp === 'function') {
+        $.scrollUp({
+          scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
+          easingType: 'linear',
+          scrollSpeed: 900,
+        });
+      }
+      // Добавьте другие плагины по аналогии
+    });
+
+    onBeforeUnmount(() => {
+      // Здесь можно добавить очистку, если требуется для плагинов
+      // Например, $(...).meanmenu('destroy');
+    });
+
+    return {
+      layout,
+      background,
+      logo,
+      logo2
+    };
+  },
+  props: ['layoutLoaded'],
+  computed: {
+    soonFilms() {
+      let result = [];
+      if (this.afisha.data && this.afisha.data.month && this.afisha.data.month.length) {
+        this.afisha.data.month.forEach(mon => {
+          result.push(...mon.performances);
+        });
+
+        result = result.filter(perf => ((moment().startOf('day').unix() + 86400) <= perf.start_timestamp));
+        
+        if (result.length > 8) {
+          result = result.slice(0, 8);
+        }
+
+        return result;
+      }
+      return result;
+    }
+  },
+  data() {
+    return {
+      afisha: {},
+      loading: true,
+      splideOptionsEvents: {
+        type: 'slide',
+        perPage: 6,
+        breakpoints: {
+          600: {
+            perPage: 2,
+            gap: '1rem',
+          },
+        },
+        pagination: false,
+        arrows: false,
+      },
+      splideOptionsBanner: {
+        type: 'slide',
+        perPage: 1,
+        pagination: false,
+        arrows: false,
+      },
+      tagColors: [
+        'blue',
+        'yell',
+        'orange',
+        'green'
+      ],
+      
+    };
+  },
+  methods: {
+    async getAfisha() {
+      const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/kino`;
+      const params = {
+          lang: import.meta.env.VITE_API_LANG,
+          jsonld: import.meta.env.VITE_API_JSONLD,
+          ignoreEndTime: 0,
+          cityId: import.meta.env.VITE_API_CITY_ID,
+          date: moment().startOf('day').unix(),
+
+          onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+          domain: import.meta.env.VITE_API_DOMAIN,
+          distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
+          // expand: 'sessions'
+          
+
+          // ignoreEndTime: 1,
+          // home_sort: 1,
+          // limit: 12,
+          // onlyData:0,
+      };
+
+      
+      await this.$axios.get(apiUrl, { params }).then(response => {
+
+        this.afisha = response.data;
+
+        useHead({
+          title: 'Киноафиша Бобруйска – Кинотеатры "Товарищ" и "Мир" | Купить билеты онлайн',
+          meta: [
+            {
+              name: 'description',
+              content: 'Актуальная киноафиша города Бобруйска. Расписание сеансов в кинотеатрах "Товарищ" и "Мир". Покупка билетов онлайн, трейлеры, описания фильмов и удобный выбор мест.'
+            },
+            {
+              name: 'keywords',
+              content: 'кино Бобруйск, кинотеатр Товарищ, кинотеатр Мир, купить билеты в кино, афиша Бобруйск, фильмы сегодня, расписание кино'
+            }
+          ]
+        });
+      });
+
+      setTimeout(() => {
+        this.loading = false;
+      }, 500);
+    },
+
+    strTimestampToHumanTime(timestamp) {
+      return moment(timestamp * 1000).format('DD.MM.YYYY');
+    },
+  },
+  beforeMount() {
+    this.layoutLoaded
+      .then(() => this.getAfisha())
+      // .then(() => {
+      //   requestAnimationFrame(() => {
+      //     setTimeout(() => {
+      //       this.loading = false;
+      //     }, 700);
+      //   });
+      // })
+      .catch(error => console.error("Ошибка выполнения getAfisha", error));
+  },
+};
+</script>
+
+<template>
+  <main>
+      <!--preloading-->
+      <div id="preloader" v-if="loading">
+          <img class="logo" :src="logo2" alt="" width="119" height="58">
+          <div id="status">
+              <span></span>
+              <span></span>
+          </div>
+      </div>
+
+      <headerSection />
+
+      <div class="slider sliderv2" :style="{ 'background': background }">
+        <div class="container">
+          <div class="row">
+              <Splide class="slider-single-item" v-if="afisha.data">
+                <!-- <SplideSlide :options="splideOptionsBanner" class="movie-item" v-for="event in afisha.data.kino.events.filter(item => item.images.length)" :key="event"> -->
+                <SplideSlide :options="splideOptionsBanner" class="movie-item" v-for="event in ((afisha.data.currentDate.length > 5) ? afisha.data.currentDate.slice(-5) : afisha.data.currentDate)" :key="event">
+                  <div class="row">
+                    <div class="col-md-8 col-sm-12 col-xs-12">
+                      <div class="title-in">
+                        <div class="cate" v-if="event.types && event.types.length">
+                          <span v-bind:class="tagColors[index]" v-for="(tag, index) in event.types" :key="tag"><a href="#">{{ tag.name }}</a></span>
+                        </div>
+                        <div class="slide-title"><router-link :to="`/event/${event.id}`">{{ event.name }}<br>
+                        <span></span></router-link></div>
+          
+                        <br>
+                        <div class="mv-details">
+                          <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{ event.kinopoiskRank.toFixed(1) }}</span> /10</p>
+                          <ul class="mv-infor" :style="{ 'margin-left': event.kinopoiskRank ? 'revert-layer' : '2rem', 'list-style': 'disc' }">
+                            <li v-if="event.duration">  Продолжительность: {{ event.duration }} мин. </li>
+                            <li v-if="event.minAge">  Возраст: {{ event.minAge }}+  </li>
+                            <li v-if="event.showFrom">  Начало продаж: {{ strTimestampToHumanTime(event.showFrom) }}</li>
+                          </ul>
+                        </div>
+                        <div class="btn-transform transform-vertical">
+                        <div><router-link :to="`/event/${event.id}`" class="item item-1 redbtn">Подробнее</router-link></div>
+                        <div><router-link :to="`/event/${event.id}`" class="item item-2 redbtn hvrbtn">Подробнее</router-link></div>
+                      </div>		
+                      </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12 col-xs-12">
+                      <div class="mv-img-2">
+                        <router-link :to="`/event/${event.id}`"><img :src="event.image['300x430']" alt=""></router-link>
+                      </div>
+                    </div>
+                  </div>	
+                </SplideSlide>
+                
+              </Splide>
+            </div>
+        </div>
+      </div>
+      <div class="movie-items full-width" style="padding-bottom: 0;">
+        <div class="row">
+          <div class="col-md-12">
+            <h1 style="color:#fff;text-align: center;">Киноафиша Бобруйска — кинотеатры "Товарищ" и "Мир"</h1>
+          </div>
+        </div>
+      </div>
+      
+      <div class="movie-items full-width" v-if="afisha && afisha.data">
+        <div class="row">
+          <div class="col-md-12">
+
+            <div>
+              <div v-if="afisha.data && afisha.data.currentDate.length">
+                <div class="title-hd">
+                  <router-link to="/events?type=today"><h2>Сегодня в кино</h2></router-link>
+                  <router-link to="/events?type=today" class="viewall">Все <i class="ion-ios-arrow-right"></i></router-link>
+                </div>
+                <div class="tabs">
+                  <div class="tab-content">
+                      <div id="tab1-h2" class="tab active">
+                          <div class="row">
+                            <Splide :options="splideOptionsEvents" class="slick-multiItem2 splide" >
+                              <!-- <SplideSlide class="slide-it" v-for="event in afisha.data.top.events" :key="event"> -->
+                              <SplideSlide class="slide-it" v-for="event in ((afisha.data.currentDate.length > 8) ? afisha.data.currentDate.slice(0, 8) : afisha.data.currentDate)" :key="event">
+                                <div class="movie-item">
+                                  <div class="mv-img" @click="$router.push(`/event/${event.id}`)">
+                                    <img :src="event.image['300x430']" alt="">
+                                  </div>
+                                  <div class="hvr-inner">
+                                    <router-link :to="`/event/${event.id}`"> Купить <i class="ion-android-arrow-dropright"></i> </router-link>
+                                  </div>
+                                  <div class="title-in">
+                                    <h6><router-link :to="`/event/${event.id}`">{{event.name}}</router-link></h6>
+                                    <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{event.kinopoiskRank.toFixed(1)}}</span> /10</p>
+                                  </div>
+                                </div>
+                              </SplideSlide>
+                            </Splide>
+                          </div>
+                      </div>
+                      
+                  </div>
+                </div>
+              </div>
+              <div v-if="soonFilms.length">
+                <div class="title-hd">
+                  <router-link to="/events?type=soon"><h2>Скоро в кино</h2></router-link>
+                  <router-link to="/events?type=soon" class="viewall">Все <i class="ion-ios-arrow-right"></i></router-link>
+                </div>
+                <div class="tabs">
+                  <div class="tab-content">
+                      <div id="tab1-h2" class="tab active">
+                          <div class="row">
+                            <Splide :options="splideOptionsEvents" class="slick-multiItem2 splide" >
+                              <!-- <SplideSlide class="slide-it" v-for="event in afisha.data.top.events" :key="event"> -->
+                              <SplideSlide class="slide-it" v-for="event in soonFilms" :key="event">
+                                <div class="movie-item">
+                                  <div class="mv-img" @click="$router.push(`/event/${event.id}`)">
+                                    <img :src="event.image['300x430']" alt="">
+                                  </div>
+                                  <div class="hvr-inner">
+                                    <router-link :to="`/event/${event.id}`"> Купить <i class="ion-android-arrow-dropright"></i> </router-link>
+                                  </div>
+                                  <div class="title-in">
+                                    <h6><router-link :to="`/event/${event.id}`">{{event.name}}</router-link></h6>
+                                    <p v-if="event.kinopoiskRank"><i class="ion-android-star"></i><span>{{event.kinopoiskRank.toFixed(1)}}</span> /10</p>
+                                  </div>
+                                </div>
+                              </SplideSlide>
+                            </Splide>
+                          </div>
+                      </div>
+                      
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+
+           
+            
+          </div>
+        </div>
+      </div>
+
+     
+      <!-- latest new v2 section-->
+      <div class="latestnew full-width">
+          <div class="row">
+            <div class="col-md-12">
+              <!-- <div class="ads adsv2" v-if="afisha.data && afisha.data.topSlider">
+                <img :src="afisha.data.topSlider.items[0].image['original']" alt="">
+              </div> -->
+              <div class="title-hd">
+                <router-link to="/posts"><h2>Последние новости</h2></router-link>
+                <router-link to="/posts" class="viewall">Все новости <i class="ion-ios-arrow-right"></i></router-link>
+              </div>
+              <!-- <div class="latestnewv2" v-if="afisha.data.posts"> -->
+              <div class="latestnewv2" v-if="afisha && afisha.postsAll">
+                <!-- <div class="blog-item-style-2" v-for="post in afisha.posts" :key="post"> -->
+                <div class="blog-item-style-2" v-for="post in afisha.postsAll" :key="post">
+                  <router-link :to="`/post/${post.slug}`"><img :src="post.image['1300x560']" alt=""></router-link>
+                  <div class="blog-it-infor">
+                    <h3><router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link></h3>
+                    <span class="time">{{ post.publishedAt }}</span>
+                    <p v-html="post.shortContent"></p>
+                  </div>
+                </div>
+                
+                
+              </div>
+            </div>
+            
+          </div>
+        
+      </div>
+      <!--end of latest new v2 section-->
+
+      <div class="movie-items full-width">
+        <div class="row" style="border: 1px solid #abb7c4;">
+          <div class="col-md-12" style="padding: 12px 15px;">
+            <h3 style="color: #abb7c4;font-size: 14px;line-height: inherit;">Добро пожаловать на официальный сайт киноафиши города Бобруйска! Здесь вы найдете актуальное расписание фильмов в кинотеатрах "Товарищ" и "Мир". Удобный интерфейс позволяет быстро выбрать интересующий сеанс, посмотреть трейлер, прочитать описание и купить билеты онлайн. Следите за новинками проката и не пропустите лучшие премьеры!</h3>
+          </div>
+        </div>
+      </div>
+
+      <footerSection />
+      
+    </main>
+</template>
