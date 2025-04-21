@@ -197,16 +197,19 @@ export default {
           <div class="slider-content s-tb slide-1">
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
+                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
+                  <a href="single-event.html">18 October, 2018 | Minsk</a>
+                </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
                 </div>
                 <div class="slider-big-text second-line">
                   <p>Developer Meetup 2018</p>
                 </div>
-                <div class="slider-btn-area forth-line margin-t-30">
-                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
-                </div>
               </div>
+            </div>
+            <div class="slider-btn-area forth-line margin-t-30">
+              <a href="#" class="btn-fill color-yellow">Buy Tickets Now!</a>
             </div>
           </div>
         </div>
@@ -214,16 +217,19 @@ export default {
           <div class="slider-content s-tb slide-2">
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
+                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
+                  <a href="single-event.html">18 October, 2018 | Minsk</a>
+                </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
                 </div>
                 <div class="slider-big-text second-line">
                   <p>Developer Meetup 2018</p>
                 </div>
-                <div class="slider-btn-area forth-line margin-t-30">
-                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
-                </div>
               </div>
+            </div>
+            <div class="slider-btn-area forth-line margin-t-30">
+              <a href="#" class="btn-fill color-yellow">Buy Tickets Now!</a>
             </div>
           </div>
         </div>
@@ -231,16 +237,19 @@ export default {
           <div class="slider-content s-tb slide-3">
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
+                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
+                  <a href="single-event.html">18 October, 2018 | Minsk</a>
+                </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
                 </div>
                 <div class="slider-big-text second-line">
                   <p>Developer Meetup 2018</p>
                 </div>
-                <div class="slider-btn-area forth-line margin-t-30">
-                  <a href="#" class="btn-ghost color-yellow">Buy Tickets Now!</a>
-                </div>
               </div>
+            </div>
+            <div class="slider-btn-area forth-line margin-t-30">
+              <a href="#" class="btn-fill color-yellow">Buy Tickets Now!</a>
             </div>
           </div>
         </div>
@@ -248,7 +257,7 @@ export default {
     </div>
     <!-- Slider Area End Here -->
     <!-- Countdown Area Start Here -->
-    <section>
+    <!-- <section>
       <div class="container-fluid">
         <div class="row no-gutters full-width">
           <div class="col-lg-4">
@@ -267,7 +276,7 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Countdown Area End Here -->
     <!-- About Area Start Here -->
     <section class="section-space-custom-less30 bg-common bg-accent"

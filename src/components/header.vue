@@ -318,7 +318,7 @@ export default {
             <div class="col-lg-3 col-md-3 d-none d-lg-block">
               <ul class="header-action-items">
                 <li>
-                  <a href="#" title="Buy Tickets" class="btn-fill size-xs color-primary border-radius-5">Buy Tickets</a>
+                  <a href="#" title="Buy Tickets" class="btn-fill size-xs color-yellow border-radius-5">Buy Tickets</a>
                 </li>
               </ul>
             </div>
