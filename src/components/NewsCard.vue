@@ -1,0 +1,158 @@
+<template>
+  <div class="blog-layout3 overlay-gradient">
+    <div class="image-wrapper" style="position: relative;">
+      <img
+        :src="post.image['1300x560'] || placeholderImage"
+        :alt="post.title"
+        class="img-fluid width-100"
+        @error="onImgError"
+      >
+      <div class="item-date-wrap" style="position: absolute; top: 10px; left: 15px; z-index: 2;">
+        <div class="item-date">
+          {{ getNewsDay(post) }}
+        </div>
+      </div>
+    </div>
+    <div class="item-content news-title-only">
+      <div class="item-title">
+        <h3 class="title-medium color-light hover-yellow">
+          {{ post.title }}
+        </h3>
+      </div>
+    </div>
+  </div>
+</template>
+  
+  <script>
+  import placeholder from '@/assets/images/blog/blog11.jpg'; // Запасное изображение для новостей
+  import moment from 'moment';
+  
+  export default {
+    name: 'NewsCard',
+    props: {
+      post: {
+        type: Object,
+        required: true,
+      },
+    },
+    data() {
+      return {
+        placeholderImage: placeholder
+      }
+    },
+    methods: {
+      onImgError(event) {
+        event.target.src = this.placeholderImage;
+      },
+      getNewsDay(post) {
+        const dateStr = post.published_at || post.publishedAt || '';
+        if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
+          return moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
+        } else if (moment(dateStr).isValid()) {
+          return moment(dateStr).format('DD MMM');
+        }
+        return '';
+      },
+      formatDate(dateString, format = 'DD MMM YYYY') {
+        // API возвращает строку вида "DD.MM.YYYY", парсим её
+        return moment(dateString, 'DD.MM.YYYY').isValid()
+          ? moment(dateString, 'DD.MM.YYYY').format(format)
+          : dateString; // Возвращаем как есть, если формат не распознан
+      }
+    },
+  };
+</script>
+  
+  <style scoped>
+.blog-layout3 {
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+.blog-layout3 img {
+  -webkit-transform: scale(1);
+  -moz-transform: scale(1);
+  -ms-transform: scale(1);
+  -o-transform: scale(1);
+  transform: scale(1);
+  -webkit-transition: all 0.5s ease-out;
+  -moz-transition: all 0.5s ease-out;
+  -ms-transition: all 0.5s ease-out;
+  -o-transition: all 0.5s ease-out;
+  transition: all 0.5s ease-out;
+}
+.blog-layout3 .item-date-wrap {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  z-index: 1;
+}
+@media only screen and (max-width: 767px) {
+  .blog-layout3 .item-date-wrap {
+    top: 10px;
+    left: 10px;
+  }
+}
+.blog-layout3 .item-date-wrap .item-date {
+  text-align: center;
+  padding: 8px 20px 7px;
+  background-color: #fad03b;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 900;
+  position: relative;
+  -webkit-transition: all 0.5s ease-out;
+  -moz-transition: all 0.5s ease-out;
+  -ms-transition: all 0.5s ease-out;
+  -o-transition: all 0.5s ease-out;
+  transition: all 0.5s ease-out;
+}
+.blog-layout3 .item-date-wrap .item-date:before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+  background-color: #d5ae26;
+  top: 5px;
+  left: 5px;
+  -webkit-transition: all 0.5s ease-out;
+  -moz-transition: all 0.5s ease-out;
+  -ms-transition: all 0.5s ease-out;
+  -o-transition: all 0.5s ease-out;
+  transition: all 0.5s ease-out;
+}
+.blog-layout3 .item-date-wrap .item-date span {
+  display: block;
+  font-size: 18px;
+  font-weight: 500;
+}
+.blog-layout3 .item-content {
+  padding: 0 12px;
+  position: absolute;
+  bottom: 5px;
+  left: 15px;
+  text-align: left;
+  z-index: 3;
+}
+@media only screen and (max-width: 767px) {
+  .blog-layout3 .item-content {
+    bottom: 0;
+    left: 0;
+  }
+}
+.blog-layout3 .item-content .item-deccription {
+  color: #ffffff;
+}
+.blog-layout3 .item-content .item-title h3 {
+  margin-bottom: 10px;
+}
+.blog-layout3:hover img {
+  transform: scale(1.1);
+}
+.blog-layout3:hover .item-date:before {
+  top: -5px;
+  left: -5px;
+}
+</style>

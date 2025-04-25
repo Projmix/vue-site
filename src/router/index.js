@@ -12,17 +12,16 @@ const router = createRouter({
     {
       path: '/event/:id',
       name: 'event',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/EventView.vue')
+      component: () => import('../views/SinglEventView.vue')
     },
+    // {
+    //   path: '/events',
+    //   name: 'events',
+    //   component: () => import('../views/EventsView.vue')
+    // },
     {
-      path: '/events',
-      name: 'events',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
+      path: '/events/:category',
+      name: 'events-category',
       component: () => import('../views/EventsView.vue')
     },
     {
@@ -70,7 +69,14 @@ const router = createRouter({
       name: 'ErrorView',
       component: () => import('../views/ErrorView.vue'),
     }
-  ]
+  ],
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  },
 })
 
 export default router

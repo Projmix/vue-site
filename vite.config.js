@@ -25,7 +25,13 @@ export default defineConfig({
   server: {
     port: 5000,
     host: '0.0.0.0',
-
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000', // Change to your backend address if different
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
     // КОМЕНТАЕМ ВСЕ, ЧТО НИЖЕ, ЕСЛИ ПРИ ЗАПУСКЕ ПРОЕКТА ПОЛУЧАЕМ ОШИБКУ HTTP SERVER...
     // middlewareMode: 'html',
     // fs: {

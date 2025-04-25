@@ -21,26 +21,43 @@ export const useLayoutStore = defineStore("layout", {
       },
       getLogo2(state){
         return state.logo2
-      }
-    },
-    actions: {
-      async fetchLayout() {
-        try {
-          const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/layout`;
-          const params = {
-              lang: import.meta.env.VITE_API_LANG,
-              jsonld: import.meta.env.VITE_API_JSONLD,
-              onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-              domain: import.meta.env.VITE_API_DOMAIN,
-              distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-          };
-          const { data } = await axios.get(apiUrl, { params });
-          this.layout = data;
-
-          
-        } catch (error) {
-            console.log(error);
+      },
+      getEventCategories(state) {
+        // Предположим, категории лежат в layout.menu или layout.categories
+        // Адаптируйте под вашу реальную структуру
+        if (state.layout && state.layout.someFieldContainingCategories) {
+            // Возможно, потребуется маппинг для получения { slug, name }
+            return state.layout.someFieldContainingCategories.map(cat => ({
+                slug: cat.slug, // Или другое поле
+                name: cat.name   // Или другое поле
+            }));
         }
+        return []; // Возвращаем пустой массив, если данных нет
+    }
+  },
+  actions: {
+      fetchLayout() {
+        if (!this.layoutLoaded) { // Загружаем только один раз
+            this.layoutLoaded = new Promise(async (resolve, reject) => {
+                try {
+                    const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/layout`;
+                    const params = {
+                        lang: import.meta.env.VITE_API_LANG,
+                        jsonld: import.meta.env.VITE_API_JSONLD,
+                        onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+                        domain: import.meta.env.VITE_API_DOMAIN,
+                        distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
+                    };
+                    const { data } = await axios.get(apiUrl, { params });
+                    this.layout = data;
+                    resolve(this.layout); // Разрешаем Promise после загрузки
+                } catch (error) {
+                    console.error("Ошибка загрузки Layout:", error);
+                    reject(error); // Отклоняем Promise при ошибке
+                }
+            });
+        }
+        return this.layoutLoaded;
       },
 
       async loadScript(src) {
@@ -82,5 +99,5 @@ export const useLayoutStore = defineStore("layout", {
           
 
       }
-    },
+    }
 })

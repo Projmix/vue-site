@@ -1,0 +1,1184 @@
+Хорошо, вот документация API, структурированная на основе предоставленных фрагментов кода и JSON-примеров, на русском языке.
+
+Документация API: 24guru Afisha API (v2 & v3)
+
+Базовый URL: https://webgate2.24guru.by/api/
+
+Введение
+
+Этот API предоставляет доступ к данным афиши (события, фильмы и т.д.), информации о площадках (местах проведения), постам (новостям/статьям) и связанным с ними расписаниям для различных городов. В основном используется партнерскими веб-сайтами. API развивался и использует эндпоинты как v2, так и v3 для разных функциональностей.
+
+Общие Параметры
+
+Эти параметры часто используются в различных эндпоинтах для определения контекста и формата запроса.
+
+Параметр	Тип	Обязательный?	По умолчанию	Описание	Пример
+lang	string	Да	ru	Код языка для данных в ответе.	ru
+cityId	integer	Да	-	Числовой ID города.	3 (Минск)
+onlyDomain	boolean	Нет	1	Флаг (0 или 1) для ограничения результатов указанным domain. Обычно 1.	1
+domain	string	Если onlyDomain=1	-	Доменное имя партнерского сайта для фильтрации контента.	"bobruiskkino.by"
+distributor_company_id	integer	Если onlyDomain=1	-	Числовой ID компании-дистрибьютора, используется вместе с domain.	286
+jsonld	boolean	Нет	0	Флаг (0 или 1) для включения структурированных данных JSON-LD в ответ. Обычно 0.	0
+Переменные Окружения (Настройка на стороне клиента)
+
+Клиентский код использует переменные окружения для конфигурации этих параметров:
+
+VITE_API_URL: Базовый URL (https://webgate2.24guru.by)
+
+VITE_API_LANG: Язык по умолчанию (ru)
+
+VITE_API_CITY_ID: ID города по умолчанию (57)
+
+VITE_API_ONLY_DOMAIN: Флаг фильтрации по домену (1)
+
+VITE_API_DOMAIN: Домен партнера ("bobruiskkino.by")
+
+VITE_API_DISTRIBUTOR_COMPANY_ID: ID дистрибьютора (286)
+
+VITE_API_JSONLD: Флаг JSON-LD (0)
+
+Эндпоинты API
+1. Данные Афиши (По категориям)
+
+Получает события/представления для определенной категории (например, кино, театр, концерты и т.д.) и города, обычно на конкретную дату.
+
+Метод: GET
+
+Путь: /v3/mobile/afisha/{category_slug}
+
+Параметры пути:
+
+{category_slug} (string, обязательный): Текстовый идентификатор (slug) категории (например, kino, theatre, concert, activ, learn, vistavki, circus, festival, opera, kids, kvesty).
+
+Параметры запроса:
+
+date (integer, опциональный): Unix timestamp начала нужного дня. По умолчанию - текущий день.
+
+ignoreEndTime (boolean, опциональный): 0 (по умолчанию) исключает прошедшие события на запрашиваемую дату, 1 включает их.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/mobile/afisha/kino?lang=ru&cityId=3&date=1745366400&onlyDomain=1&domain=somepartner.by&distributor_company_id=123
+
+Ответ: Возвращает JSON-объект, содержащий информацию о текущем городе, доступные даты в календаре, опции фильтров, информацию о категории (включая SEO-данные), связанные посты и основные данные о событиях, сгруппированные по дате, месяцу, жанрам и тегам.
+
+См. предоставленные JSON-файлы (kino.json.txt, activ.json.txt и т.д.) для подробных примеров структуры ответа.
+
+Ключевые данные находятся в поле data, содержащем массивы, такие как currentDate, month, и объекты, такие как genres, tags, которые содержат массивы объектов Performance (см. Структуры Данных ниже).
+
+2. Детали События
+
+Получает подробную информацию о конкретном событии/представлении.
+
+Метод: GET
+
+Путь: /v3/arena/events/{event_id}
+
+Параметры пути:
+
+{event_id} (integer, обязательный): Числовой ID события.
+
+Параметры запроса:
+
+time (integer, опциональный): Unix timestamp, вероятно, используется для определения релевантной информации о расписании/календаре. По умолчанию - текущий день.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/arena/events/1307519?lang=ru&cityId=3&time=1745366400
+
+Ответ: Возвращает JSON-объект, содержащий подробную информацию о performance (включая seo, description, name, изображения и т.д.) и, возможно, массив calendar с доступными датами/временами.
+
+3. Расписание События (v2)
+
+Получает расписание (времена сеансов) для конкретного события на заданную дату. Примечание: Использует API v2.
+
+Метод: GET
+
+Путь: /v2/schedule/events/{event_id}
+
+Параметры пути:
+
+{event_id} (integer, обязательный): Числовой ID события.
+
+Параметры запроса:
+
+time (integer, опциональный): Unix timestamp начала нужного дня. По умолчанию - текущий день.
+
+lang (string, обязательный)
+
+cityId (integer, обязательный)
+
+jsonld (boolean, опциональный)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v2/schedule/events/1307519?lang=ru&cityId=3&time=1745366400
+
+Ответ: Возвращает JSON-объект, содержащий информацию о расписании, вероятно, сгруппированную по месту проведения (площадке/объекту) и перечисляющую времена сеансов на указанную дату. (Структура не предоставлена в примерах, вывод сделан на основе использования).
+
+4. Список Объектов/Площадок
+
+Получает список объектов (мест проведения, таких как кинотеатры, театры, концертные залы).
+
+Метод: GET
+
+Путь: /v3/pages/objects
+
+Параметры запроса:
+
+filter[typeIds] (integer, опциональный): Фильтр по ID типа объекта (например, 2 для Кинотеатров).
+
+filter[perPage] (integer, опциональный): Количество элементов на странице для пагинации.
+
+page (integer, опциональный): Номер страницы для пагинации.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/pages/objects?filter[typeIds]=2&filter[perPage]=18&page=1&lang=ru&cityId=57&onlyDomain=1&domain=bobruiskkino.by&distributor_company_id=286
+
+Ответ: Возвращает JSON-объект с пагинацией, содержащий массив data с объектами Object/Venue и, возможно, seo-информацию для страницы списка.
+
+5. Детали Объекта/Площадки
+
+Получает подробную информацию о конкретном объекте/месте проведения.
+
+Метод: GET
+
+Путь: /v3/pages/objects/{object_id}
+
+Параметры пути:
+
+{object_id} (integer, обязательный): Числовой ID объекта/площадки.
+
+Параметры запроса:
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/pages/objects/24?lang=ru&cityId=3
+
+Ответ: Возвращает JSON-объект, содержащий детали object (название, описание, тип, местоположение, изображения, seo) и, возможно, calendar с датами событий на этой площадке.
+
+6. Расписание Объекта/Площадки (v2)
+
+Получает расписание событий для конкретного объекта/места проведения на заданную дату. Примечание: Использует API v2.
+
+Метод: GET
+
+Путь: /v2/schedule/objects/{object_id}
+
+Параметры пути:
+
+{object_id} (integer, обязательный): Числовой ID объекта/площадки.
+
+Параметры запроса:
+
+time (integer, опциональный): Unix timestamp начала нужного дня. По умолчанию - текущий день.
+
+lang (string, обязательный)
+
+cityId (integer, обязательный)
+
+jsonld (boolean, опциональный)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v2/schedule/objects/24?lang=ru&cityId=3&time=1745366400
+
+Ответ: Возвращает JSON-объект, содержащий информацию о расписании для указанной площадки и даты, вероятно, перечисляя события и времена их сеансов. (Структура не предоставлена в примерах).
+
+7. Список Постов/Новостей
+
+Получает список постов или новостных статей с пагинацией.
+
+Метод: GET
+
+Путь: /v3/arena/posts
+
+Параметры запроса:
+
+perPage (integer, опциональный): Количество элементов на странице. Значение по умолчанию, вероятно, применяется на стороне сервера.
+
+page (integer, опциональный): Номер страницы. По умолчанию 1.
+
+expand (string, опциональный): Установите значение 'sessions', чтобы включить связанные сеансы событий в данные поста.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/arena/posts?lang=ru&cityId=3&perPage=9&page=1&expand=sessions
+
+Ответ: Возвращает JSON-объект, содержащий массив posts с кратким содержанием постов (id, slug, title, image, published_at) и информацию для пагинации, например, posts_last_page.
+
+8. Детали Поста/Новости
+
+Получает полную информацию о конкретном посте/новостной статье.
+
+Метод: GET
+
+Путь: /v3/arena/posts/{slug}
+
+Параметры пути:
+
+{slug} (string, обязательный): Текстовый идентификатор (slug) поста.
+
+Параметры запроса:
+
+expand (string, опциональный): Установите значение 'sessions', чтобы включить связанные сеансы событий.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/arena/posts/2200-kinopremery-nedeli-greshniki-karuza-i-pochtar?lang=ru&cityId=3&expand=sessions
+
+Ответ: Возвращает JSON-объект, вероятно, содержащий объект posts с полной информацией о посте (title, content, seo, images, published_at) и, возможно, связанные sessions, если использовался expand.
+
+9. Детали Страницы
+
+Получает содержимое конкретной статической или динамической страницы.
+
+Метод: GET
+
+Путь: /v3/arena/page/{slug}
+
+Параметры пути:
+
+{slug} (string, обязательный): Текстовый идентификатор (slug) страницы.
+
+Параметры запроса:
+
+expand (string, опциональный): Потенциально используется для включения связанных данных, таких как 'sessions'.
+
+(Применяются Общие Параметры)
+
+Пример запроса:
+GET https://webgate2.24guru.by/api/v3/arena/page/about-us?lang=ru&cityId=3
+
+Ответ: Возвращает JSON-объект, содержащий объект page с его содержимым (title, body, seo-данные и т.д.).
+
+Структуры Данных (Общие объекты в ответах)
+
+Объект Performance/Event (Представление/Событие):
+
+{
+  "id": 1307519, // ID события
+  "name": "Массовое катание в ледовом дворце спорта Могилева", // Название
+  "start_timestamp": 1744654500, // Время начала (Unix timestamp)
+  "end_timastamp": 1746057599, // Время окончания (Unix timestamp)
+  "slug": "1307519-massovoe-katanie-v-ledovom-dvorce-sporta-mogileva", // Slug
+  "image": { // См. Объект Image
+    "240x340": "...",
+    "170x240": "...",
+    "300x430": "...",
+    "original": "..."
+  },
+  "minPrice": "3.50", // Минимальная цена
+  "maxPrice": "6.00", // Максимальная цена
+  "min_age": 0, // Минимальный возраст
+  "duration": 0, // Длительность в минутах (или 0)
+  "month_formatted": "2025-04", // Форматированный месяц
+  "home_sort": 0, // Порядок сортировки на главной
+  "rating_sort": 0, // Порядок сортировки по рейтингу
+  "kinopoisk_rank": 0, // Рейтинг Кинопоиска (или 0)
+  "buy": true, // Можно ли купить билеты
+  "count_sales_yesterday": 8, // Кол-во продаж за вчера
+  "types": [ // Массив объектов Type/Category
+    {
+      "id": 41,
+      "name": "Активный отдых",
+      "slug": "activ"
+    }
+  ],
+  "genres": [], // Массив объектов Genre
+  "tags": [ // Массив объектов Tag
+    {
+      "id": 2,
+      "name": "Топ продаж",
+      "performance_card_view": 0, // Параметр отображения
+      "params": [] // Дополнительные параметры
+    }
+  ]
+  // ... в детальных ответах могут быть другие поля, например, description, seo
+}
+
+
+Объект City (Город):
+
+{
+  "id": 3,
+  "name": "Минск",
+  "pluralName": "Минска", // Родительный падеж
+  "regionId": 1,
+  "lat": 53.901366, // Широта
+  "lon": 27.550655, // Долгота
+  "timezone": "+0300", // Временная зона
+  "slug": "minsk",
+  "sort": 9 // Порядок сортировки
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Object/Venue (Объект/Площадка):
+
+{
+  "id": 5167,
+  "name": "Конькобежный стадион «Минск-Арена»",
+  "type": { // Объект Type/Category
+    "id": 20,
+    "name": "Спортивные площадки",
+    "slug": "20"
+  }
+  // ... в детальных ответах могут быть другие поля, например, address, description
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Type/Category (Тип/Категория):
+
+{
+  "id": 41,
+  "name": "Активный отдых",
+  "slug": "activ"
+  // ... В ответе Афиши этот объект под ключом "type" содержит гораздо больше данных:
+  // "h1", "h2", "h3", "seoDescription", "seoKeywords", "seoTitle",
+  // "typeView", "sort", "itemsName", "isHiddenFilter", "buttons", "filters", "countCategory"
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Tag (Тег):
+
+{
+  "id": 1,
+  "name": "Премьера",
+  "slug": "premier"
+  // ... в контексте Performance могут быть другие поля, например, performance_card_view, params
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Genre (Жанр):
+
+{
+  "id": 2,
+  "name": "Комедии",
+  "slug": "camedy"
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Image (Изображение): (Содержит URL для разных размеров изображений)
+
+{
+  "1600x900": "https://...", // Пример для изображения поста
+  "240x340": "https://...", // Пример для изображения события
+  "original": "https://..."
+  // ... другие размеры по необходимости
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+
+Объект Post (Краткая информация о посте/новости):
+
+{
+  "id": 2200,
+  "slug": "2200-kinopremery-nedeli-greshniki-karuza-i-pochtar",
+  "title": "Кинопремьеры недели: Грешники, Каруза и Почтарь",
+  "image": { ... }, // Объект Image
+  "published_at": "23.04.2025", // Дата публикации
+  "category_id": 7 // ID категории поста
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Json
+IGNORE_WHEN_COPYING_END
+Примечания
+
+Версионирование API: Обратите внимание на использование v2 для эндпоинтов расписания и v3 для большинства других данных.
+
+Формат Даты/Времени: Даты/времена, передаваемые в параметрах, являются Unix timestamp (секунды с начала эпохи), обычно представляющие начало дня (00:00:00). Timestamp в ответах также являются Unix timestamp. Используйте библиотеки, такие как moment.js (как видно в коде клиента), для преобразований.
+
+Фильтрация по домену: Параметры onlyDomain, domain и distributor_company_id важны для интеграций с партнерами, чтобы гарантировать отображение только релевантного контента.
+
+Структура Ответа: Структура, особенно для эндпоинта Афиши, довольно вложенная. Обратите внимание на поле data, которое содержит основные списки представлений, часто сгруппированные по дате, месяцу, жанру или тегу.
+
+URL Изображений: Объекты Image предоставляют относительные пути. Добавьте базовый домен (https://webgate2.24guru.by), чтобы построить полный URL изображения.
+
+Обработка Ошибок: Примеры обработки ошибок не предоставлены, но следует ожидать стандартные коды состояния HTTP.
+
+Эта документация должна обеспечить прочную основу для использования 24guru API на основе предоставленной информации.
+
+Хорошо, давайте разберем логику для вашего Vue-проекта на основе предоставленных API-эндпоинтов и требований.
+
+Базовая конфигурация (в файлах .env или аналогичных):
+
+VITE_API_URL=https://webgate2.24guru.by
+VITE_API_LANG=ru
+VITE_API_CITY_ID=3 // ID Минска по умолчанию
+VITE_API_ONLY_DOMAIN=1 // Предполагаем, что фильтрация нужна
+VITE_API_DOMAIN="your-domain.by" // Замените на ваш домен
+VITE_API_DISTRIBUTOR_COMPANY_ID=your_company_id // Замените на ваш ID
+VITE_API_JSONLD=0
+
+
+Сервис для API запросов (например, src/services/apiService.js):
+
+import axios from 'axios';
+import moment from 'moment'; // Если используете moment.js для дат
+
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+
+// Функция для получения общих параметров
+const getCommonParams = (cityId = null) => ({
+  lang: import.meta.env.VITE_API_LANG,
+  jsonld: import.meta.env.VITE_API_JSONLD,
+  cityId: cityId || import.meta.env.VITE_API_CITY_ID, // Используем переданный ID или дефолтный
+  onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+  domain: import.meta.env.VITE_API_DOMAIN,
+  distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
+});
+
+export default {
+  // --- Афиша ---
+  getAfishaByCategory(categorySlug, date = null, cityId = null) {
+    const params = {
+      ...getCommonParams(cityId),
+      date: date ? moment(date).startOf('day').unix() : moment().startOf('day').unix(),
+      ignoreEndTime: 0, // Показываем только актуальные
+    };
+    return apiClient.get(`/api/v3/mobile/afisha/${categorySlug}`, { params });
+  },
+
+  // --- События ---
+  getEventDetails(eventId, cityId = null) {
+    const params = {
+      ...getCommonParams(cityId),
+       time: moment().startOf('day').unix(), // Можно передавать конкретное время для календаря
+    };
+    return apiClient.get(`/api/v3/arena/events/${eventId}`, { params });
+  },
+
+  getEventSchedule(eventId, date = null, cityId = null) {
+    const params = {
+       lang: import.meta.env.VITE_API_LANG,
+       jsonld: import.meta.env.VITE_API_JSONLD,
+       cityId: cityId || import.meta.env.VITE_API_CITY_ID,
+       time: date ? moment(date).startOf('day').unix() : moment().startOf('day').unix(),
+    };
+    // Внимание: Используем v2 API
+    return apiClient.get(`/api/v2/schedule/events/${eventId}`, { params });
+  },
+
+  // --- Новости (Посты) ---
+  getPosts(page = 1, perPage = 6, cityId = null) { // По умолчанию 6 для страницы списка
+     const params = {
+       ...getCommonParams(cityId),
+       page: page,
+       perPage: perPage,
+       // expand: 'sessions' // Добавляем, если нужны сеансы прямо в списке новостей
+     };
+     return apiClient.get(`/api/v3/arena/posts`, { params });
+  },
+
+  getPostDetails(slug, cityId = null) {
+    const params = {
+      ...getCommonParams(cityId),
+      expand: 'sessions' // Обычно для детальной новости нужны сеансы
+    };
+    return apiClient.get(`/api/v3/arena/posts/${slug}`, { params });
+  },
+
+  // --- Объекты (Площадки) ---
+  getObjectDetails(objectId, cityId = null) {
+     const params = {
+       ...getCommonParams(cityId),
+     };
+     return apiClient.get(`/api/v3/pages/objects/${objectId}`, { params });
+  },
+
+  getObjectSchedule(objectId, date = null, cityId = null) {
+    const params = {
+       lang: import.meta.env.VITE_API_LANG,
+       jsonld: import.meta.env.VITE_API_JSONLD,
+       cityId: cityId || import.meta.env.VITE_API_CITY_ID,
+       time: date ? moment(date).startOf('day').unix() : moment().startOf('day').unix(),
+    };
+     // Внимание: Используем v2 API
+    return apiClient.get(`/api/v2/schedule/objects/${objectId}`, { params });
+  },
+
+  getObjectsList(typeId, page = 1, perPage = 18, cityId = null) {
+     const params = {
+       ...getCommonParams(cityId),
+       'filter[typeIds]': typeId,
+       'filter[perPage]': perPage,
+       page: page,
+     };
+     return apiClient.get(`/api/v3/pages/objects`, { params });
+  }
+
+  // --- Другие возможные методы ---
+  // getPageContent(slug, cityId = null) { ... }
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+Логика для Главного Экрана
+
+Задача: Вывести несколько категорий (Кино, Театр, Концерты и т.д.), в каждой максимум по 6 событий.
+
+Предположение: Нет единого эндпоинта для получения всех категорий с событиями для главной. Поэтому будем делать запросы для каждой нужной категории.
+
+Компонент: src/views/HomePage.vue
+
+<template>
+  <div>
+    <h1>Афиша {{ currentCityName }}</h1>
+
+    <!-- Блок Новостей -->
+    <div v-if="newsLoading">Загрузка новостей...</div>
+    <div v-else-if="newsItems.length">
+      <h2>Новости</h2>
+      <div class="news-list">
+        <NewsCard v-for="news in newsItems" :key="news.id" :news="news" />
+      </div>
+      <router-link to="/news">Все новости</router-link>
+    </div>
+
+    <!-- Блок Категорий -->
+    <div v-if="categoriesLoading">Загрузка категорий...</div>
+    <div v-else>
+      <CategorySection
+        v-for="category in categoriesData"
+        :key="category.slug"
+        :title="category.title"
+        :slug="category.slug"
+        :events="category.events"
+      />
+    </div>
+
+     <!-- Можно добавить выбор города -->
+     <select v-model="selectedCityId" @change="loadHomepageData">
+        <option value="3">Минск</option>
+        <option value="57">Бобруйск</option>
+        <!-- Другие города -->
+     </select>
+
+  </div>
+</template>
+
+<script>
+import apiService from '@/services/apiService';
+import CategorySection from '@/components/CategorySection.vue';
+import NewsCard from '@/components/NewsCard.vue';
+
+export default {
+  name: 'HomePage',
+  components: {
+    CategorySection,
+    NewsCard
+  },
+  data() {
+    return {
+      selectedCityId: import.meta.env.VITE_API_CITY_ID, // Город по умолчанию из env
+      currentCityName: 'Минск', // Нужно получать из API или иметь маппинг
+      categoriesToLoad: ['kino', 'theatre', 'concert', 'activ', 'kids'], // Список категорий для главной
+      categoriesData: [],
+      categoriesLoading: true,
+      newsItems: [],
+      newsLoading: true,
+    };
+  },
+  methods: {
+    async fetchCategoryEvents(slug) {
+      try {
+        const response = await apiService.getAfishaByCategory(slug, null, this.selectedCityId);
+        const categoryInfo = response.data.type;
+        let events = [];
+        // Собираем события с currentDate и month (приоритет currentDate)
+        if (response.data.data?.currentDate?.length) {
+            events = events.concat(response.data.data.currentDate);
+        }
+        if (response.data.data?.month?.[0]?.performances?.length) {
+             // Берем события только из первого месяца в ответе (обычно текущий)
+            events = events.concat(response.data.data.month[0].performances);
+        }
+
+        // Убираем дубликаты по ID, если API может вернуть одно и то же событие в разных секциях
+        const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
+
+        return {
+          slug: categoryInfo.slug,
+          title: categoryInfo.name || categoryInfo.itemsName || 'Категория', // Название категории
+          events: uniqueEvents.slice(0, 6), // Берем не более 6 событий
+        };
+      } catch (error) {
+        console.error(`Ошибка загрузки категории ${slug}:`, error);
+        return { slug: slug, title: `Ошибка загрузки (${slug})`, events: [] }; // Обработка ошибки
+      }
+    },
+    async loadHomepageData() {
+      this.categoriesLoading = true;
+      this.newsLoading = true;
+      this.categoriesData = []; // Очищаем перед загрузкой нового города
+
+       // Обновляем имя города (в идеале брать из ответа API, если он есть)
+       // Здесь простой пример
+       this.currentCityName = this.selectedCityId == 3 ? 'Минск' : 'Бобруйск';
+
+      // Загрузка категорий параллельно
+      const categoryPromises = this.categoriesToLoad.map(slug => this.fetchCategoryEvents(slug));
+      this.categoriesData = await Promise.all(categoryPromises);
+      this.categoriesLoading = false;
+
+      // Загрузка новостей
+      try {
+        const newsResponse = await apiService.getPosts(1, 3, this.selectedCityId); // Загружаем 3 новости
+        this.newsItems = newsResponse.data.posts || [];
+      } catch (error) {
+          console.error("Ошибка загрузки новостей:", error);
+          this.newsItems = [];
+      } finally {
+          this.newsLoading = false;
+      }
+    }
+  },
+  mounted() {
+    this.loadHomepageData(); // Загружаем данные при монтировании
+  }
+};
+</script>
+
+<style scoped>
+/* Стили для HomePage */
+.news-list, .category-section {
+  margin-bottom: 20px;
+}
+</style>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Vue
+IGNORE_WHEN_COPYING_END
+
+Компонент: src/components/CategorySection.vue
+
+<template>
+  <section class="category-section">
+    <h2>{{ title }}</h2>
+    <div v-if="events.length" class="events-grid">
+      <EventCard v-for="event in events" :key="event.id" :event="event" />
+    </div>
+    <p v-else>Нет событий в этой категории.</p>
+    <router-link :to="{ name: 'Category', params: { slug: slug } }">
+      Все события категории "{{ title }}"
+    </router-link>
+  </section>
+</template>
+
+<script>
+import EventCard from './EventCard.vue';
+
+export default {
+  name: 'CategorySection',
+  components: { EventCard },
+  props: {
+    title: {
+      type: String,
+      required: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+    },
+    events: {
+      type: Array,
+      required: true,
+    },
+  },
+};
+</script>
+
+<style scoped>
+.category-section {
+  margin-bottom: 30px;
+}
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Адаптивная сетка */
+  gap: 15px;
+  margin-bottom: 15px;
+}
+</style>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Vue
+IGNORE_WHEN_COPYING_END
+Логика для Страницы Категории
+
+Задача: Показать 6 событий, по кнопке "Ещё" подгружать по 3 до конца списка.
+
+Компонент: src/views/CategoryPage.vue
+
+<template>
+  <div>
+    <div v-if="loading">Загрузка...</div>
+    <div v-else-if="categoryInfo">
+      <h1>{{ categoryInfo.name || categoryInfo.itemsName }}</h1>
+      <p v-if="categoryInfo.seoDescription">{{ categoryInfo.seoDescription }}</p>
+
+      <div v-if="displayedEvents.length" class="events-list">
+         <EventCard v-for="event in displayedEvents" :key="event.id" :event="event" />
+      </div>
+      <p v-else>В этой категории пока нет событий.</p>
+
+      <button v-if="hasMoreEvents" @click="loadMoreEvents" :disabled="moreLoading">
+        {{ moreLoading ? 'Загрузка...' : 'Показать ещё' }}
+      </button>
+
+    </div>
+     <div v-else>
+        <p>Категория не найдена или произошла ошибка.</p>
+     </div>
+  </div>
+</template>
+
+<script>
+import apiService from '@/services/apiService';
+import EventCard from '@/components/EventCard.vue';
+
+export default {
+  name: 'CategoryPage',
+  components: { EventCard },
+  props: {
+    slug: { // Получаем slug из роутера
+      type: String,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      loading: true,
+      moreLoading: false, // Для индикатора загрузки кнопки "Ещё"
+      categoryInfo: null,
+      allEvents: [],
+      displayCount: 6, // Начальное количество
+      loadStep: 3, // Сколько подгружать за раз
+      selectedCityId: import.meta.env.VITE_API_CITY_ID, // Можно сделать динамическим
+    };
+  },
+  computed: {
+    displayedEvents() {
+      // Возвращает срез массива для отображения
+      return this.allEvents.slice(0, this.displayCount);
+    },
+    hasMoreEvents() {
+      // Проверяет, есть ли еще события для загрузки
+      return this.displayCount < this.allEvents.length;
+    },
+  },
+  methods: {
+    async fetchCategoryData() {
+      this.loading = true;
+      try {
+        const response = await apiService.getAfishaByCategory(this.slug, null, this.selectedCityId);
+        this.categoryInfo = response.data.type;
+
+        let events = [];
+        // Собираем события со всех доступных источников в ответе API
+        if (response.data.data?.currentDate?.length) {
+          events = events.concat(response.data.data.currentDate);
+        }
+        if (response.data.data?.month?.length) {
+          response.data.data.month.forEach(monthData => {
+              if (monthData.performances?.length) {
+                  events = events.concat(monthData.performances);
+              }
+          });
+        }
+        // Добавьте обработку других секций, если они есть (weekend, genres, tags)
+        // ...
+
+        // Убираем дубликаты
+         this.allEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
+
+         // Можно добавить сортировку, например, по дате начала, если нужно
+         this.allEvents.sort((a, b) => a.start_timestamp - b.start_timestamp);
+
+        // Устанавливаем SEO-теги
+        if (this.categoryInfo) {
+            document.title = this.categoryInfo.seoTitle || this.categoryInfo.h1 || 'Категория';
+            // Здесь можно добавить установку мета-тегов, если используете vue-meta или useHead
+        }
+
+      } catch (error) {
+        console.error(`Ошибка загрузки категории ${this.slug}:`, error);
+        this.categoryInfo = null; // Показать сообщение об ошибке
+        this.allEvents = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+    loadMoreEvents() {
+      // Просто увеличиваем количество отображаемых элементов
+      // Если бы была серверная пагинация, здесь был бы API вызов
+      this.displayCount += this.loadStep;
+    },
+  },
+  watch: {
+      slug: 'fetchCategoryData' // Перезагрузка данных при смене slug'а категории
+  },
+  mounted() {
+    this.fetchCategoryData();
+  },
+};
+</script>
+
+<style scoped>
+.events-list {
+  /* Стили для списка событий */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+}
+</style>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Vue
+IGNORE_WHEN_COPYING_END
+Логика для Новостей
+
+Главная страница: (уже показано в HomePage.vue) - загружаем 3 новости через apiService.getPosts(1, 3).
+
+Страница списка новостей:
+
+Задача: Показать 6 новостей, по кнопке "Ещё" подгружать по 3 (или 6/9, как в примере кода) до конца.
+
+Компонент: src/views/NewsListPage.vue
+
+<template>
+  <div>
+    <h1>Новости</h1>
+    <div v-if="loading">Загрузка...</div>
+    <div v-else>
+      <div v-if="newsItems.length" class="news-list-page">
+        <NewsCard v-for="news in newsItems" :key="news.id" :news="news" />
+      </div>
+      <p v-else>Новостей пока нет.</p>
+
+      <button v-if="!isLastPage" @click="loadMoreNews" :disabled="moreLoading">
+        {{ moreLoading ? 'Загрузка...' : 'Загрузить ещё' }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<script>
+import apiService from '@/services/apiService';
+import NewsCard from '@/components/NewsCard.vue';
+
+export default {
+  name: 'NewsListPage',
+  components: { NewsCard },
+  data() {
+    return {
+      loading: true,
+      moreLoading: false,
+      newsItems: [],
+      currentPage: 1,
+      perPage: 6, // Сколько загружать за раз на этой странице
+      isLastPage: false,
+      selectedCityId: import.meta.env.VITE_API_CITY_ID,
+    };
+  },
+  methods: {
+    async fetchNews(append = false) {
+      if (!append) {
+        this.loading = true;
+        this.newsItems = []; // Очищаем для первой загрузки
+        this.currentPage = 1;
+      } else {
+        this.moreLoading = true;
+      }
+
+      try {
+        const response = await apiService.getPosts(this.currentPage, this.perPage, this.selectedCityId);
+        const newPosts = response.data.posts || [];
+
+        if (newPosts.length > 0) {
+          this.newsItems = append ? this.newsItems.concat(newPosts) : newPosts;
+        }
+
+        // Проверяем, достигли ли последней страницы
+        // API возвращает 'posts_last_page' - номер последней страницы
+        this.isLastPage = this.currentPage >= response.data.posts_last_page;
+
+      } catch (error) {
+        console.error("Ошибка загрузки новостей:", error);
+        // Можно добавить обработку ошибки для пользователя
+      } finally {
+        this.loading = false;
+        this.moreLoading = false;
+      }
+    },
+    loadMoreNews() {
+      if (!this.isLastPage) {
+        this.currentPage++;
+        this.fetchNews(true); // Загружаем и добавляем (append = true)
+      }
+    },
+  },
+  mounted() {
+    this.fetchNews(); // Первичная загрузка
+  },
+};
+</script>
+
+<style scoped>
+.news-list-page {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+}
+</style>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Vue
+IGNORE_WHEN_COPYING_END
+Логика для Отображения Объекта (Сооружения/Здания)
+
+Задача: Показать информацию о конкретном объекте и его расписание.
+
+Что можно вывести:
+На основе эндпоинта /v3/pages/objects/{id} и примера activ.json:
+
+Основная информация: Название (object.name), Тип (object.type.name), ID (object.id), Координаты (object.lat, object.lon).
+
+Описание: object.description (может содержать HTML, нужно будет обработать или отобразить как v-html).
+
+Изображения: Если API их возвращает (в примерах не видно, но вероятно есть поле images).
+
+Адрес/Контакты: Вероятно, есть поля address, phone, website (не показаны в кратких примерах, но ожидаются).
+
+SEO: object.seo.seoTitle, object.seo.seoDescription для мета-тегов страницы.
+
+Календарь событий: Массив calendar, показывающий даты, когда на этой площадке есть события.
+
+Расписание на дату: Эндпоинт /v2/schedule/objects/{id} позволяет получить список событий и их сеансов на конкретную дату.
+
+Компонент: src/views/ObjectDetailPage.vue
+
+<template>
+  <div>
+    <div v-if="loading">Загрузка объекта...</div>
+    <div v-else-if="objectData">
+      <h1>{{ objectData.object.name }}</h1>
+      <p><strong>Тип:</strong> {{ objectData.object.type.name }}</p>
+      <!-- Отображение адреса, телефона, сайта, если есть -->
+       <p v-if="objectData.object.address"><strong>Адрес:</strong> {{ objectData.object.address }}</p>
+      <!-- <p v-if="objectData.object.phone"><strong>Телефон:</strong> {{ objectData.object.phone }}</p> -->
+      <!-- <a v-if="objectData.object.website" :href="objectData.object.website" target="_blank">Веб-сайт</a> -->
+
+      <!-- Описание (может содержать HTML) -->
+      <div v-if="objectData.object.description" v-html="objectData.object.description"></div>
+
+      <!-- Изображения (если есть) -->
+      <!-- <div v-if="objectData.object.images && objectData.object.images.length">
+        <img v-for="(img, index) in objectData.object.images" :key="index" :src="getImageUrl(img.original)" :alt="objectData.object.name">
+      </div> -->
+
+      <h2>Календарь событий</h2>
+      <div v-if="objectData.calendar && objectData.calendar.length">
+        <button
+          v-for="calDate in objectData.calendar"
+          :key="calDate.date"
+          @click="fetchScheduleForDate(calDate.date)"
+          :class="{ active: calDate.date === selectedDate }"
+        >
+          {{ formatDate(calDate.date) }}
+        </button>
+      </div>
+      <p v-else>Нет предстоящих событий в календаре.</p>
+
+      <div v-if="scheduleLoading">Загрузка расписания...</div>
+      <div v-else-if="schedule && schedule.length">
+        <h3>Расписание на {{ formatDate(selectedDate) }}</h3>
+        <!-- Здесь логика отображения расписания -->
+        <!-- Структура ответа /v2/schedule/objects/ не ясна из примеров, -->
+        <!-- нужно будет адаптировать под реальный ответ. -->
+        <!-- Возможно, это будет список событий с временами сеансов. -->
+        <pre>{{ schedule }}</pre> <!-- Временно для отладки -->
+      </div>
+       <p v-else-if="selectedDate">Нет событий на выбранную дату.</p>
+
+    </div>
+    <div v-else>Объект не найден или произошла ошибка.</div>
+  </div>
+</template>
+
+<script>
+import apiService from '@/services/apiService';
+import moment from 'moment'; // Для форматирования дат
+
+export default {
+  name: 'ObjectDetailPage',
+  props: {
+    id: { // ID объекта из роутера
+      type: [String, Number],
+      required: true,
+    },
+  },
+  data() {
+    return {
+      loading: true,
+      scheduleLoading: false,
+      objectData: null,
+      schedule: null,
+      selectedDate: null,
+      selectedCityId: import.meta.env.VITE_API_CITY_ID,
+    };
+  },
+  methods: {
+    async fetchObjectDetails() {
+      this.loading = true;
+      this.objectData = null;
+      this.schedule = null;
+      this.selectedDate = null;
+      try {
+        const response = await apiService.getObjectDetails(this.id, this.selectedCityId);
+        this.objectData = response.data;
+
+        // Устанавливаем SEO
+        const seoTitle = (this.objectData.object.seo && this.objectData.object.seo.seoTitle)
+                         ? this.objectData.object.seo.seoTitle
+                         : this.objectData.object.name;
+        document.title = seoTitle;
+        // Добавьте мета-теги при необходимости
+
+        // Если есть календарь, выбираем первую дату и грузим расписание
+        if (this.objectData.calendar && this.objectData.calendar.length > 0) {
+          this.fetchScheduleForDate(this.objectData.calendar[0].date);
+        }
+
+      } catch (error) {
+        console.error("Ошибка загрузки объекта:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchScheduleForDate(date) {
+        if (this.selectedDate === date && this.schedule) return; // Не перезагружать, если дата та же
+
+        this.scheduleLoading = true;
+        this.selectedDate = date;
+        this.schedule = null; // Очищаем предыдущее расписание
+        try {
+            const response = await apiService.getObjectSchedule(this.id, date, this.selectedCityId);
+            // Обрабатываем ответ v2 - структура неизвестна, присваиваем пока весь ответ
+            this.schedule = response.data;
+        } catch (error) {
+            console.error(`Ошибка загрузки расписания для ${date}:`, error);
+            this.schedule = { error: 'Не удалось загрузить расписание' }; // Показать ошибку
+        } finally {
+            this.scheduleLoading = false;
+        }
+    },
+    formatDate(dateString) {
+        // Форматируем дату для отображения (YYYY-MM-DD -> DD.MM.YYYY)
+        return moment(dateString).format('DD.MM.YYYY');
+    },
+    // getImageUrl(path) { // Если пути относительные
+    //   return import.meta.env.VITE_API_URL.replace('/api','') + path; // Пример
+    // }
+  },
+  mounted() {
+    this.fetchObjectDetails();
+  },
+  watch: {
+      id: 'fetchObjectDetails' // Перезагрузка при смене ID объекта
+  }
+};
+</script>
+
+<style scoped>
+button.active {
+  font-weight: bold;
+  border-color: blue;
+}
+</style>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Vue
+IGNORE_WHEN_COPYING_END
+Ключевые моменты и Уточнения
+
+Загрузка Категорий на Главной: Как отмечено, логика предполагает множественные запросы для получения данных по каждой категории. Если существует единый эндпоинт для главной страницы, его использование будет эффективнее.
+
+Пагинация:
+
+Категории: В текущей реализации пагинация на странице категории происходит на клиенте после загрузки всех событий из ответа afisha/{slug}. Это может быть неэффективно при больших списках. Идеально, если бы API поддерживал параметры page/perPage для эндпоинта афиши.
+
+Новости: Используется стандартная пагинация API с параметрами page и perPage.
+
+Обработка HTML: Поле description для событий и объектов может содержать HTML. Используйте v-html с осторожностью (убедитесь, что HTML безопасен) или библиотеку для очистки HTML перед отображением.
+
+Структура Расписания (v2): Точная структура ответа для эндпоинтов /v2/schedule/... неизвестна из примеров. Код для отображения расписания на страницах EventDetailPage и ObjectDetailPage нужно будет адаптировать под фактический формат ответа.
+
+Состояние Города: Переменная selectedCityId добавлена для демонстрации. В реальном приложении её стоило бы вынести в глобальное хранилище (Pinia/Vuex) или передавать через пропсы/provide/inject, чтобы легко менять город для всего приложения.
+
+Компоненты: Представлены основные компоненты. EventCard.vue и NewsCard.vue нужно будет создать для отображения отдельных элементов в списках.
+
+Изображения: Убедитесь, что URL изображений формируются правильно, добавляя базовый URL сервера (https://webgate2.24guru.by), если API возвращает относительные пути.
+
+Эта логика и структура должны помочь вам реализовать требуемый функционал в вашем Vue-проекте.
