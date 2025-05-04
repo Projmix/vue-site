@@ -7,8 +7,8 @@ import { useLayoutStore } from "../stores/layout.js";
 import { useHead } from '@vueuse/head';
 import moment from 'moment';
 import ru from 'moment/locale/ru';
+import axios from 'axios';
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
-// import apiService from '@/services/apiService'; // Используйте централизованный сервис
 
 export default {
   name: "Events",
@@ -39,11 +39,6 @@ export default {
 
     const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID); // Или динамический
 
-    // Получаем axios через getCurrentInstance().appContext.config.globalProperties
-    const { appContext } = getCurrentInstance();
-    const axiosInstance = appContext.config.globalProperties.$axios;
-
-
     const getCommonParams = (cityId = null) => ({
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
@@ -64,11 +59,11 @@ export default {
       try {
         const params = {
           ...getCommonParams(),
-          date: moment().startOf('day').unix(), // как на главной!
+          date: moment().startOf('day').unix(), // как на главной
           ignoreEndTime: 0,
         };
         const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/${categorySlug.value}`;
-        const response = await axiosInstance.get(apiUrl, { params });
+        const response = await axios.get(apiUrl, { params });
         console.log('[fetchCategoryEvents] API response:', response.data);
 
         categoryInfo.value = response.data.type;
@@ -101,7 +96,7 @@ export default {
         }
         // Убираем дубликаты и сортируем
         const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-        allEvents.value = uniqueEvents.slice(0, 100); // Можно увеличить лимит, если нужно больше
+        allEvents.value = uniqueEvents.slice(0, 100); 
         allEvents.value.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
         console.log('[fetchCategoryEvents] allEvents.value:', allEvents.value);
 
@@ -165,14 +160,9 @@ export default {
       displayedEvents,
       hasMoreEvents,
       loadMoreEvents,
+      layoutStore,
     };
   },
-  // Старые data, computed, watch, methods не нужны
-  // data() { ... }
-  // computed: { ... }
-  // watch: { ... } // Перенесен в setup
-  // methods: { ... } // Перенесены в setup
-  // beforeMount() { ... } // Перенесен в setup -> onMounted
 };
 </script>
 
@@ -187,11 +177,11 @@ export default {
           </div>
       </div>
 
-      <headerSection />
+      <headerSection :filteredCategoriesData="layoutStore.filteredCategoriesData" />
 
       <!-- Banner -->
        <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-                <div class="container">
+                <!-- <div class="container">
                     <div class="row">
                         <div class="col-12">
                             <div class="breadcrumbs-area">
@@ -207,7 +197,7 @@ export default {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
       </section>
 
       <!-- Events List -->
@@ -216,10 +206,10 @@ export default {
                  <div v-if="!loading">
 
 
-                    <div v-if="displayedEvents.length" class="events-view-grid">
-                        <EventCard v-for="event in displayedEvents" :key="event.id" :event="event" />
-                    </div>
-                    <p v-else>В этой категории пока нет событий.</p>
+                    <transition-group name="fade-list" tag="div" class="events-view-grid">
+                      <EventCard v-for="event in displayedEvents" :key="event.id" :event="event" class="fade-list-item" />
+                      <p v-if="displayedEvents.length === 0">В этой категории пока нет событий.</p>
+                    </transition-group>
 
                     <div v-if="hasMoreEvents" class="load-more-container">
                         <button @click="loadMoreEvents" :disabled="moreLoading" class="btn-fill size-lg color-yellow border-radius-5">
@@ -239,7 +229,6 @@ export default {
 </template>
 
 <style scoped>
-/* Стили для EventsView */
 .category-description {
     margin-bottom: 30px;
     text-align: center;
@@ -250,7 +239,7 @@ export default {
 .events-view-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* 3 колонки */
-  gap: 25px; /* Промежуток */
+  gap: 25px;
   margin-bottom: 30px;
 }
 
@@ -270,10 +259,17 @@ export default {
   .events-view-grid {
     grid-template-columns: 1fr; /* 1 колонка */
     gap: 20px;
+    margin-left: 15%;
+    margin-right: 15%;
+  }
+}
+@media (max-width: 500px) {
+  .events-view-grid {
+    margin-left: 10%;
+    margin-right: 10%;
   }
 }
 
-/* Стили прелоадера скопированы из HomeView, можно вынести */
 #preloader {
   position: fixed;
   left: 0;
@@ -291,13 +287,21 @@ export default {
 #preloader .logo {
     margin-bottom: 20px;
 }
-#status {
-  /* ... стили status ... */
+.container .events-view-grid .speaker-layout3{
+  padding-bottom: 0px;
 }
-#status span {
-  /* ... стили span ... */
+.fade-list-item {
+  transition: opacity 0.6s, transform 0.6s;
 }
-@keyframes status-load {
-  /* ... анимация ... */
+.fade-list-enter-from, .fade-list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.fade-list-enter-active, .fade-list-leave-active {
+  transition: opacity 0.6s, transform 0.6s;
+}
+.fade-list-enter-to, .fade-list-leave-from {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>

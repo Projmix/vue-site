@@ -22,28 +22,33 @@ export default {
   methods: {
   },
   beforeMount() {
-    // Динамически загружаем скрипт Google Translate
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    document.head.appendChild(script);
+    // Флаг, чтобы не загружать скрипт повторно
+    if (!window._googleTranslateScriptLoading) {
+      window._googleTranslateScriptLoading = true;
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.onerror = function() {
+        console.error('Google Translate script failed to load.');
+      };
+      document.head.appendChild(script);
+    }
 
-    // Режим для слабовидящих
-    // const scriptLidrekon = document.createElement('script');
-    // scriptLidrekon.type = 'text/javascript';
-    // scriptLidrekon.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
-    // document.head.appendChild(scriptLidrekon);
-
-    // Инициализация Google Translate
+    // Инициализация Google Translate с проверкой
     window.googleTranslateElementInit = function () {
-      new window.google.translate.TranslateElement({
-        pageLanguage: 'ru',
-        includedLanguages: 'ar,en,es,fr,km,ru,sq,vi,zh-CN,be',
-        layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-        multilanguagePage: true,
-        gaTrack: true,
-      }, 'google_translate_element');
+      if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+        new window.google.translate.TranslateElement({
+          pageLanguage: 'ru',
+          includedLanguages: 'ar,en,es,fr,km,ru,sq,vi,zh-CN,be',
+          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+          multilanguagePage: true,
+          gaTrack: true,
+        }, 'google_translate_element');
+      } else {
+        console.error('Google Translate API is not available.');
+      }
     };
+
 
     // Функция удаления куки
     const deleteCookie = (cookieName) => {
@@ -76,13 +81,15 @@ export default {
   <footer class="ht-footer full-width-ft" :style="{ 'background': background }">
     <div class="footer-layout2">
       <div class="footer-top-area footer-box-layout">
-        <div class="container-fluid">
+        <div class="container">
           <div class="row">
             <div class="col-lg-3">
               <div class="widget">
                 <a class="footer-widget-logo" href="index.html">
                   <img class="img-fluid" src="../assets/images/logo.png" alt="logo">
                 </a>
+                <!--
+               
                 <div class="footer-widget-about">
                   <p>Fummy text of the printing antypesetting industry. Lorem Ipsum heen the industry's
                     standard dummy text ever since theype.</p>
@@ -124,24 +131,25 @@ export default {
                     </li>
                   </ul>
                 </div>
+              -->
               </div>
             </div>
             <div class="col-lg-3">
               <div class="widget">
-                <h3 class="widgettitle">Need Help</h3>
+                <h3 class="widgettitle">Раздел 1</h3>
                 <div class="footer-widget-menu">
                   <ul>
                     <li>
-                      <a href="#">Online Chatting</a>
+                      <a href="#">Подраздел 1.1</a>
                     </li>
                     <li>
-                      <a href="#">FAQ’s</a>
+                      <a href="#">Подраздел 1.2</a>
                     </li>
                     <li>
-                      <a href="#">24/7 Client Support</a>
+                      <a href="#">Подраздел 1.3</a>
                     </li>
                     <li>
-                      <a href="#">Others</a>
+                      <a href="#">Подраздел 1.4</a>
                     </li>
                   </ul>
                 </div>
@@ -149,26 +157,20 @@ export default {
             </div>
             <div class="col-lg-3">
               <div class="widget">
-                <h3 class="widgettitle">Useful Links</h3>
+                <h3 class="widgettitle">Раздел 2</h3>
                 <div class="footer-widget-menu">
                   <ul>
                     <li>
-                      <a href="#">Home</a>
+                      <a href="#">Подраздел 2.1</a>
                     </li>
                     <li>
-                      <a href="#">About Us</a>
+                      <a href="#">Подраздел 2.2</a>
                     </li>
                     <li>
-                      <a href="#">Help</a>
+                      <a href="#">Подраздел 2.3</a>
                     </li>
                     <li>
-                      <a href="#">Terms &amp; Privecy</a>
-                    </li>
-                    <li>
-                      <a href="#">Support</a>
-                    </li>
-                    <li>
-                      <a href="#">Payment Policy</a>
+                      <a href="#">Подраздел 2.4</a>
                     </li>
                   </ul>
                 </div>
@@ -176,18 +178,22 @@ export default {
             </div>
             <div class="col-lg-3">
               <div class="widget">
-                <h3 class="widgettitle">Newsletter</h3>
-                <div class="footer-widget-newsletter">
-                  <p>Rimply dummy text the printing and typesetting in sum has been the industry's
-                    standar.</p>
-                  <div class="input-group stylish-input-group">
-                    <input type="email" placeholder="E-mail address" name="email" class="form-control" required="">
-                    <span class="input-group-addon">
-                      <button type="submit">
-                        <i class="fa fa-angle-right" aria-hidden="true"></i>
-                      </button>
-                    </span>
-                  </div>
+                <h3 class="widgettitle">Раздел 3</h3>
+                <div class="footer-widget-menu">
+                  <ul>
+                    <li>
+                      <a href="#">Подраздел 3.1</a>
+                    </li>
+                    <li>
+                      <a href="#">Подраздел 3.2</a>
+                    </li>
+                    <li>
+                      <a href="#">Подраздел 3.3</a>
+                    </li>
+                    <li>
+                      <a href="#">Подраздел 3.4</a>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -195,14 +201,19 @@ export default {
         </div>
       </div>
       <div class="footer-bottom-area footer-box-layout">
-        <p>© 2018 eventalk. All Rights Reserved. Designed by
-          <a target="_blank" href="https://radiustheme.com">
-            RadiusTheme</a>
-        </p>
+        <p>© 2012-2025 "Arcom Group". Все права защищены.</p>
       </div>
     </div>
   </footer>
   <!-- end of footer v2 section-->
 </template>
 
-<style scoped></style>
+<style scoped>
+.footer-top-area .container-fluid .col-lg-3:first-child{
+  display: flex;
+  align-items: center;
+}
+.footer-layout2 .footer-top-area .widget .footer-widget-logo{
+  margin-bottom: 0px;
+}
+</style>

@@ -7,7 +7,6 @@ import { useHead } from '@vueuse/head';
 import moment from 'moment';
 import ru from 'moment/locale/ru';
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
-import VueAwesomePaginate from "vue-awesome-paginate"; // Импортируем пагинацию
 import "vue-awesome-paginate/dist/style.css"; // Стили пагинации
 // import apiService from '@/services/apiService';
 
@@ -17,7 +16,6 @@ export default {
     headerSection,
     footerSection,
     NewsCard,
-    VueAwesomePaginate, // Регистрируем компонент
   },
    props: {
       layoutLoaded: Promise // Пропс из App.vue
@@ -39,7 +37,7 @@ export default {
     const posts = ref([]);
     const currentPage = ref(1);
     const totalPages = ref(1); // Будет обновлено из API
-    const perPage = ref(9); // Количество новостей на странице
+    const perPage = ref(9); // Загружаем максимум новостей, чтобы показать все
     const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID);
 
     // Переносим axios
@@ -54,19 +52,16 @@ export default {
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     });
 
-    const fetchPosts = async (page = 1) => {
+    const fetchPosts = async () => {
         loading.value = true;
         try {
              const params = {
                ...getCommonParams(),
-               page: page,
                perPage: perPage.value,
              };
              const response = await axiosInstance.get(`/api/v3/arena/posts`, { params });
              posts.value = response.data.posts || [];
-             // API возвращает posts_last_page, используем это как общее количество страниц
-             totalPages.value = response.data.posts_last_page || 1;
-
+             totalPages.value = 1;
         } catch (error) {
             console.error("Ошибка загрузки новостей:", error);
             posts.value = [];
@@ -75,11 +70,6 @@ export default {
             loading.value = false;
         }
     };
-
-     const onPageChange = (newPage) => {
-         currentPage.value = newPage;
-         fetchPosts(currentPage.value);
-     };
 
     onMounted(() => {
         props.layoutLoaded.then(() => {
@@ -96,12 +86,11 @@ export default {
       logo2,
       loading,
       posts,
-      currentPage,
-      totalPages,
-      onPageChange
+      // currentPage,
+      // totalPages,
+      // onPageChange
     };
   },
-  // Data, methods, computed, watch, beforeMount - перенесены в setup
 };
 </script>
 
@@ -144,26 +133,7 @@ export default {
                     </div>
                     <p v-else>Новостей пока нет.</p>
 
-                     <!-- Пагинация -->
-                    <div class="pagination-container" v-if="totalPages > 1">
-                        <vue-awesome-paginate
-                            :total-items="totalPages * perPage"  
-                            :items-per-page="perPage"
-                            :max-pages-shown="5"
-                            v-model="currentPage"
-                            @click="onPageChange"
-                            paginate-buttons-class="btn-paginate"
-                            active-page-class="btn-paginate-active"
-                            back-button-class="icon-prev"
-                            next-button-class="icon-next"
-                        />
-                         <!-- Примечание: total-items здесь немного условно,
-                              так как API дает только total pages.
-                              Можно оставить просто :total-pages="totalPages",
-                              если vue-awesome-paginate это поддерживает,
-                              или передать items-per-page=1 и total-items=totalPages
-                          -->
-                    </div>
+
               </div>
               <div v-else>
                    <p>Загрузка новостей...</p>
@@ -191,15 +161,15 @@ export default {
     margin-top: 40px;
 }
 
-/* Стили для пагинации (уже были в оригинале, проверяем/дополняем) */
+/* Стили для пагинации  */
 .btn-paginate {
     height: 40px;
     width: 40px;
-    border: 1px solid #ddd; /* Добавляем границу для видимости */
+    border: 1px solid #ddd;
     background-color: #fff;
     margin-inline: 5px;
     cursor: pointer;
-    border-radius: 4px; /* Скругление */
+    border-radius: 4px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 .btn-paginate:hover {
@@ -207,22 +177,12 @@ export default {
 }
 
 .btn-paginate-active {
-    background-color: #dd003f; /* Основной цвет темы */
+    background-color: #dd003f; 
     color: white;
     border-color: #dd003f;
 }
 .btn-paginate-active:hover {
-     background-color: #c70039; /* Чуть темнее при наведении */
-}
-
-/* Стили для стрелок (если используются классы icon-prev/icon-next) */
-.icon-prev::before {
-  content: '<'; /* Или иконка */
-  /* Доп. стили для иконки */
-}
-.icon-next::before {
-  content: '>'; /* Или иконка */
-   /* Доп. стили для иконки */
+     background-color: #c70039;
 }
 
 
@@ -240,6 +200,5 @@ export default {
   }
 }
 
-/* Стили прелоадера (повторяются, лучше вынести) */
-/* ... */
+
 </style>

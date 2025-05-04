@@ -77,7 +77,7 @@ export default {
 }
 .speaker-layout3 .img-fluid {
   width: 100%;
-  height: 320px;
+  height: 406px;
   object-fit: cover;
   border-radius: 10px 10px 0 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -140,12 +140,16 @@ export default {
 
 @media (max-width: 991px) {
   .speaker-layout3 .img-fluid {
-    height: 240px;
+    height: 350px;
   }
 }
 @media (max-width: 767px) {
+   .speaker-layout3 {
+    max-width: 350px;
+  } 
   .speaker-layout3 .img-fluid {
-    height: 180px;
+    height: 300px;
   }
 }
+
 </style>

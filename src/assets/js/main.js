@@ -176,71 +176,71 @@
     /*-------------------------------------
     On click loadmore functionality 
     -------------------------------------*/
-    $('.loadmore-four-item').on('click', function (e) {
-        e.preventDefault();
-        var _this = $(this),
-            _parent = _this.parents('.menu-list-wrapper'),
-            _target = _parent.find('.menu-list'),
-            _set = _target.find('.menu-item.hidden').slice(0, 4);
-        if (_set.length) {
-            _set.animate({
-                opacity: 0
-            });
-            _set.promise().done(function () {
-                _set.removeClass('hidden');
-                _set.show().animate({
-                    opacity: 1
-                }, 1000);
-            });
-        } else {
-            _this.text('No more item to display');
-        }
-        return false;
-    });
-    /*********************************/
-    $('.loadmore-one-item').on('click', function (e) {
-        e.preventDefault();
-        var _this = $(this),
-            _parent = _this.parents('.menu-list-wrapper'),
-            _target = _parent.find('.menu-list'),
-            _set = _target.find('.menu-item.hidden').slice(0, 1);
-        if (_set.length) {
-            _set.animate({
-                opacity: 0
-            });
-            _set.promise().done(function () {
-                _set.removeClass('hidden');
-                _set.show().animate({
-                    opacity: 1
-                }, 1000);
-            });
-        } else {
-            _this.text('No more item to display');
-        }
-        return false;
-    });
-    /*********************************/
-    $('.loadmore-three-item').on('click', function (e) {
-        e.preventDefault();
-        var _this = $(this),
-            _parent = _this.parents('.menu-list-wrapper'),
-            _target = _parent.find('.menu-list'),
-            _set = _target.find('.menu-item.hidden').slice(0, 3);
-        if (_set.length) {
-            _set.animate({
-                opacity: 0
-            });
-            _set.promise().done(function () {
-                _set.removeClass('hidden');
-                _set.show().animate({
-                    opacity: 1
-                }, 1000);
-            });
-        } else {
-            _this.text('No more item to display');
-        }
-        return false;
-    });
+    // $('.loadmore-four-item').on('click', function (e) {
+    //     e.preventDefault();
+    //     var _this = $(this),
+    //         _parent = _this.parents('.menu-list-wrapper'),
+    //         _target = _parent.find('.menu-list'),
+    //         _set = _target.find('.menu-item.hidden').slice(0, 4);
+    //     if (_set.length) {
+    //         _set.animate({
+    //             opacity: 0
+    //         });
+    //         _set.promise().done(function () {
+    //             _set.removeClass('hidden');
+    //             _set.show().animate({
+    //                 opacity: 1
+    //             }, 1000);
+    //         });
+    //     } else {
+    //         _this.text('Увы, больше событий нет.');
+    //     }
+    //     return false;
+    // });
+    // /*********************************/
+    // $('.loadmore-one-item').on('click', function (e) {
+    //     e.preventDefault();
+    //     var _this = $(this),
+    //         _parent = _this.parents('.menu-list-wrapper'),
+    //         _target = _parent.find('.menu-list'),
+    //         _set = _target.find('.menu-item.hidden').slice(0, 1);
+    //     if (_set.length) {
+    //         _set.animate({
+    //             opacity: 0
+    //         });
+    //         _set.promise().done(function () {
+    //             _set.removeClass('hidden');
+    //             _set.show().animate({
+    //                 opacity: 1
+    //             }, 1000);
+    //         });
+    //     } else {
+    //         _this.text('Увы, больше событий нет.');
+    //     }
+    //     return false;
+    // });
+    // /*********************************/
+    // $('.loadmore-three-item').on('click', function (e) {
+    //     e.preventDefault();
+    //     var _this = $(this),
+    //         _parent = _this.parents('.menu-list-wrapper'),
+    //         _target = _parent.find('.menu-list'),
+    //         _set = _target.find('.menu-item.hidden').slice(0, 3);
+    //     if (_set.length) {
+    //         _set.animate({
+    //             opacity: 0
+    //         });
+    //         _set.promise().done(function () {
+    //             _set.removeClass('hidden');
+    //             _set.show().animate({
+    //                 opacity: 1
+    //             }, 1000);
+    //         });
+    //     } else {
+    //         _this.text('Увы, больше событий нет.');
+    //     }
+    //     return false;
+    // });
 
     /*-------------------------------------
      jQuery MeanMenu activation code

@@ -1,5 +1,5 @@
 <script>
-import { reactive, toRaw } from 'vue';
+import { reactive, toRaw, onMounted } from 'vue';
 import headerSection from '../components/header.vue';
 import footerSection from '../components/footer.vue';
 import { useLayoutStore } from "../stores/layout.js";
@@ -24,10 +24,26 @@ export default {
     const background = computed(() => layoutStore.getBackground);
     const logo = computed(() => layoutStore.getLogo);
     const logo2 = computed(() => layoutStore.getLogo2);
+
+    // Инициализация и загрузка категорий при монтировании
+    onMounted(() => {
+      if (typeof layoutStore.initCategoriesData === 'function') {
+        layoutStore.initCategoriesData();
+        const fromCache = layoutStore.loadCategoriesFromCache();
+        if (!fromCache) {
+          // Используем импортированный axios
+          layoutStore.categoriesToLoad.forEach(cat => {
+            layoutStore.fetchCategoryEvents(cat, axios, () => ({}));
+          });
+        }
+      }
+    });
+
     return {
       background,
       logo,
-      logo2
+      logo2,
+      layoutStore
     };
   },
   props: ['layoutLoaded'],
@@ -137,73 +153,79 @@ export default {
 
 <template>
   <main>
-      <!--preloading-->
-      <div id="preloader" v-if="loading">
-          <img class="logo" :src="logo2" alt="" width="119" height="58">
-          <div id="status">
-              <span></span>
-              <span></span>
-          </div>
+    <!--preloading-->
+    <div id="preloader" v-if="loading">
+      <img class="logo" :src="logo2" alt="" width="119" height="58">
+      <div id="status">
+        <span></span>
+        <span></span>
       </div>
+    </div>
 
-      <headerSection />
-      
-      <div class="hero common-hero" :style="{ 'background': background }">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12">
-              <div class="hero-ct">
-                <h1>Новости</h1>
-                <ul class="breadcumb">
-                  <li class="active"><router-link to="/">Главная</router-link></li>
-                  <li> <span class="ion-ios-arrow-right"></span> Новости</li>
-                </ul>
-              </div>
+    <headerSection :filteredCategoriesData="layoutStore.filteredCategoriesData" />
+
+    <!-- Banner and Breadcrumbs as in blog-masonry.html -->
+    <section class="inner-page-banner" style="background-image: url(/img/figure/inner-page-figure.jpg);">
+      <!-- <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="breadcrumbs-area">
+              <h1>Новости</h1>
+              <ul>
+                <li>
+                  <router-link to="/">Главная</router-link>
+                </li>
+                <li>Новости</li>
+              </ul>
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
+    </section>
       <!-- blog grid section-->
-      <div class="page-single">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12 col-sm-12 col-xs-12" v-if="posts && posts.length">
-              <div class="row row-objects">
-                <div class="col-md-4 col-sm-12 col-xs-12" v-for="(post) in posts" :key="post">
-                  <div class="blog-item-style-2">
-                    <router-link :to="`/post/${post.slug}`"><img :src="post.image['1600x900']" alt=""></router-link>
-                    <div class="blog-it-infor">
-                      <h3><router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link></h3>
-                      <span class="time">{{ post.publishedAt }}</span>
-                      <p v-html="post.shortContent"></p>
-                    </div>
-                  </div>
+    <!-- Blog Masonry Section Start -->
+    <section class="section-space-equal">
+      <div class="container">
+        <div class="row" id="no-equal-gallery">
+          <div
+            class="col-lg-4 col-md-6 col-sm-6 col-xs-12 no-equal-item"
+            v-for="post in posts"
+            :key="post.id"
+          >
+            <div class="blog-layout4">
+              <div class="entry-image">
+                <div class="item-image">
+                  <router-link :to="`/post/${post.slug}`">
+                    <img
+                      :src="post.image['1300x560'] || post.image['1600x900']"
+                      class="img-responsive"
+                      :alt="post.title"
+                    />
+                  </router-link>
+                </div>
+                <div class="item-content">
+                  <h3 class="title title-bold color-dark hover-primary">
+                    <router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link>
+                  </h3>
+                  <ul class="news-meta-info">
+                    <li>{{ post.publishedAt }}</li>
+                  </ul>
+                  <p v-html="post.shortContent"></p>
                 </div>
               </div>
-
-              <vue-awesome-paginate style="margin-top: 2rem;"
-                :total-items="posts_last_page"
-                v-model="currentPage"
-                @click="load"
-                :items-per-page="5"
-                :max-pages-shown="isMobile ? 2 : 7"
-                paginate-buttons-class="btn-paginate"
-                active-page-class="btn-paginate-active"
-                back-button-class="icon-prev"
-                next-button-class="icon-next"
-              />
-              
             </div>
           </div>
         </div>
       </div>
-      <!--end of  blog grid section-->
+    </section>
+    <!-- Blog Masonry Section End -->
       <footerSection />
       
     </main>
 </template>
 
 <style>
+@import "../assets/css/style.css";
   .btn-paginate {
     height: 40px;
 

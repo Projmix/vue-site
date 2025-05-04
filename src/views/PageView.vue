@@ -26,8 +26,10 @@ export default {
     return {
       background,
       logo,
-      logo2
+      logo2,
+      layoutStore
     };
+
   },
   props: ['layoutLoaded'],
   data() {
@@ -51,7 +53,7 @@ export default {
 
       };
       
-      await this.$axios.get(apiUrl, { params }).then(response => {
+      await axios.get(apiUrl, { params }).then(response => {
 
         if (!response.data) {
           return;
@@ -108,7 +110,7 @@ export default {
           </div>
       </div>
 
-      <headerSection />
+      <headerSection :filteredCategoriesData="layoutStore.filteredCategoriesData" />
 
 
       <div class="hero common-hero" :style="{ 'background': background }">

@@ -1,5 +1,5 @@
 <script>
-import { reactive, ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import headerSection from '../components/header.vue';
 import footerSection from '../components/footer.vue';
 import { useLayoutStore } from "../stores/layout.js";
@@ -10,6 +10,7 @@ import axios from 'axios';
 import '@splidejs/vue-splide/css';
 import ru from 'moment/locale/ru'; // Убедитесь, что локаль импортирована
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
+import EventDetailModal from '../components/EventDetailModal.vue';
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
 // import apiService from '@/services/apiService'; // Используйте централизованный сервис, если он есть
 
@@ -22,8 +23,11 @@ export default {
     SplideSlide,
     EventCard,
     NewsCard,
+    EventDetailModal,
   },
   setup() {
+    // Флаг для отслеживания инициализации Nivo Slider
+    let nivoInitialized = false;
     const layoutStore = useLayoutStore();
     const background = computed(() => layoutStore.getBackground);
     const logo = computed(() => layoutStore.getLogo);
@@ -32,33 +36,42 @@ export default {
     // // Добавлено: categoriesData из Pinia store
     // const categoriesData = computed(() => layoutStore.getEventCategories || []);
 
-    // Добавлено: categoriesToLoad для избежания ReferenceError
-    const categoriesToLoad = ref([
-      { slug: 'kino', name: 'Кино' },
-       { slug: 'theatre', name: 'Театр' }, // Раскомментируйте нужные
-       { slug: 'concert', name: 'Концерты' },
-      { slug: 'sport', name: 'Спорт' },
-       { slug: 'activ', name: 'Активный отдых' },
-       { slug: 'kids', name: 'Детям' },
-       { slug: 'vistavki', name: 'Выставки' },
-       { slug: 'learn', name: 'Обучение' },
-       //{ slug: 'festival', name: 'Фестивали' },
-       { slug: 'circus', name: 'Цирк' },
-       //{ slug: 'opera', name: 'Опера и балет' },
-       { slug: 'kvesty', name: 'Квесты' },
-    ]);
 
-    const categoriesData = reactive({}); // { kino: { events: [], loading: true, error: false }, ... }
     const newsItems = ref([]);
     const newsLoading = ref(true);
     const generalLoading = ref(true); // Общий лоадер для страницы
+    const loading = generalLoading;
+
+    // Для модального окна
+    const showModal = ref(false);
+    const selectedEvent = ref(null);
+    const selectedSessions = ref([]);
+
+    function openEventDetail(event) {
+      selectedEvent.value = event;
+      // sessions: ищем до 3 ближайших дат/сеансов, если есть
+      let sessions = [];
+      if (event.sessions && Array.isArray(event.sessions)) {
+        sessions = event.sessions.slice(0, 3);
+      } else if (event.dates && Array.isArray(event.dates)) {
+        sessions = event.dates.slice(0, 3);
+      } else if (event.seances && Array.isArray(event.seances)) {
+        sessions = event.seances.slice(0, 3);
+      } else if (event.performances && Array.isArray(event.performances)) {
+        sessions = event.performances.slice(0, 3);
+      } else if (event.times && Array.isArray(event.times)) {
+        sessions = event.times.slice(0, 3);
+      }
+      selectedSessions.value = sessions;
+      showModal.value = true;
+    }
+    function closeEventDetail() {
+      showModal.value = false;
+      selectedEvent.value = null;
+      selectedSessions.value = [];
+    }
 
     const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID); // Можно сделать динамическим
-
-    // Инициализация categoriesData
-    categoriesToLoad.value.forEach(cat => {
-      categoriesData[cat.slug] = { events: [], loading: true, error: false, name: cat.name };
-    });
 
     const getCommonParams = (cityId = null) => ({
       lang: import.meta.env.VITE_API_LANG,
@@ -68,48 +81,6 @@ export default {
       domain: import.meta.env.VITE_API_DOMAIN,
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     });
-
-    // Переносим axios из data/methods в setup
-    let axiosInstance = inject ? inject('$axios') : undefined;
-    if (!axiosInstance) axiosInstance = axios; // fallback на глобальный импорт
-
-
-    const fetchCategoryEvents = async (category) => {
-      categoriesData[category.slug].loading = true;
-      categoriesData[category.slug].error = false;
-      try {
-        const params = {
-          ...getCommonParams(),
-          date: moment().startOf('day').unix(), // Сегодняшняя дата
-          ignoreEndTime: 0,
-        };
-        console.log(`[fetchCategoryEvents] slug: ${category.slug}, params:`, params);
-        const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/${category.slug}`;
-        const response = await axiosInstance.get(apiUrl, { params });
-        console.log(`[fetchCategoryEvents] slug: ${category.slug}, response:`, response);
-        
-        let events = [];
-        if (response.data.data?.currentDate?.length) {
-          events = events.concat(response.data.data.currentDate);
-        }
-        // Можно добавить и другие источники событий, если API их возвращает для этой категории
-        // if (response.data.data?.month?.[0]?.performances?.length) {
-        //   events = events.concat(response.data.data.month[0].performances);
-        // }
-
-        const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-        categoriesData[category.slug].events = uniqueEvents.slice(0, 6); // Берем первые 6
-        // Можно получить реальное имя категории из ответа, если нужно
-        // categoriesData[category.slug].name = response.data.type?.name || category.name;
-
-      } catch (error) {
-        console.error(`Ошибка загрузки категории ${category.slug}:`, error);
-        categoriesData[category.slug].error = true;
-        categoriesData[category.slug].events = [];
-      } finally {
-        categoriesData[category.slug].loading = false;
-      }
-    };
 
     const fetchNews = async () => {
       newsLoading.value = true;
@@ -121,8 +92,19 @@ export default {
         };
         console.log('[fetchNews] params:', params);
         const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/posts`;
-        const response = await axiosInstance.get(apiUrl, { params });
+        const response = await axios.get(apiUrl, { params });
         console.log('[fetchNews] response:', response);
+        let posts = response.data.posts || [];
+        console.log(params);
+        posts = posts.slice().sort((a, b) => {
+          const dateA = moment(a.published_at || a.publishedAt, ["DD.MM.YYYY", moment.ISO_8601], true);
+          const dateB = moment(b.published_at || b.publishedAt, ["DD.MM.YYYY", moment.ISO_8601], true);
+          if (!dateA.isValid() && !dateB.isValid()) return 0;
+          if (!dateA.isValid()) return 1;
+          if (!dateB.isValid()) return -1;
+          return dateB.valueOf() - dateA.valueOf();
+        });
+        newsItems.value = posts.slice(0, 3);
         newsItems.value = response.data.posts || [];
       } catch (error) {
         console.error("Ошибка загрузки новостей:", error);
@@ -132,39 +114,68 @@ export default {
       }
     };
 
+    // Загрузка только новостей, категории — через layoutStore
     const loadAllData = async () => {
       generalLoading.value = true;
-      const promises = categoriesToLoad.value.map(fetchCategoryEvents);
-      promises.push(fetchNews()); // Добавляем загрузку новостей в общий пул
-      await Promise.all(promises);
+      await fetchNews();
       generalLoading.value = false;
     };
 
-    onMounted(() => {
 
-      layoutStore.layoutLoaded.then(() => {
-        loadAllData();
-        // Инициализация jQuery-плагинов
-        if (window.$ && typeof window.$.fn.meanmenu === 'function') {
-          $('nav#dropdown').meanmenu({
-            siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
-          });
-        }
-        if (window.$ && typeof window.$.scrollUp === 'function') {
-          $.scrollUp({
-            scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
-            easingType: 'linear',
-            scrollSpeed: 900,
-          });
-        }
-      }).catch(error => {
-        console.error("Ошибка загрузки layout:", error);
-        // Загружаем данные даже если layout не загрузился, используя дефолтные значения
-        loadAllData();
+    onMounted(() => {
+      nextTick(() => {
+        setTimeout(() => {
+          if (window.$ && typeof window.$.fn.nivoSlider === 'function') {
+            // Очищаем предыдущую инициализацию
+            $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
+            $('#ensign-nivoslider-3').nivoSlider({
+              effect: 'fade',
+              slices: 15,
+              boxCols: 8,
+              boxRows: 4,
+              animSpeed: 500,
+              pauseTime: 5000,
+              startSlide: 0,
+              directionNav: true,
+              controlNav: true,
+              pauseOnHover: true,
+              manualAdvance: false,
+            });
+            nivoInitialized = true;
+          }
+        }, 200); // задержка чтобы DOM точно был готов
       });
+      // --- Инициализация и загрузка категорий через Pinia store ---
+      layoutStore.initCategoriesData();
+      const fromCache = layoutStore.loadCategoriesFromCache();
+      if (!fromCache) {
+        layoutStore.categoriesToLoad.forEach(cat => {
+          layoutStore.fetchCategoryEvents(cat, axios, () => ({}));
+        });
+      }
+      // ---
+      // Загрузка новостей
+      loadAllData();
+      // Инициализация jQuery-плагинов
+      if (window.$ && typeof window.$.fn.meanmenu === 'function') {
+        $('nav#dropdown').meanmenu({
+          siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
+        });
+      }
+      if (window.$ && typeof window.$.scrollUp === 'function') {
+        $.scrollUp({
+          scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
+          easingType: 'linear',
+          scrollSpeed: 900,
+        });
+      }
     });
 
     onBeforeUnmount(() => {
+      if (nivoInitialized) {
+        $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
+        nivoInitialized = false;
+      }
       // destroy
     });
 
@@ -174,253 +185,30 @@ export default {
 
 
 
+
     return {
       layoutStore,
       background,
       logo,
       logo2,
-      categoriesData,
-      categoriesToLoad,
+      // Категории теперь только через layoutStore
+
       newsItems,
       newsLoading,
       generalLoading,
+      loading,
       formatDate,
+      showModal,
+      selectedEvent,
+      selectedSessions,
+      openEventDetail,
+      closeEventDetail,
+      moment,
       //afisha,
       //sportEventsAll,
     };
   },
   props: ['layoutLoaded'],
-  // computed: {
-  //   soonFilms() {
-  //     let result = [];
-  //     if (this.afisha.data && this.afisha.data.month && this.afisha.data.month.length) {
-  //       this.afisha.data.month.forEach(mon => {
-  //         result.push(...mon.performances);
-  //       });
-
-  //       result = result.filter(perf => ((moment().startOf('day').unix() + 86400) <= perf.start_timestamp));
-
-  //       if (result.length > 8) {
-  //         result = result.slice(0, 8);
-  //       }
-
-  //       return result;
-  //     }
-  //     return result;
-  //   }
-  // },
-  // data() {
-  //   return {
-  //     afisha: {},
-  //     sportEvents: [],
-  //     sportEventsAll: [],
-  //     loading: true,
-  //     splideOptionsEvents: {
-  //       type: 'slide',
-  //       perPage: 6,
-  //       breakpoints: {
-  //         600: {
-  //           perPage: 2,
-  //           gap: '1rem',
-  //         },
-  //       },
-  //       pagination: false,
-  //       arrows: false,
-  //     },
-  //     splideOptionsBanner: {
-  //       type: 'slide',
-  //       perPage: 1,
-  //       pagination: false,
-  //       arrows: false,
-  //     },
-  //     tagColors: [
-  //       'blue',
-  //       'yell',
-  //       'orange',
-  //       'green'
-  //     ],
-
-  //   };
-  // },
-  // methods: {
-  //   async getAfisha() {
-  //     const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/kino`;
-  //     const params = {
-  //       lang: import.meta.env.VITE_API_LANG,
-  //       jsonld: import.meta.env.VITE_API_JSONLD,
-  //       ignoreEndTime: 0,
-  //       cityId: import.meta.env.VITE_API_CITY_ID,
-  //       date: moment().startOf('day').unix(),
-
-  //       onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-  //       domain: import.meta.env.VITE_API_DOMAIN,
-  //       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-  //       // expand: 'sessions'
-
-
-  //       // ignoreEndTime: 1,
-  //       // home_sort: 1,
-  //       // limit: 12,
-  //       // onlyData:0,
-  //     };
-
-
-  //     await this.$axios.get(apiUrl, { params }).then(response => {
-  //       console.log('API AFISHA:', response.data);
-  //       this.afisha = response.data;
-
-  //       useHead({
-  //         title: 'Киноафиша Бобруйска – Кинотеатры "Товарищ" и "Мир" | Купить билеты онлайн',
-  //         meta: [
-  //           {
-  //             name: 'description',
-  //             content: 'Актуальная киноафиша города Бобруйска. Расписание сеансов в кинотеатрах "Товарищ" и "Мир". Покупка билетов онлайн, трейлеры, описания фильмов и удобный выбор мест.'
-  //           },
-  //           {
-  //             name: 'keywords',
-  //             content: 'кино Бобруйск, кинотеатр Товарищ, кинотеатр Мир, купить билеты в кино, афиша Бобруйск, фильмы сегодня, расписание кино'
-  //           }
-  //         ]
-  //       });
-
-  //       // --- Новая логика ---
-  //       const categoriesToLoad = ref([
-  //         { slug: 'kino', name: 'Кино' },
-  //         // { slug: 'theatre', name: 'Театр' }, // Раскомментируйте нужные
-  //         // { slug: 'concert', name: 'Концерты' },
-  //         { slug: 'sport', name: 'Спорт' },
-  //         // { slug: 'activ', name: 'Активный отдых' },
-  //         // { slug: 'kids', name: 'Детям' },
-  //         // { slug: 'vistavki', name: 'Выставки' },
-  //         // { slug: 'learn', name: 'Обучение' },
-  //         // { slug: 'festival', name: 'Фестивали' },
-  //         // { slug: 'circus', name: 'Цирк' },
-  //         // { slug: 'opera', name: 'Опера и балет' },
-  //         // { slug: 'kvesty', name: 'Квесты' },
-  //       ]);
-  //       const categoriesData = reactive({}); // { kino: { events: [], loading: true, error: false }, ... }
-  //       const newsItems = ref([]);
-  //       const newsLoading = ref(true);
-  //       const generalLoading = ref(true); // Общий лоадер для страницы
-
-  //       const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID); // Можно сделать динамическим
-
-  //       // Инициализация categoriesData
-  //       categoriesToLoad.value.forEach(cat => {
-  //         categoriesData[cat.slug] = { events: [], loading: true, error: false, name: cat.name };
-  //       });
-
-  //       const getCommonParams = (cityId = null) => ({
-  //         lang: import.meta.env.VITE_API_LANG,
-  //         jsonld: import.meta.env.VITE_API_JSONLD,
-  //         cityId: cityId || selectedCityId.value,
-  //         onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-  //         domain: import.meta.env.VITE_API_DOMAIN,
-  //         distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-  //       });
-
-  //       // Переносим axios из data/methods в setup
-  //       const axiosInstance = inject('$axios'); // Получаем axios, если он зарегистрирован глобально
-
-  //       const fetchCategoryEvents = async (category) => {
-  //         categoriesData[category.slug].loading = true;
-  //         categoriesData[category.slug].error = false;
-  //         try {
-  //           const params = {
-  //             ...getCommonParams(),
-  //             date: moment().startOf('day').unix(), // Сегодняшняя дата
-  //             ignoreEndTime: 0,
-  //           };
-  //           const response = await axiosInstance.get(`/api/v3/mobile/afisha/${category.slug}`, { params });
-
-  //           let events = [];
-  //           if (response.data.data?.currentDate?.length) {
-  //             events = events.concat(response.data.data.currentDate);
-  //           }
-  //           // Можно добавить и другие источники событий, если API их возвращает для этой категории
-  //           // if (response.data.data?.month?.[0]?.performances?.length) {
-  //           //   events = events.concat(response.data.data.month[0].performances);
-  //           // }
-
-  //           const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-  //           categoriesData[category.slug].events = uniqueEvents.slice(0, 6); // Берем первые 6
-  //           // Можно получить реальное имя категории из ответа, если нужно
-  //           // categoriesData[category.slug].name = response.data.type?.name || category.name;
-
-  //         } catch (error) {
-  //           console.error(`Ошибка загрузки категории ${category.slug}:`, error);
-  //           categoriesData[category.slug].error = true;
-  //           categoriesData[category.slug].events = [];
-  //         } finally {
-  //           categoriesData[category.slug].loading = false;
-  //         }
-  //       };
-
-  //       const fetchNews = async () => {
-  //         newsLoading.value = true;
-  //         try {
-  //           const params = {
-  //             ...getCommonParams(),
-  //             page: 1,
-  //             perPage: 6, // Количество новостей на главной
-  //           };
-  //           const response = await axiosInstance.get(`/api/v3/arena/posts`, { params });
-  //           newsItems.value = response.data.posts || [];
-  //         } catch (error) {
-  //           console.error("Ошибка загрузки новостей:", error);
-  //           newsItems.value = [];
-  //         } finally {
-  //           newsLoading.value = false;
-  //         }
-  //       };
-
-  //       const loadAllData = async () => {
-  //         generalLoading.value = true;
-  //         const promises = categoriesToLoad.value.map(fetchCategoryEvents);
-  //         promises.push(fetchNews()); // Добавляем загрузку новостей в общий пул
-  //         await Promise.all(promises);
-  //         generalLoading.value = false;
-  //       };
-  //     });
-
-  //     setTimeout(() => {
-  //       this.loading = false;
-  //     }, 500);
-  //   },
-
-  //   async getSportEvents() {
-  //     const apiUrl = `https://webgate2.24guru.by/api/v3/mobile/afisha/sport`;
-  //     try {
-  //       const response = await axios.get(apiUrl, { params: { lang: 'ru' } });
-  //       this.sportEvents = response.data.data?.currentDate || [];
-  //       // Собрать все month[].performances в один массив
-  //       this.sportEventsAll = [];
-  //       if (response.data.data && response.data.data.month && Array.isArray(response.data.data.month)) {
-  //         response.data.data.month.forEach(mon => {
-  //           if (Array.isArray(mon.performances)) {
-  //             this.sportEventsAll.push(...mon.performances);
-  //           }
-  //         });
-  //       }
-  //     } catch (e) {
-  //       this.sportEvents = [];
-  //       this.sportEventsAll = [];
-  //     }
-  //   },
-
-  //   strTimestampToHumanTime(timestamp) {
-  //     return moment(timestamp * 1000).format('DD.MM.YYYY');
-  //   },
-  //   formatDate(date, format = 'DD MMM') {
-  //     return moment(date).format(format);
-  //   },
-  // },
-  // beforeMount() {
-  //   this.layoutLoaded
-  //     .then(() => this.getAfisha())
-  //     .then(() => this.getSportEvents())
-  //     .catch(error => console.error("Ошибка выполнения getAfisha/getSportEvents", error));
-  // },
 };
 </script>
 
@@ -441,11 +229,11 @@ export default {
     <div class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
       <div class="bend niceties preview-1">
         <div id="ensign-nivoslider-3" class="slides">
-          <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-1" style="cursor:pointer"
+          <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
             @click="$router.push(`/event/1`)" />
           <img src="@/assets/images/slider/slide4-2.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
             @click="$router.push(`/event/2`)" />
-          <img src="@/assets/images/slider/slide4-3.jpg" alt="slider" title="#slider-direction-3" style="cursor:pointer"
+          <img src="@/assets/images/slider/slide4-3.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
             @click="$router.push(`/event/3`)" />
         </div>
         <div id="slider-direction-1" class="t-cn slider-direction">
@@ -453,13 +241,13 @@ export default {
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
                 <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">18 October, 2018 | Minsk</a>
+                  <a href="#" @click.prevent="$router.push(`/event/1`)">18 October, 2025 | Minsk</a>
                 </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
                 </div>
                 <div class="slider-big-text second-line">
-                  <p>Developer Meetup 2018</p>
+                  <p>Developer Meetup 2025</p>
                 </div>
               </div>
             </div>
@@ -473,13 +261,13 @@ export default {
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
                 <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">18 October, 2018 | Minsk</a>
+                  <a href="#" @click.prevent="$router.push(`/event/1`)">20 October, 2025 | Minsk</a>
                 </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
                 </div>
                 <div class="slider-big-text second-line">
-                  <p>Developer Meetup 2018</p>
+                  <p>Developer Meetup 2025</p>
                 </div>
               </div>
             </div>
@@ -493,7 +281,7 @@ export default {
             <div class="title-container s-tb-c title-light">
               <div class="container text-left">
                 <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">18 October, 2018 | Minsk</a>
+                  <a href="#" @click.prevent="$router.push(`/event/1`)">22 October, 2025 | Minsk</a>
                 </h3>
                 <div class="slider-big-text first-line">
                   <p>Application</p>
@@ -511,30 +299,8 @@ export default {
       </div>
     </div>
     <!-- Slider Area End Here -->
-    <!-- Countdown Area Start Here -->
-    <!-- <section>
-      <div class="container-fluid">
-        <div class="row no-gutters full-width">
-          <div class="col-lg-4">
-            <div class="height-100 d-flex align-items-center bg-primary">
-              <div class="upcoming-event-layout2 zindex-up">
-                <h2>East Tobaco</h2>
-                <div class="event-location">26 Street, London</div>
-                <div class="event-date">17 October - 22 Octber, 2018</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-8">
-            <div class="countdown-layout1">
-              <div id="countdown"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-    <!-- Countdown Area End Here -->
     <!-- About Area Start Here -->
-    <section class="section-space-custom-less30 bg-common bg-accent"
+    <!-- <section class="section-space-custom-less30 bg-common bg-accent"
       style="background-image: url(img/figure/figure3.png);">
       <div class="container-fluid">
         <div class="about-layout3">
@@ -546,10 +312,10 @@ export default {
             when an unknown printer took.</p>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- About Page Area End Here -->
     <!-- Schedule Area Start Here -->
-    <section class="section-space-top-default bg-light">
+    <!-- <section class="section-space-top-default bg-light">
       <div class="container-fluid">
         <div class="section-heading title-black color-dark">
           <h2>Event Schedule &amp; Agenda</h2>
@@ -636,38 +402,40 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Schedule Area End Here -->
 
-    <section v-for="(category, slug) in categoriesData" :key="slug"
+    <EventDetailModal :show="showModal" :event="selectedEvent" :sessions="selectedSessions" @close="closeEventDetail" />
+    <section v-for="(category, slug) in layoutStore.filteredCategoriesData" :key="slug"
       class="section-space-default bg-light overlay-icon-layout4">
       <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
-        <div class="section-heading title-black color-dark all-category">
-          <div>
+        <div class="section-heading title-black color-dark all-category text-left">
             <h2>{{ category.name }}</h2>
-            <p>Описание категории</p>
-          </div>
-          <div class="col-12 text-center">
             <router-link :to="{ name: 'events-category', params: { category: slug } }"
-              class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow margin-t-30">
+              class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
               Все события
             </router-link>
-          </div>
         </div>
 
-        <div class="row gutters full-width menu-list">
+        <div class="row menu-list">
           <template v-if="category.loading">
-            <div class="col-12"><p>Загрузка событий...</p></div>
+            <div class="col-12">
+              <p>Загрузка событий...</p>
+            </div>
           </template>
           <template v-else-if="category.error">
-            <div class="col-12"><p>Не удалось загрузить события.</p></div>
+            <div class="col-12">
+              <p>Не удалось загрузить события.</p>
+            </div>
           </template>
           <template v-else-if="category.events.length">
             <div v-for="event in category.events.slice(0, 6)" :key="event.id"
               class="col-lg-4 col-md-4 col-sm-6 col-12 menu-item">
               <div class="speaker-layout3 event-card-fixed">
                 <router-link :to="`/event/${event.id}`">
-                  <img :src="event.image['300x430'] || event.image['240x340'] || require('@/assets/images/speaker/speaker1.png')" :alt="event.name" class="img-fluid">
+                  <img
+                    :src="event.image['300x430'] || event.image['240x340'] || require('@/assets/images/speaker/speaker1.png')"
+                    :alt="event.name" class="img-fluid">
                 </router-link>
                 <div class="item-title">
                   <h3 class="title title-medium color-light hover-yellow size-md">
@@ -692,7 +460,9 @@ export default {
             </div>
           </template>
           <template v-else>
-            <div class="col-12"><p>В данной категории пока нет событий.</p></div>
+            <div class="col-12">
+              <p>В данной категории пока нет событий.</p>
+            </div>
           </template>
         </div>
 
@@ -705,7 +475,6 @@ export default {
         <div class="section-heading-container">
           <div class="section-heading title-black color-dark text-left">
             <h2>Последние новости</h2>
-            <p>Новости и обновления киноафиши</p>
           </div>
           <div class="see-all-button">
             <router-link :to="{ name: 'posts' }" class="btn-fill border-radius-5 size-md color-yellow">
@@ -719,129 +488,8 @@ export default {
         </div>
       </div>
     </section>
-    <!-- Speaker Area Start Here (Сегодня в кино)
-    <section class="section-space-default bg-light overlay-icon-layout4">
-      <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
-        <div class="container-name-category">
-          <div class="section-heading title-black color-dark text-left">
-            <h2>Сегодня в кино</h2>
-            <p>Актуальные фильмы на сегодня</p>
-          </div>
-          <div class="col-12 text-right ">
-            <router-link :to="{ name: 'events-category', params: { category: 'kino' } }"
-              class="btn-fill border-radius-5 size-lg color-yellow margin-t-30">Все фильмы</router-link>
-          </div>
-        </div>
-
-        <div v-if="afisha && afisha.data && afisha.data.currentDate" class="row gutters full-width menu-list">
-          <div v-for="event in afisha.data.currentDate.slice(0, 6)" :key="event.id"
-            class="col-xl-4 col-lg-4 col-md-6 col-sm-6 col-12 menu-item">
-            <div class="speaker-layout3 event-card-fixed">
-              <img :src="event.image['300x430']" :alt="event.name" class="img-fluid" />
-              <div class="item-title">
-                <h3 class="title title-medium color-light hover-yellow size-md">
-                  <router-link :to="`/event/${event.id}`">{{ event.name }}</router-link>
-                </h3>
-                <div class="text-left title-light size-md color-light">{{ event.genre }}</div>
-              </div>
-              <div class="item-social">
-                <ul>
-                  <li>
-                    <span v-if="event.kinopoisk_rank" class="kp-rating">
-                      <span class="kp-star">
-                        <svg width="18" height="18" viewBox="0 0 20 20" fill="#fad03b"
-                          xmlns="http://www.w3.org/2000/svg">
-                          <polygon
-                            points="10,1 12.59,7.36 19.51,7.64 14,12.14 15.82,19.02 10,15.6 4.18,19.02 6,12.14 0.49,7.64 7.41,7.36" />
-                        </svg>
-                      </span>
-                      <span class="kp-value">{{ event.kinopoisk_rank.toFixed(1) }}</span>
-                      <span class="kp-max">/10</span>
-                    </span>
-                  </li>
-                  <li>
-                    <a href="#" title="twitter">
-                      <i class="fa fa-twitter" aria-hidden="true"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" title="linkedin">
-                      <i class="fa fa-linkedin" aria-hidden="true"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" title="pinterest">
-                      <i class="fa fa-pinterest" aria-hidden="true"></i>
-                    </a>
-                  </li>
-                </ul>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section> -->
-    <!-- Спорт афиша на главной
-    <section class="section-space-default bg-light overlay-icon-layout4">
-      <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
-        <div class="section-heading title-black color-dark text-left">
-          <div class="container-name-category">
-            <div class="section-heading title-black color-dark text-left">
-              <h2>Сегодня в спорте</h2>
-              <p>Актуальные спортивные события</p>
-            </div>
-            <div class="col-12 text-right">
-              <router-link :to="{ name: 'events-category', params: { category: 'sport' } }"
-                class="btn-fill size-lg color-yellow border-radius-5 margin-t-30">Все спортивные события</router-link>
-            </div>
-          </div>
-
-        </div>
-        <div class="row gutters full-width menu-list">
-          <div v-for="event in (categoriesData['sport'] && categoriesData['sport'].events ? categoriesData['sport'].events.slice(0, 6) : [])" :key="event.id"
-            class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 menu-item">
-            <div class="speaker-layout3 event-card-fixed">
-              <img :src="event.image['300x430']" :alt="event.name" class="img-fluid">
-              <div class="item-title">
-                <h3 class="title title-bold color-light hover-yellow">
-                  <router-link :to="`/event/${event.id}`">{{ event.name }}</router-link>
-                </h3>
-                <div class="title-light size-md text-left color-light">{{ event.genre }}</div>
-              </div>
-              <div class="item-social">
-                <ul>
-                  <li v-if="event.socials && event.socials.facebook">
-                    <a :href="event.socials.facebook" title="facebook"><i class="fa fa-facebook"
-                        aria-hidden="true"></i></a>
-                  </li>
-                  <li v-if="event.socials && event.socials.twitter">
-                    <a :href="event.socials.twitter" title="twitter"><i class="fa fa-twitter"
-                        aria-hidden="true"></i></a>
-                  </li>
-                  <li>
-                    <a href="#" title="linkedin">
-                      <i class="fa fa-linkedin" aria-hidden="true"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" title="pinterest">
-                      <i class="fa fa-pinterest" aria-hidden="true"></i>
-                    </a>
-                  </li>
-                </ul>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- End Speaker Area -->
     <!-- Progress Area Start Here -->
-    <section class="section-space-md bg-common progress-bg-color"
+    <!-- <section class="section-space-md bg-common progress-bg-color"
       style="background-image: url(@/assets/images/figure/figure6.png);">
       <div class="container-fluid">
         <div class="row no-gutters">
@@ -886,10 +534,10 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Progress Area End Here -->
     <!-- Pricing Plan Area Start Here -->
-    <section class="section-space-default-less30 overlay-icon-layout2 bg-common bg-accent"
+    <!-- <section class="section-space-default-less30 overlay-icon-layout2 bg-common bg-accent"
       style="background-image: url(@/assets/images/figure/figure5.png);">
       <div class="container zindex-up">
         <div class="section-heading title-black color-dark text-center">
@@ -962,10 +610,10 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Pricing Plan Area End Here -->
     <!-- Sponsonrs Area Start Here -->
-    <section class="section-space-default bg-light">
+    <!-- <section class="section-space-default bg-light">
       <div class="container">
         <div class="section-heading title-black color-dark text-center">
           <h2>Offcial Sponsonrs &amp; Partner</h2>
@@ -1034,14 +682,15 @@ export default {
         <div class="row">
           <div class="col-12 text-center">
             <a href="#" title="Become a Sponsors"
-              class="btn-fill size-lg border-radius-5 color-yellow margin-t-30">Become a Sponsors</a>
+              class="btn-fill size-lg border-radius-5 color-yellow margin-t-30">Become a
+              Sponsors</a>
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Sponsonrs Area End Here -->
     <!-- Call To Action Area Start Here -->
-    <section class="overlay-primary90 overlay-icon-layout1 section-space-default"
+    <!-- <section class="overlay-primary90 overlay-icon-layout1 section-space-default"
       style="background-image: url(img/figure/figure1.jpg);">
       <div class="container">
         <div class="row">
@@ -1055,39 +704,14 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Call To Action Area End Here -->
 
     <!-- Blog Area Start Here -->
-    <section class="section-space-default-less30 bg-common bg-accent" v-if="afisha && afisha.postsAll && afisha.postsAll.length">
-      <div class="container-fluid">
-        <div class="section-heading title-black color-dark text-center">
-          <h2>Последние новости</h2>
-          <p>Новости и обновления киноафиши</p>
-        </div>
-        <div class="row gutters-15 full-width">
-          <div v-for="post in afisha.postsAll" :key="post.slug" class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <div class="blog-layout3 overlay-gradient">
-              <div class="item-date-wrap">
-                <div class="item-date">
-                  {{ $dayjs(post.publishedAt || post.published_at).format('DD') }}
-                </div>
-              </div>
-              <div class="item-content news-title-only">
-                <div class="item-title">
-                  <h3 class="title-medium color-light hover-yellow">
-                    {{ post.title }}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+
     <!-- End Blog Area -->
     <!-- Map Area Start Here -->
-    <section class="full-width-container">
+    <!-- <section class="full-width-container">
       <div class="container-fluid">
         <div class="google-map-area">
           <div id="googleMap" style="width:100%; height:496px;"></div>
@@ -1100,7 +724,7 @@ export default {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!-- Map Area End Here -->
 
 
@@ -1111,62 +735,56 @@ export default {
 
 
 <style scoped>
-.main-content-area {
-  padding-top: 20px;
-  /* Отступ сверху */
+body main {
+  padding-left: 40px;
+  padding-right: 40px;
+
+  @media only screen and (max-width: 575px) {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
-.category-section,
-.news-section {
-  /* padding: 40px 0; */
-  /* Убрано для использования section-space-* */
-  /* margin-bottom: 30px; */
-  /* Убрано */
+.main-content-area {
+  padding-top: 20px;
 }
+
 
 .section-heading-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  /* Отступ под заголовком */
+  margin-left: 50px;
+  margin-right: 50px;
   flex-wrap: wrap;
-  /* Перенос на мобильных */
 }
 
 .section-heading {
   margin-bottom: 0;
-  /* Убираем стандартный отступ */
   flex-grow: 1;
-  /* Заголовок занимает доступное пространство */
 }
 
 .section-heading h2 {
   margin-bottom: 5px;
-  /* Уменьшаем отступ под заголовком */
 }
 
 
 .see-all-button {
   margin-left: 20px;
-  /* Отступ слева для кнопки */
   margin-top: 10px;
-  /* Отступ сверху на мобильных */
 }
 
 .home-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* 3 колонки */
   gap: 20px;
-  /* Промежуток между карточками */
 }
 
 /* Адаптация для мобильных устройств */
 @media (max-width: 991px) {
   .home-grid {
     grid-template-columns: repeat(2, 1fr);
-    /* 2 колонки на планшетах */
   }
 
   .section-heading-container {
@@ -1183,11 +801,10 @@ export default {
 @media (max-width: 767px) {
   .home-grid {
     grid-template-columns: repeat(1, 1fr);
-    /* 1 колонка на мобильных */
   }
 }
 
-/* Стили прелоадера (можно вынести в App.vue или глобальные стили) */
+/* Стили прелоадера */
 #preloader {
   position: fixed;
   left: 0;
@@ -1197,7 +814,6 @@ export default {
   height: 100%;
   overflow: visible;
   background: #fff url('../assets/images/ajax-loader.gif') no-repeat center center;
-  /* Путь к гифке */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1214,12 +830,9 @@ export default {
   position: absolute;
   left: 50%;
   top: 50%;
-  /* background-image: url(src/assets/images/ajax-loader.gif); */
-  /* Можно использовать gif */
   background-repeat: no-repeat;
   background-position: center;
   margin: -100px 0 0 -100px;
-  /* Стили для анимации точек (если не используется gif) */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1231,7 +844,6 @@ export default {
   height: 8px;
   margin: 0 4px;
   background: #dd003f;
-  /* Цвет точек */
   border-radius: 50%;
   animation: status-load 1s infinite ease-in-out;
 }
@@ -1256,18 +868,15 @@ export default {
   }
 }
 
-/* Стили для .kp-rating можно вынести в EventCard.vue или глобально */
 .kp-rating {
   display: inline-flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.8);
-  /* Белый полупрозрачный фон */
   color: #222;
   border-radius: 1.2em;
   padding: 0.15em 0.7em 0.15em 0.4em;
   font-weight: 600;
   font-size: 1.04em;
-  /* Можно настроить размер */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   margin-right: 0.5em;
 }
@@ -1280,40 +889,76 @@ export default {
 
 .kp-rating .kp-value {
   color: #fad03b;
-  /* Цвет значения рейтинга */
   font-weight: 700;
   font-size: 1.08em;
-  /* Размер значения */
   margin-right: 0.15em;
   letter-spacing: 0.01em;
 }
 
 .kp-rating .kp-max {
   color: #888;
-  /* Цвет "/10" */
   font-size: 0.97em;
   margin-left: 0.08em;
 }
-.section-heading .col-12{
+
+.section-heading .col-12 {
   flex: 0 0 0%;
   width: max-content;
 }
-.speaker-layout3.event-card-fixed{
-width:200px;
+
+
+.row.menu-list {
+  max-width: 70%;
+  margin-right: auto;
+  margin-left: auto;
 }
-.menu-item{
-  display: flex;
-  justify-content: center;
+
+@media (max-width: 1200px) {
+    .row.menu-list {
+        max-width: 1140px;
+  }
 }
-.title.title-medium.color-light.hover-yellow.size-md{
+  @media (max-width: 992px) {
+    .row.menu-list {
+        max-width: 960px;
+    }
+}
+@media (max-width: 768px) {
+  .row.menu-list {
+        max-width: 720px;
+    }
+}
+@media (max-width: 576px) {
+  .row.menu-list {
+        max-width: 350px;
+    }
+  .section-heading.title-black.color-dark.all-category.text-left{
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+  .loadmore-four-item.btn-fill{
+    padding-right: 2px;
+    padding-left: 2px;
+    border-radius: 2px;
+  }
+}
+
+.title.title-medium.color-light.hover-yellow.size-md {
   width: 150px;
   font-size: 14px;
 }
-.section-heading.title-black.color-dark.all-category{
+
+.section-heading.title-black.color-dark.all-category {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-left: 50px;
   padding-right: 50px;
+  margin-bottom: 30px;
+}
+
+.section-heading.title-black.color-dark.all-category h2{
+  margin-bottom: 0;
 }
 
 .news-title-only .item-title h3 {
@@ -1325,5 +970,13 @@ width:200px;
   white-space: normal;
   min-height: 2.8em;
   max-height: 3.2em;
+}
+
+.news-section .container {
+  max-width: none;
+
+}
+.news-section .container .see-all-button{
+  margin-top: 0px;
 }
 </style>

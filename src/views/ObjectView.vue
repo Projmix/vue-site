@@ -73,7 +73,7 @@ export default {
       };
 
       
-      await this.$axios.get(apiUrl, { params }).then(response => {
+      await axios.get(apiUrl, { params }).then(response => {
 
         if (!response.data) {
           return;
@@ -144,7 +144,7 @@ export default {
 
         };
         
-        this.$axios.get(apiUrl, { params })
+        axios.get(apiUrl, { params })
           .then(response => {
             if (!response.data) {
               return;
@@ -214,7 +214,7 @@ export default {
           </div>
       </div>
 
-      <headerSection />
+      <headerSection :filteredCategoriesData="layoutStore.filteredCategoriesData" />
 
       <div class="hero mv-single-hero background-properties" v-if="object.object" :style="{ 'background': `url(${object.object.image['original']})` }">
         <div class="container">

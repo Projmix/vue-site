@@ -332,30 +332,41 @@ h3.size-sm {
 }
 @media only screen and (max-width: 575px) {
   h3.size-sm {
-    font-size: calc(18px);
+    font-size: calc(16px);
   }
 }
 @media only screen and (max-width: 479px) {
   h3.size-sm {
-    font-size: calc(18px);
+    font-size: calc(16px);
   }
 }
 h3 {
-  font-size: 24px;
+  font-size: 20px;
+}
+/*NEWS h3*/
+@media only screen and (max-width: 1399px) {
+  h3 {
+    font-size: calc(17px);
+  }
 }
 @media only screen and (max-width: 1199px) {
   h3 {
-    font-size: calc(23px);
+    font-size: calc(15px);
+  }
+}
+@media only screen and (max-width: 1140px) {
+  h3 {
+    font-size: calc(12px);
   }
 }
 @media only screen and (max-width: 991px) {
   h3 {
-    font-size: calc(22px);
+    font-size: calc(15px);
   }
 }
 @media only screen and (max-width: 767px) {
   h3 {
-    font-size: calc(22px);
+    font-size: calc(20px);
   }
 }
 @media only screen and (max-width: 575px) {
@@ -365,7 +376,17 @@ h3 {
 }
 @media only screen and (max-width: 479px) {
   h3 {
-    font-size: calc(21px);
+    font-size: calc(16px);
+  }
+}
+@media only screen and (max-width: 380px) {
+  h3 {
+    font-size: calc(12px);
+  }
+}
+@media only screen and (max-width: 300px) {
+  h3 {
+    font-size: calc(10px);
   }
 }
 h3.size-md {
@@ -2426,7 +2447,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   top: 0;
   width: 100%;
   z-index: 9999999;
-  background: #4c1864;
+  background: #111111e6;
   overflow: visible;
 }
 .preloader .items {
@@ -2516,7 +2537,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   background-repeat: no-repeat;
   position: relative;
   display: block;
-  padding: 22rem 0 18rem;
+  padding: 0 0 11rem;
 }
 @media only screen and (max-width: 991px) {
   .inner-page-banner {
@@ -2709,7 +2730,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   transform: scaleY(1);
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu {
-  background: #4c1864;
+  background: #111111e6;
   box-shadow: none;
   border: none;
   -webkit-border-radius: 0;
@@ -2739,7 +2760,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li {
   display: block;
-  border-bottom: 1px solid #4c1864;
+  border-bottom: 1px solid #111111e6;
   position: relative;
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li a {
@@ -2757,14 +2778,14 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li a:hover,
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li a:focus {
   background: #fad03b;
-  color: #4c1864;
+  color: #242424e6;
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li:last-child {
   border-bottom: none;
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu .current > a {
   background: #fad03b;
-  color: #4c1864;
+  color: #242424e6;
 }
 .eventalk-main-menu nav > ul > li .rt-dropdown-menu.third-level {
   width: 460px;
@@ -2800,7 +2821,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   transition: all 0.5s ease-out;
 }
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner {
-  background: #4c1864;
+  background: #111111e6;
   padding: 15px;
 }
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner .menu-layout-title {
@@ -2811,7 +2832,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   text-transform: uppercase;
 }
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner ul.rt-mega-items li {
-  border-bottom: 1px solid #4c1864;
+  border-bottom: 1px solid #111111e6;
   display: block;
   position: relative;
 }
@@ -2830,11 +2851,11 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner ul.rt-mega-items li a:hover {
   padding-left: 10px;
   color: #ffffff;
-  background: #4c1854;
-  background: -webkit-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: -o-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: -moz-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: linear-gradient(#4c1854, #4c1864, #4c1874);
+  background: #111111e6;
+  background: -webkit-linear-gradient(#242424e6, #131313, #141414);
+  background: -o-linear-gradient(#242424e6, #131313, #141414);
+  background: -moz-linear-gradient(#242424e6, #131313, #141414);
+  background: linear-gradient(#242424e6, #131313, #141414);
 }
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner ul.rt-mega-items li:last-child {
   border-bottom: none;
@@ -2842,11 +2863,11 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 .eventalk-main-menu nav > ul li.menu-justify .rt-dropdown-mega .rt-dropdown-inner ul.rt-mega-items .current > a {
   padding-left: 10px;
   color: #ffffff;
-  background: #4c1854;
-  background: -webkit-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: -o-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: -moz-linear-gradient(#4c1854, #4c1864, #4c1874);
-  background: linear-gradient(#4c1854, #4c1864, #4c1874);
+  background: #111111e6;
+  background: -webkit-linear-gradient(#242424e6, #131313, #141414);
+  background: -o-linear-gradient(#242424e6, #131313, #141414);
+  background: -moz-linear-gradient(#242424e6, #131313, #141414);
+  background: linear-gradient(#242424e6, #131313, #141414);
 }
 .eventalk-main-menu nav > ul li.menu-justify:hover .rt-dropdown-mega {
   opacity: 1;
@@ -2991,7 +3012,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 .cart-area {
   position: relative;
 }
-.cart-area:hover .cart-wrapper {
+.cart-are .cart-wrapper {
   opacity: 1;
   visibility: visible;
   max-height: 1000px;
@@ -3214,7 +3235,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   transition: all 0.5s ease-out;
 }
 .mean-container .mean-bar .mean-nav ul li a:hover {
-  color: #4c1864;
+  color: #242424e6;
   -webkit-transition: all 0.5s ease-out;
   -moz-transition: all 0.5s ease-out;
   -ms-transition: all 0.5s ease-out;
@@ -6330,7 +6351,7 @@ div ~ :last-child .progress-layout2:before {
 }
 .profile-social li a:hover {
   border: 1px solid #4c1864;
-  background: #4c1864;
+  background: #111111e6;
   color: #ffffff;
 }
 @media only screen and (max-width: 575px) {
@@ -6861,7 +6882,7 @@ div ~ :last-child .progress-layout2:before {
   font-size: 10px;
 }
 .single-product-wrap .single-product-info .quantity li:first-child {
-  background: #4c1864;
+  background: #111111e6;
 }
 .single-product-wrap .single-product-info .quantity li:first-child a {
   color: #ffffff;
@@ -7625,7 +7646,7 @@ div ~ :last-child .progress-layout2:before {
   transition: all 0.5s ease-out;
 }
 .single-blog-wrapper .blog-comments ul li .comments-content .reply:hover a {
-  background: #4c1864;
+  background: #111111e6;
 }
 .single-blog-wrapper .blog-comments ul li:nth-child(even) {
   padding-left: 40px;
@@ -7746,10 +7767,10 @@ div ~ :last-child .progress-layout2:before {
   transition: all 0.5s ease-out;
 }
 .sidebar-widget-area .widget-search .stylish-input-group .input-group-addon:hover {
-  background: #4c1864;
+  background: #111111e6;
 }
 .sidebar-widget-area .widget-search .stylish-input-group .input-group-addon:hover button {
-  background: #4c1864;
+  background: #111111e6;
 }
 .sidebar-widget-area .widget-search .stylish-input-group .input-group-addon:hover button span {
   color: #ffffff;
@@ -7938,8 +7959,8 @@ div ~ :last-child .progress-layout2:before {
   transition: all 0.5s ease-out;
 }
 .sidebar-widget-area .widget-tag li:hover {
-  border: 1px solid #4c1864;
-  background: #4c1864;
+  border: 1px solid #111111e6;
+  background: #111111e6;
 }
 .sidebar-widget-area .widget-tag li:hover a {
   color: #ffffff;
@@ -8790,7 +8811,7 @@ div ~ :last-child .progress-layout2:before {
     left: -15px;
   }
   .nav-control-top .owl-controls .owl-prev:hover {
-    background: #4c1864;
+    background: #111111e6;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
@@ -8804,7 +8825,7 @@ div ~ :last-child .progress-layout2:before {
     right: -15px;
   }
   .nav-control-top .owl-controls .owl-next:hover {
-    background: #4c1864;
+    background: #111111e6;
     -webkit-transition: all 0.3s ease-out;
     -moz-transition: all 0.3s ease-out;
     -ms-transition: all 0.3s ease-out;
