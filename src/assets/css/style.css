@@ -7420,9 +7420,9 @@ div ~ :last-child .progress-layout2:before {
 }
 .blog-layout4 .entry-image .item-content {
   padding: 2.5rem 3rem 2rem;
-  border-right: 1px solid #c4c4c4;
+  /* border-right: 1px solid #c4c4c4;
   border-bottom: 1px solid #c4c4c4;
-  border-left: 1px solid #c4c4c4;
+  border-left: 1px solid #c4c4c4; */
 }
 .blog-layout4 .entry-image .item-content .title {
   margin-bottom: 10px;

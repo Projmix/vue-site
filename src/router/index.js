@@ -12,7 +12,7 @@ const router = createRouter({
     {
       path: '/event/:id',
       name: 'event',
-      component: () => import('../views/SinglEventView.vue')
+      component: () => import('../views/SingleEventView.vue')
     },
     // {
     //   path: '/events',
@@ -31,6 +31,11 @@ const router = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/PostView.vue')
+    },
+    {
+      path: '/sponsors',
+      name: 'sponsors',
+      component: () => import('../views/SponsorsView.vue')
     },
     {
       path: '/posts',

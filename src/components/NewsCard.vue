@@ -1,10 +1,10 @@
 <template>
-  <div class="blog-layout3 overlay-gradient">
-    <div class="image-wrapper" style="position: relative;">
+  <div class="blog-layout3 overlay-gradient news-aspect">
+    <div class="image-wrapper news-img-aspect">
       <img
         :src="post.image['1300x560'] || placeholderImage"
         :alt="post.title"
-        class="img-fluid width-100"
+        class="img-fluid news-img-crop"
         @error="onImgError"
       >
       <div class="item-date-wrap" style="position: absolute; top: 10px; left: 15px; z-index: 2;">
@@ -69,6 +69,29 @@
   position: relative;
   overflow: hidden;
 }
+
+.news-img-aspect {
+  aspect-ratio: 1.5/1;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #181818;
+}
+@supports not (aspect-ratio: 1.5/1) {
+  .news-img-aspect {
+    width: 100%;
+    padding-top: 66.6667%;
+    height: 0;
+    position: relative;
+  }
+}
+.news-img-crop {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .blog-layout3 img {
   -webkit-transform: scale(1);
   -moz-transform: scale(1);

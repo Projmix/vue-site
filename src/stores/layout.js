@@ -7,7 +7,7 @@ export const useLayoutStore = defineStore("layout", {
         layout: null,
         logo: `/src/assets/images/${window.location.hostname}/logo1.png`,
         logo2: `/src/assets/images/${window.location.hostname}/logo2.png`,
-        categoriesData: {}, // { kino: { events: [], loading: true, error: false, name: '' }, ... }
+        categoriesData: {}, // { kino: { events: [], loading: true, error: false, name: '' }, ... },
         categoriesToLoad: [
           { slug: 'kino', name: 'Кино' },
           { slug: 'theatre', name: 'Театр' },
@@ -19,52 +19,59 @@ export const useLayoutStore = defineStore("layout", {
           { slug: 'learn', name: 'Обучение' },
           { slug: 'circus', name: 'Цирк' },
           { slug: 'kvesty', name: 'Квесты' },
-        ]
+        ],
+        initialDataLoaded: false,
+        layoutFetchPromise: null,
     }),
     getters: {
-      getLayout(state){
-        return state.layout
+      getLayout(state) {
+        return state.layout;
       },
-      getBackground(state){
-        return state.background
+      getBackground(state) {
+        return state.background;
       },
-      getLogo(state){
-        return state.logo
+      getLogo(state) {
+        return state.logo;
       },
-      getLogo2(state){
-        return state.logo2
+      getLogo2(state) {
+        return state.logo2;
       },
       filteredCategoriesData(state) {
-        // Только категории с событиями
+        // Возвращаем ВСЕ категории (события могут быть пустыми)
         const filtered = {};
         Object.entries(state.categoriesData).forEach(([slug, cat]) => {
-          if (cat.events && cat.events.length > 0) {
-            filtered[slug] = cat;
-          }
+          filtered[slug] = cat;
         });
         return filtered;
       },
+      isInitialDataLoaded(state) {
+        return state.initialDataLoaded;
+      },
       getEventCategories(state) {
         if (state.layout && state.layout.someFieldContainingCategories) {
-            return state.layout.someFieldContainingCategories.map(cat => ({
-                slug: cat.slug,
-                name: cat.name
-            }));
+          return state.layout.someFieldContainingCategories.map(cat => ({
+            slug: cat.slug,
+            name: cat.name
+          }));
         }
         return [];
-      }
+      },
     },
     actions: {
       initCategoriesData() {
-        // Инициализация структуры
+        // Инициализация структуры только для отсутствующих
         this.categoriesToLoad.forEach(cat => {
-          this.categoriesData[cat.slug] = { events: [], loading: true, error: false, name: cat.name };
+          if (!this.categoriesData[cat.slug]) {
+            this.categoriesData[cat.slug] = { events: [], loading: true, error: false, name: cat.name };
+          }
         });
       },
       saveCategoriesToCache() {
-        localStorage.setItem('categoriesData', JSON.stringify(this.categoriesData));
-        localStorage.setItem('categoriesData_time', Date.now().toString());
-        console.log('[categoriesData: SAVED TO CACHE]', JSON.parse(JSON.stringify(this.categoriesData)));
+        if (Object.keys(this.categoriesData).length) {
+          localStorage.setItem('categoriesData', JSON.stringify(this.categoriesData));
+          localStorage.setItem('categoriesData_time', Date.now().toString());
+          console.log('[categoriesData: SAVED TO CACHE]', JSON.parse(JSON.stringify(this.categoriesData)));
+        }
       },
       loadCategoriesFromCache() {
         const cachedCategories = localStorage.getItem('categoriesData');
@@ -82,12 +89,15 @@ export const useLayoutStore = defineStore("layout", {
         return false;
       },
       async fetchCategoryEvents(category, axiosInstance, getCommonParams) {
+        if (!this.categoriesData[category.slug]) {
+          this.initCategoriesData();
+        }
         this.categoriesData[category.slug].loading = true;
         this.categoriesData[category.slug].error = false;
         try {
           const params = {
             ...getCommonParams(),
-            date: (window.moment ? window.moment() : Date.now()), // Можно заменить на moment().startOf('day').unix()
+            date: (window.moment ? window.moment().startOf('day').unix() : Math.floor(Date.now() / 1000)),
             ignoreEndTime: 0,
           };
           const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/${category.slug}`;
@@ -98,8 +108,15 @@ export const useLayoutStore = defineStore("layout", {
           if (response.data.data?.currentDate?.length) {
             events = events.concat(response.data.data.currentDate);
           }
+          if (response.data.data?.month?.length) {
+            response.data.data.month.forEach(monthData => {
+              if (monthData.performances?.length) {
+                events = events.concat(monthData.performances);
+              }
+            });
+          }
           const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-          this.categoriesData[category.slug].events = uniqueEvents.slice(0, 6);
+          this.categoriesData[category.slug].events = uniqueEvents.slice(0, 8);
           console.log('[fetchCategoryEvents] categoriesData:', JSON.parse(JSON.stringify(this.categoriesData)));
         } catch (error) {
           console.error(`Ошибка загрузки категории ${category.slug}:`, error);
@@ -109,28 +126,41 @@ export const useLayoutStore = defineStore("layout", {
           this.categoriesData[category.slug].loading = false;
         }
       },
-      fetchLayout() {
-        if (!this.layoutLoaded) { // Загружаем только один раз
-            this.layoutLoaded = new Promise(async (resolve, reject) => {
-                try {
-                    const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/layout`;
-                    const params = {
-                        lang: import.meta.env.VITE_API_LANG,
-                        jsonld: import.meta.env.VITE_API_JSONLD,
-                        onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-                        domain: import.meta.env.VITE_API_DOMAIN,
-                        distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-                    };
-                    const { data } = await axios.get(apiUrl, { params });
-                    this.layout = data;
-                    resolve(this.layout); // Разрешаем Promise после загрузки
-                } catch (error) {
-                    console.error("Ошибка загрузки Layout:", error);
-                    reject(error); // Отклоняем Promise при ошибке
-                }
-            });
+      async fetchLayout() {
+        if (this.layoutFetchPromise) {
+          return this.layoutFetchPromise;
         }
-        return this.layoutLoaded;
+        this.layoutFetchPromise = new Promise(async (resolve, reject) => {
+          const loadedFromCache = this.loadCategoriesFromCache();
+          try {
+            const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/layout`;
+            const params = {
+              lang: import.meta.env.VITE_API_LANG,
+              jsonld: import.meta.env.VITE_API_JSONLD,
+              onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+              domain: import.meta.env.VITE_API_DOMAIN,
+              distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
+            };
+            const { data } = await axios.get(apiUrl, { params });
+            this.layout = data;
+            if (!loadedFromCache) {
+              this.initCategoriesData();
+              const categoryFetchPromises = this.categoriesToLoad.map(cat =>
+                this.fetchCategoryEvents(cat, axios, () => params)
+              );
+              await Promise.all(categoryFetchPromises);
+              this.initialDataLoaded = true;
+              this.saveCategoriesToCache();
+            } else {
+              this.initialDataLoaded = true;
+            }
+            resolve(this.layout);
+          } catch (error) {
+            this.initialDataLoaded = true;
+            reject(error);
+          }
+        });
+        return this.layoutFetchPromise;
       },
 
       async loadScript(src) {
@@ -173,4 +203,4 @@ export const useLayoutStore = defineStore("layout", {
 
       }
     }
-})
+});
