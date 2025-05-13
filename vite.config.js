@@ -10,9 +10,9 @@ export default defineConfig({
     vue(),
     viteStaticCopy({
       targets: [
-        { src: 'src/assets/css/**/*', dest: 'assets/css' },
-        { src: 'src/assets/js/**/*', dest: 'assets/js' },
-        { src: 'src/assets/images/**/*', dest: 'assets/images' }      
+        { src: 'src/assets/css/**/*', dest: 'src/assets/css' },
+        { src: 'src/assets/js/**/*', dest: 'src/assets/js' },
+        { src: 'src/assets/images/**/*', dest: 'src/assets/images' }      
       ]
     })
   ],
