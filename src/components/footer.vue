@@ -64,9 +64,9 @@ onMounted(() => {
           <div class="row">
             <div class="col-lg-3">
               <div class="widget">
-                <a class="footer-widget-logo" href="index.html">
+                <router-link class="footer-widget-logo" :to="{ name: 'home' }">
                   <img class="img-fluid" :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
-                </a>
+                </router-link>
                 <!--
                
                 <div class="footer-widget-about">

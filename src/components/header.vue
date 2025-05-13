@@ -25,9 +25,9 @@ const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData
           <div class="row no-gutters d-flex align-items-center">
             <div class="col-lg-2 col-md-2 d-none d-lg-block">
               <div class="logo-area">
-                <a href="index.html">
-                  <img :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
-                </a>
+                <router-link :to="{ name: 'home' }">
+  <img :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
+</router-link>
               </div>
             </div>
             <div class="col-lg-7 col-md-6 possition-static">
@@ -35,7 +35,7 @@ const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData
                 <nav class="d-none d-lg-block">
                   <ul>
                     <li>
-                      <a href="home.html">Главная</a>
+                      <router-link :to="{ name: 'home' }">Главная</router-link>
                     </li>
                     <li>
                       <a href="#">Афиша</a>
@@ -64,7 +64,7 @@ const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData
                 <nav id="dropdown" class="d-md-none">
                   <ul>
                     <li>
-                      <a href="home.html">Главная</a>
+                      <router-link :to="{ name: 'home' }">Главная</router-link>
                     </li>
                     <li>
                       <a href="#">Афиша</a>
