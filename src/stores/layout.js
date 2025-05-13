@@ -7,6 +7,9 @@ export const useLayoutStore = defineStore("layout", {
         layout: null,
         logo: `/src/assets/images/${window.location.hostname}/logo1.png`,
         logo2: `/src/assets/images/${window.location.hostname}/logo2.png`,
+        companyInfo: null, // Данные объекта компании из API
+        companyInfoLoading: false,
+        companyInfoError: null,
         categoriesData: {}, // { kino: { events: [], loading: true, error: false, name: '' }, ... },
         categoriesToLoad: [
           { slug: 'kino', name: 'Кино' },
@@ -31,7 +34,20 @@ export const useLayoutStore = defineStore("layout", {
         return state.background;
       },
       getLogo(state) {
-        return state.logo;
+        // Если companyInfo загружен — используем его логотип
+        return state.companyInfo?.logoUrl?.original || state.logo;
+      },
+      getCompanyLogoUrl(state) {
+        return state.companyInfo?.logoUrl?.original || '';
+      },
+      getCompanyInfo(state) {
+        return state.companyInfo;
+      },
+      getCompanyInfoLoading(state) {
+        return state.companyInfoLoading;
+      },
+      getCompanyInfoError(state) {
+        return state.companyInfoError;
       },
       getLogo2(state) {
         return state.logo2;
@@ -58,6 +74,22 @@ export const useLayoutStore = defineStore("layout", {
       },
     },
     actions: {
+      async fetchCompanyInfo() {
+        this.companyInfoLoading = true;
+        this.companyInfoError = null;
+        try {
+          const companyId = import.meta.env.VITE_API_COMPANY_OBJECTS_ID;
+          if (!companyId) throw new Error('VITE_API_COMPANY_OBJECTS_ID is not set');
+          const apiUrl = import.meta.env.VITE_API_URL;
+          const response = await axios.get(`${apiUrl}/api/v3/pages/objects/${companyId}`);
+          this.companyInfo = response.data.object;
+        } catch (e) {
+          this.companyInfoError = e;
+          this.companyInfo = null;
+        } finally {
+          this.companyInfoLoading = false;
+        }
+      },
       initCategoriesData() {
         // Инициализация структуры только для отсутствующих
         this.categoriesToLoad.forEach(cat => {

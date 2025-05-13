@@ -1,30 +1,15 @@
-<script>
+<script setup>
 import { useLayoutStore } from "../stores/layout.js";
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
-export default {
-  name: "Header",
-  setup() {
-    const store = useLayoutStore();
-    const layout = computed(() => store.getLayout);
-    const logo = computed(() => store.getLogo);
-    const filteredCategoriesData = computed(() => store.filteredCategoriesData);
-    console.log('[header.vue] filteredCategoriesData', filteredCategoriesData.value);
-    return {
-      layout,
-      logo,
-      filteredCategoriesData
-    };
-  },
-  data() {
-    return {
-    };
-  },
-  methods: {
-  },
-  beforeMount() {
-  },
-};
+const layoutStore = useLayoutStore();
+onMounted(() => {
+  layoutStore.fetchCompanyInfo();
+});
+const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
+const layout = computed(() => layoutStore.getLayout);
+const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData);
+
 </script>
 
 <template>
@@ -41,7 +26,7 @@ export default {
             <div class="col-lg-2 col-md-2 d-none d-lg-block">
               <div class="logo-area">
                 <a href="index.html">
-                  <img src="../assets/images/logo.png" alt="logo">
+                  <img :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
                 </a>
               </div>
             </div>

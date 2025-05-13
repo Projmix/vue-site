@@ -1,79 +1,58 @@
-<script>
+<script setup>
 import { useLayoutStore } from "../stores/layout.js";
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
-export default {
-  name: "Header",
-  setup() {
-    const store = useLayoutStore();
-    const layout = computed(() => store.getLayout);
-    const background = computed(() => store.getBackground);
-    const logo = computed(() => store.getLogo);
-    return {
-      layout,
-      background,
-      logo
+const layoutStore = useLayoutStore();
+onMounted(() => {
+  layoutStore.fetchCompanyInfo();
+});
+const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
+const layout = computed(() => layoutStore.getLayout);
+const background = computed(() => layoutStore.getBackground);
+
+// Google Translate init (через onMounted, без this)
+onMounted(() => {
+  if (!window._googleTranslateScriptLoading) {
+    window._googleTranslateScriptLoading = true;
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    script.onerror = function() {
+      console.error('Google Translate script failed to load.');
     };
-  },
-  data() {
-    return {
-    };
-  },
-  methods: {
-  },
-  beforeMount() {
-    // Флаг, чтобы не загружать скрипт повторно
-    if (!window._googleTranslateScriptLoading) {
-      window._googleTranslateScriptLoading = true;
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.onerror = function() {
-        console.error('Google Translate script failed to load.');
-      };
-      document.head.appendChild(script);
+    document.head.appendChild(script);
+  }
+  window.googleTranslateElementInit = function () {
+    if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+      new window.google.translate.TranslateElement({
+        pageLanguage: 'ru',
+        includedLanguages: 'ar,en,es,fr,km,ru,sq,vi,zh-CN,be',
+        layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+        multilanguagePage: true,
+        gaTrack: true,
+      }, 'google_translate_element');
+    } else {
+      console.error('Google Translate API is not available.');
     }
-
-    // Инициализация Google Translate с проверкой
-    window.googleTranslateElementInit = function () {
-      if (window.google && window.google.translate && window.google.translate.TranslateElement) {
-        new window.google.translate.TranslateElement({
-          pageLanguage: 'ru',
-          includedLanguages: 'ar,en,es,fr,km,ru,sq,vi,zh-CN,be',
-          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-          multilanguagePage: true,
-          gaTrack: true,
-        }, 'google_translate_element');
-      } else {
-        console.error('Google Translate API is not available.');
-      }
-    };
-
-
-    // Функция удаления куки
-    const deleteCookie = (cookieName) => {
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=`;
-    };
-
-    // Обработчик кликов для меню перевода
-    this.$nextTick(() => {
-      document.querySelectorAll('.langsList a').forEach((element) => {
-        element.addEventListener('click', (event) => {
-          deleteCookie('googtrans');
-          if (event.target.textContent === 'РУС') {
-            setTimeout(() => {
-              window.location.href = window.location.origin + window.location.pathname + window.location.search;
-            }, 800);
-          } else {
-            setTimeout(() => {
-              window.location.reload();
-            }, 800);
-          }
-        });
+  };
+  // Обработчик кликов для меню перевода
+  setTimeout(() => {
+    document.querySelectorAll('.langsList a').forEach((element) => {
+      element.addEventListener('click', (event) => {
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=`;
+        if (event.target.textContent === 'РУС') {
+          setTimeout(() => {
+            window.location.href = window.location.origin + window.location.pathname + window.location.search;
+          }, 800);
+        } else {
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+        }
       });
     });
-  },
-};
+  }, 1000);
+});
 </script>
 
 <template>
@@ -86,7 +65,7 @@ export default {
             <div class="col-lg-3">
               <div class="widget">
                 <a class="footer-widget-logo" href="index.html">
-                  <img class="img-fluid" src="../assets/images/logo.png" alt="logo">
+                  <img class="img-fluid" :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
                 </a>
                 <!--
                

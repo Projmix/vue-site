@@ -104,7 +104,7 @@ export default {
           if (!dateB.isValid()) return -1;
           return dateB.valueOf() - dateA.valueOf();
         });
-        newsItems.value = posts.slice(0, 3);
+        newsItems.value = posts.slice(0, 6);
         newsItems.value = response.data.posts || [];
       } catch (error) {
         console.error("Ошибка загрузки новостей:", error);
