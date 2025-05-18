@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import apiService from './services/apiService'
 
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@/assets/css/normalize.css';
@@ -38,8 +39,12 @@ const app = createApp(App)
 
 app.component('VueDatePicker', VueDatePicker)
 
+// Регистрируем сервисы как глобальные свойства
 app.config.globalProperties.$axios = { ...axiosInstance }
+app.config.globalProperties.$api = apiService
 
+// Создаем глобальный provide для apiService
+app.provide('apiService', apiService)
 
 app.use(VueAwesomePaginate)
 app.use(createPinia())

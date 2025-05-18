@@ -9,6 +9,8 @@ onMounted(() => {
 const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
 const layout = computed(() => layoutStore.getLayout);
 const background = computed(() => layoutStore.getBackground);
+const footerLinks = computed(() => layoutStore.getSiteFooterLinks);
+const footerImages = computed(() => layoutStore.getSiteFooterImages);
 
 // Google Translate init (через onMounted, без this)
 onMounted(() => {
@@ -67,110 +69,21 @@ onMounted(() => {
                 <router-link class="footer-widget-logo" :to="{ name: 'home' }">
                   <img class="img-fluid" :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
                 </router-link>
-                <!--
-               
-                <div class="footer-widget-about">
-                  <p>Fummy text of the printing antypesetting industry. Lorem Ipsum heen the industry's
-                    standard dummy text ever since theype.</p>
-                </div>
-                <div class="footer-widget-contact">
-                  <a href="tel:+5647-345-2224">5647-345-2224</a>
-                </div>
-                <div class="footer-widget-social">
-                  <ul>
-                    <li>
-                      <a href="#" title="facebook">
-                        <i class="fa fa-facebook" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" title="twitter">
-                        <i class="fa fa-twitter" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" title="google-plus">
-                        <i class="fa fa-google-plus" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" title="linkedin">
-                        <i class="fa fa-linkedin" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" title="pinterest">
-                        <i class="fa fa-pinterest" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" title="rss">
-                        <i class="fa fa-rss" aria-hidden="true"></i>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              -->
               </div>
             </div>
-            <div class="col-lg-3">
+            <!-- Динамические ссылки футера из API -->
+            <div class="col-lg-3" v-for="(linkGroup, index) in footerLinks" :key="index">
               <div class="widget">
-                <h3 class="widgettitle">Раздел 1</h3>
-                <div class="footer-widget-menu">
+                <h3 class="widgettitle">{{ linkGroup.text }}</h3>
+                <div class="footer-widget-menu" v-if="linkGroup.children && linkGroup.children.length">
                   <ul>
-                    <li>
-                      <a href="#">Подраздел 1.1</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 1.2</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 1.3</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 1.4</a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-3">
-              <div class="widget">
-                <h3 class="widgettitle">Раздел 2</h3>
-                <div class="footer-widget-menu">
-                  <ul>
-                    <li>
-                      <a href="#">Подраздел 2.1</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 2.2</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 2.3</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 2.4</a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-3">
-              <div class="widget">
-                <h3 class="widgettitle">Раздел 3</h3>
-                <div class="footer-widget-menu">
-                  <ul>
-                    <li>
-                      <a href="#">Подраздел 3.1</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 3.2</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 3.3</a>
-                    </li>
-                    <li>
-                      <a href="#">Подраздел 3.4</a>
+                    <li v-for="(link, linkIdx) in linkGroup.children" :key="linkIdx">
+                      <router-link v-if="link.href.startsWith('/')" :to="link.href" :title="link.title">
+                        {{ link.text }}
+                      </router-link>
+                      <a v-else :href="link.href" :title="link.title" :target="link.target || '_self'">
+                        {{ link.text }}
+                      </a>
                     </li>
                   </ul>
                 </div>

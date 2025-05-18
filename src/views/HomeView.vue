@@ -324,31 +324,8 @@ export default {
           <template v-else-if="category.events.length">
             <div v-for="event in category.events.slice(0, 8)" :key="event.id"
               class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
-              <div class="speaker-layout3 event-card-fixed">
-                <router-link :to="`/event/${event.id}`">
-                  <img
-                    :src="event.image['300x430'] || event.image['240x340'] || require('@/assets/images/speaker/speaker1.png')"
-                    :alt="event.name" class="img-fluid">
-                </router-link>
-                <div class="item-title">
-                  <h3 class="title title-medium color-light hover-yellow size-md">
-                    <router-link :to="`/event/${event.id}`">{{ event.name }}</router-link>
-                  </h3>
-                  <div class="text-left title-light size-md color-light">{{ event.genre }}</div>
-                </div>
-                <div class="item-social">
-                  <ul>
-                    <li>
-                      <a href="#" title="twitter"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                    </li>
-                    <li>
-                      <a href="#" title="linkedin"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                    </li>
-                    <li>
-                      <a href="#" title="pinterest"><i class="fa fa-pinterest" aria-hidden="true"></i></a>
-                    </li>
-                  </ul>
-                </div>
+              <div @click="openEventDetail(event)">
+                <EventCard :event="event" />
               </div>
             </div>
           </template>

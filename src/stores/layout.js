@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import apiService from '../services/apiService';
 
-import axios from "axios"
 export const useLayoutStore = defineStore("layout", {
     state: () => ({
         layout: null,
@@ -11,18 +11,9 @@ export const useLayoutStore = defineStore("layout", {
         companyInfoLoading: false,
         companyInfoError: null,
         categoriesData: {}, // { kino: { events: [], loading: true, error: false, name: '' }, ... },
-        categoriesToLoad: [
-          { slug: 'kino', name: 'Кино' },
-          { slug: 'theatre', name: 'Театр' },
-          { slug: 'concert', name: 'Концерты' },
-          { slug: 'sport', name: 'Спорт' },
-          { slug: 'activ', name: 'Активный отдых' },
-          { slug: 'kids', name: 'Детям' },
-          { slug: 'vistavki', name: 'Выставки' },
-          { slug: 'learn', name: 'Обучение' },
-          { slug: 'circus', name: 'Цирк' },
-          { slug: 'kvesty', name: 'Квесты' },
-        ],
+        categories: [], // Список доступных категорий из API
+        categoriesLoading: false,
+        categoriesError: null,
         initialDataLoaded: false,
         layoutFetchPromise: null,
     }),
@@ -64,14 +55,17 @@ export const useLayoutStore = defineStore("layout", {
         return state.initialDataLoaded;
       },
       getEventCategories(state) {
-        if (state.layout && state.layout.someFieldContainingCategories) {
-          return state.layout.someFieldContainingCategories.map(cat => ({
-            slug: cat.slug,
-            name: cat.name
-          }));
-        }
-        return [];
+        return state.categories.filter(cat => cat.slug !== 'top');
       },
+      getSiteMenu(state) {
+        return state.layout?.site_menu || [];
+      },
+      getSiteFooterLinks(state) {
+        return state.layout?.site_footer_links || [];
+      },
+      getSiteFooterImages(state) {
+        return state.layout?.site_footer_images || [];
+      }
     },
     actions: {
       async fetchCompanyInfo() {
@@ -81,8 +75,9 @@ export const useLayoutStore = defineStore("layout", {
           const companyId = import.meta.env.VITE_API_COMPANY_OBJECTS_ID;
           if (!companyId) throw new Error('VITE_API_COMPANY_OBJECTS_ID is not set');
           const apiUrl = import.meta.env.VITE_API_URL;
-          const response = await axios.get(`${apiUrl}/api/v3/pages/objects/${companyId}`);
-          this.companyInfo = response.data.object;
+          const response = await fetch(`${apiUrl}/api/v3/pages/objects/${companyId}?${new URLSearchParams(apiService.getCommonParams())}`);
+          const data = await response.json();
+          this.companyInfo = data.object;
         } catch (e) {
           this.companyInfoError = e;
           this.companyInfo = null;
@@ -90,11 +85,34 @@ export const useLayoutStore = defineStore("layout", {
           this.companyInfoLoading = false;
         }
       },
+      async fetchCategories() {
+        this.categoriesLoading = true;
+        this.categoriesError = null;
+        try {
+          this.categories = await apiService.getEventCategories();
+          console.log('[fetchCategories] Получены категории:', this.categories);
+          return this.categories;
+        } catch (e) {
+          this.categoriesError = e;
+          this.categories = [];
+          console.error('[fetchCategories] Ошибка:', e);
+          return [];
+        } finally {
+          this.categoriesLoading = false;
+        }
+      },
       initCategoriesData() {
         // Инициализация структуры только для отсутствующих
-        this.categoriesToLoad.forEach(cat => {
+        // Используем категории из API вместо хардкода
+        this.categories.filter(cat => cat.slug !== 'top').forEach(cat => {
           if (!this.categoriesData[cat.slug]) {
-            this.categoriesData[cat.slug] = { events: [], loading: true, error: false, name: cat.name };
+            this.categoriesData[cat.slug] = { 
+              events: [], 
+              loading: true, 
+              error: false, 
+              name: cat.name,
+              id: cat.id
+            };
           }
         });
       },
@@ -120,35 +138,17 @@ export const useLayoutStore = defineStore("layout", {
         }
         return false;
       },
-      async fetchCategoryEvents(category, axiosInstance, getCommonParams) {
+      async fetchCategoryEvents(category) {
         if (!this.categoriesData[category.slug]) {
           this.initCategoriesData();
         }
         this.categoriesData[category.slug].loading = true;
         this.categoriesData[category.slug].error = false;
+        
         try {
-          const params = {
-            ...getCommonParams(),
-            date: (window.moment ? window.moment().startOf('day').unix() : Math.floor(Date.now() / 1000)),
-            ignoreEndTime: 0,
-          };
-          const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/${category.slug}`;
-          console.log('[fetchCategoryEvents] Запрос:', apiUrl, params);
-          const response = await axiosInstance.get(apiUrl, { params });
-          console.log('[fetchCategoryEvents] Ответ:', response.data);
-          let events = [];
-          if (response.data.data?.currentDate?.length) {
-            events = events.concat(response.data.data.currentDate);
-          }
-          if (response.data.data?.month?.length) {
-            response.data.data.month.forEach(monthData => {
-              if (monthData.performances?.length) {
-                events = events.concat(monthData.performances);
-              }
-            });
-          }
-          const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-          this.categoriesData[category.slug].events = uniqueEvents.slice(0, 8);
+          const result = await apiService.getCategoryEvents(category.slug);
+          // Берем только первые 8 событий для главной страницы
+          this.categoriesData[category.slug].events = result.events.slice(0, 8);
           console.log('[fetchCategoryEvents] categoriesData:', JSON.parse(JSON.stringify(this.categoriesData)));
         } catch (error) {
           console.error(`Ошибка загрузки категории ${category.slug}:`, error);
@@ -162,36 +162,39 @@ export const useLayoutStore = defineStore("layout", {
         if (this.layoutFetchPromise) {
           return this.layoutFetchPromise;
         }
+        
         this.layoutFetchPromise = new Promise(async (resolve, reject) => {
-          const loadedFromCache = this.loadCategoriesFromCache();
           try {
-            const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/layout`;
-            const params = {
-              lang: import.meta.env.VITE_API_LANG,
-              jsonld: import.meta.env.VITE_API_JSONLD,
-              onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-              domain: import.meta.env.VITE_API_DOMAIN,
-              distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-            };
-            const { data } = await axios.get(apiUrl, { params });
-            this.layout = data;
+            // 1. Сначала загружаем layout для получения меню и footer
+            this.layout = await apiService.getLayout();
+            
+            // 2. Затем загружаем категории с API
+            await this.fetchCategories();
+            
+            // 3. Затем пробуем загрузить из кеша или заново
+            const loadedFromCache = this.loadCategoriesFromCache();
+            
             if (!loadedFromCache) {
               this.initCategoriesData();
-              const categoryFetchPromises = this.categoriesToLoad.map(cat =>
-                this.fetchCategoryEvents(cat, axios, () => params)
-              );
+              
+              // Загружаем события для каждой категории
+              const categoryFetchPromises = this.categories
+                .filter(cat => cat.slug !== 'top')
+                .map(cat => this.fetchCategoryEvents(cat));
+              
               await Promise.all(categoryFetchPromises);
-              this.initialDataLoaded = true;
               this.saveCategoriesToCache();
-            } else {
-              this.initialDataLoaded = true;
             }
+            
+            this.initialDataLoaded = true;
             resolve(this.layout);
           } catch (error) {
+            console.error('[fetchLayout] Ошибка:', error);
             this.initialDataLoaded = true;
             reject(error);
           }
         });
+        
         return this.layoutFetchPromise;
       },
 
@@ -217,22 +220,12 @@ export const useLayoutStore = defineStore("layout", {
           .then(() => { console.log('Загружен: home.js'); return this.loadScript('/src/assets/js/jquery.meanmenu.min.js'); })
           .then(() => { console.log('Загружен: jquery.meanmenu.min.js'); return this.loadScript('/src/assets/js/jquery.scrollUp.min.js'); })
           .then(() => { console.log('Загружен: jquery.scrollUp.min.js'); 
-          // return this.loadScript('/src/assets/js/jquery.counterup.min.js'); })
-          // .then(() => { console.log('Загружен: jquery.counterup.min.js');
-          // return this.loadScript('/src/assets/js/waypoints.min.js'); })
-          // .then(() => { console.log('Загружен: waypoints.min.js');
           return this.loadScript('/src/assets/js/jquery.countdown.min.js'); })
           .then(() => { console.log('Загружен: jquery.countdown.min.js'); 
-          //   return this.loadScript('/src/assets/js/isotope.pkgd.min.js'); })
-          // .then(() => { console.log('Загружен: isotope.pkgd.min.js'); 
-          // return this.loadScript('/src/assets/js/jquery.magnific-popup.min.js'); })
-          // .then(() => { console.log('Загружен: jquery.magnific-popup.min.js'); 
           return this.loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyBtmXSwv4YmAKtcZyyad9W7D4AC08z0Rb4'); })
           .then(() => { console.log('Загружен: maps.googleapis.com'); return this.loadScript('/src/assets/js/main.js'); })
           .then(() => { console.log('Загружен: main.js'); })
           .catch(error => console.error('Ошибка загрузки скриптов', error));
-          
-
       }
     }
 });

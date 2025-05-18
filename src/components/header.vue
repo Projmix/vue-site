@@ -9,6 +9,8 @@ onMounted(() => {
 const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
 const layout = computed(() => layoutStore.getLayout);
 const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData);
+const eventCategories = computed(() => layoutStore.getEventCategories);
+const siteMenu = computed(() => layoutStore.getSiteMenu);
 
 </script>
 
@@ -34,55 +36,48 @@ const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData
               <div class="eventalk-main-menu">
                 <nav class="d-none d-lg-block">
                   <ul>
-                    <li>
-                      <router-link :to="{ name: 'home' }">Главная</router-link>
-                    </li>
-                    <li>
-                      <a href="#">Афиша</a>
-                      <ul v-if="filteredCategoriesData && Object.keys(filteredCategoriesData).length"
+                    <!-- Динамическое меню из API -->
+                    <li v-for="item in siteMenu" :key="item.href">
+                      <router-link v-if="item.href.startsWith('/')" :to="item.href" :title="item.title">
+                        {{ item.text }}
+                      </router-link>
+                      <a v-else :href="item.href" :title="item.title" :target="item.target">
+                        {{ item.text }}
+                      </a>
+                      
+                      <!-- Специальная обработка для пункта "Афиша" - показываем выпадающий список категорий -->
+                      <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
                         class="rt-dropdown-menu">
-                        <li v-for="(cat, slug) in filteredCategoriesData" :key="slug">
-                          <router-link :to="{ name: 'events-category', params: { category: slug } }">
+                        <li v-for="cat in eventCategories" :key="cat.slug">
+                          <router-link :to="{ name: 'events-category', params: { category: cat.slug } }">
                             {{ cat.name }}
                           </router-link>
                         </li>
                       </ul>
-                    </li>
-                    <li>
-                      <router-link :to="{ name: 'posts' }">
-                        Новости
-                      </router-link>
-                    </li>
-                    <li>
-                      <router-link :to="{ name: 'sponsors' }">
-                        О нас
-                      </router-link>
                     </li>
                   </ul>
                 </nav>
                 <!-- Mobile Menu start -->
                 <nav id="dropdown" class="d-md-none">
                   <ul>
-                    <li>
-                      <router-link :to="{ name: 'home' }">Главная</router-link>
-                    </li>
-                    <li>
-                      <a href="#">Афиша</a>
-                      <ul class="rt-dropdown-menu">
-                        <li v-for="(cat, slug) in filteredCategoriesData" :key="slug">
-                          <router-link :to="{ name: 'events-category', params: { category: slug } }">
+                    <!-- Динамическое меню для мобильных из API -->
+                    <li v-for="item in siteMenu" :key="item.href">
+                      <router-link v-if="item.href.startsWith('/')" :to="item.href" :title="item.title">
+                        {{ item.text }}
+                      </router-link>
+                      <a v-else :href="item.href" :title="item.title" :target="item.target">
+                        {{ item.text }}
+                      </a>
+                      
+                      <!-- Специальная обработка для пункта "Афиша" - показываем выпадающий список категорий -->
+                      <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
+                        class="rt-dropdown-menu">
+                        <li v-for="cat in eventCategories" :key="cat.slug">
+                          <router-link :to="{ name: 'events-category', params: { category: cat.slug } }">
                             {{ cat.name }}
                           </router-link>
                         </li>
                       </ul>
-                    </li>
-                    <li>
-                      <a href="news.html">Новости</a>
-                    </li>
-                    <li>
-                      <router-link :to="{ name: 'sponsors' }">
-                        О нас
-                      </router-link>
                     </li>
                   </ul>
                 </nav>
