@@ -23,7 +23,7 @@ export default {
     EventCard,
     NewsCard,
   },
-  setup() {
+  setup(props) {
     // Флаг для отслеживания инициализации Nivo Slider
     let nivoInitialized = false;
     const layoutStore = useLayoutStore();
@@ -86,12 +86,58 @@ export default {
     // Загрузка только новостей, категории — через layoutStore
     const loadAllData = async () => {
       generalLoading.value = true;
-      await fetchNews();
-      generalLoading.value = false;
+      
+      try {
+        // Wait for the layout to be loaded from props.layoutLoaded first
+        await props.layoutLoaded;
+        
+        // Ensure categories are loaded
+        if (!layoutStore.categories || layoutStore.categories.length === 0) {
+          console.log('[HomeView] No categories found, fetching them');
+          await layoutStore.fetchCategories();
+        }
+        
+        // Initialize categories data structure
+        layoutStore.initCategoriesData();
+        
+        // Try to load from cache first
+        const fromCache = layoutStore.loadCategoriesFromCache();
+        
+        // If cache loading failed, fetch each category
+        if (!fromCache) {
+          console.log('[HomeView] Categories not in cache, fetching them');
+          const fetchPromises = [];
+          
+          // Make sure we have categories before trying to load them
+          if (layoutStore.categories && layoutStore.categories.length > 0) {
+            for (const cat of layoutStore.categories.filter(cat => cat.slug !== 'top')) {
+              fetchPromises.push(layoutStore.fetchCategoryEvents(cat));
+            }
+            
+            // Wait for all category event fetches to complete
+            await Promise.all(fetchPromises);
+            
+            // Save to cache for future visits
+            layoutStore.saveCategoriesToCache();
+          }
+        }
+        
+        // Finally, load news posts
+        await fetchNews();
+        
+      } catch (error) {
+        console.error('[HomeView] Error loading data:', error);
+      } finally {
+        generalLoading.value = false;
+      }
     };
 
 
     onMounted(() => {
+      // Load all data (categories and news)
+      loadAllData();
+      
+      // Setup UI components after a small delay
       nextTick(() => {
         setTimeout(() => {
           if (window.$ && typeof window.$.fn.nivoSlider === 'function') {
@@ -112,32 +158,22 @@ export default {
             });
             nivoInitialized = true;
           }
+          
+          // Инициализация jQuery-плагинов
+          if (window.$ && typeof window.$.fn.meanmenu === 'function') {
+            $('nav#dropdown').meanmenu({
+              siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
+            });
+          }
+          if (window.$ && typeof window.$.scrollUp === 'function') {
+            $.scrollUp({
+              scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
+              easingType: 'linear',
+              scrollSpeed: 900,
+            });
+          }
         }, 200); // задержка чтобы DOM точно был готов
       });
-      // --- Инициализация и загрузка категорий через Pinia store ---
-      layoutStore.initCategoriesData();
-      const fromCache = layoutStore.loadCategoriesFromCache();
-      if (!fromCache) {
-        layoutStore.categoriesToLoad.forEach(cat => {
-          layoutStore.fetchCategoryEvents(cat, axios, () => ({}));
-        });
-      }
-      // ---
-      // Загрузка новостей
-      loadAllData();
-      // Инициализация jQuery-плагинов
-      if (window.$ && typeof window.$.fn.meanmenu === 'function') {
-        $('nav#dropdown').meanmenu({
-          siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
-        });
-      }
-      if (window.$ && typeof window.$.scrollUp === 'function') {
-        $.scrollUp({
-          scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
-          easingType: 'linear',
-          scrollSpeed: 900,
-        });
-      }
     });
 
     onBeforeUnmount(() => {
