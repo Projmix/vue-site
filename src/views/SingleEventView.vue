@@ -30,7 +30,6 @@
       <div class="container mt-4" v-if="!loading && !error">
         <div class="row">
           <div class="col-12">
-            <h3 class="title-medium mb-3">Доступные даты:</h3>
             <div class="profile-event-list row">
               <div class="col-lg-4 col-md-6 col-sm-12" v-for="(date, idx) in calendarDates" :key="idx">
                 <div class="profile-event">
@@ -45,10 +44,10 @@
                     </div>
                   </div>
                   <div v-else class="text-center my-2">
-                    <button class="btn-fill size-xs border-radius-5" 
-                            @click="loadSessions(date)" 
+                    <button class="btn-fill size-xs color-yellow border-radius-5" 
+                            @click="buyTicketForDate(date)" 
                             :disabled="date.loading">
-                      {{ date.loading ? 'Загрузка...' : 'Показать сеансы' }}
+                      {{ date.loading ? 'Загрузка...' : 'Купить' }}
                     </button>
                   </div>
                 </div>
@@ -66,12 +65,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import headerSection from '../components/header.vue';
 import footerSection from '../components/footer.vue';
-import axios from 'axios';
 import moment from 'moment';
 
 const route = useRoute();
@@ -82,6 +80,9 @@ const eventName = ref('');
 const eventDescription = ref('');
 const eventImage = ref('');
 const calendarDates = ref([]);
+
+// Inject apiService
+const apiService = inject('apiService');
 
 function formatDate(dateStr) {
   return moment(dateStr).format('DD MMMM YYYY');
@@ -97,43 +98,18 @@ function formatPrice(price) {
 }
 
 async function loadSessions(date) {
-  // Установка флага загрузки для конкретной даты
+  if (date.sessions && date.sessions.length) {
+    // Sessions already loaded, no need to reload
+    return;
+  }
+  
   date.loading = true;
   
   try {
-    const timestamp = moment(date.date).unix();
-    const params = {
-      lang: import.meta.env.VITE_API_LANG,
-      jsonld: import.meta.env.VITE_API_JSONLD,
-      time: timestamp,
-      cityId: import.meta.env.VITE_API_CITY_ID,
-    };
-    
-    const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/api/v2/schedule/events/${eventId}`, 
-      { params }
-    );
-    
-    console.log('[loadSessions] response:', response.data);
-    
-    // Собираем все сессии из всех объектов
-    const sessions = [];
-    if (response.data.objects && Array.isArray(response.data.objects)) {
-      response.data.objects.forEach(obj => {
-        if (obj.sessions && Array.isArray(obj.sessions)) {
-          // Добавляем информацию об объекте к каждой сессии
-          const objSessions = obj.sessions.map(session => ({
-            ...session,
-            objectName: obj.name,
-            objectAddress: obj.address
-          }));
-          sessions.push(...objSessions);
-        }
-      });
-    }
-    
-    // Сортируем по времени
-    date.sessions = sessions.sort((a, b) => a.timeSpending - b.timeSpending);
+    // Use apiService instead of direct axios call
+    const sessions = await apiService.getEventSessions(eventId, date.date);
+    date.sessions = sessions;
+    console.log('[loadSessions] Loaded sessions:', sessions);
   } catch (e) {
     console.error('[loadSessions] Ошибка загрузки сеансов:', e);
     date.error = 'Не удалось загрузить сеансы';
@@ -144,11 +120,33 @@ async function loadSessions(date) {
 }
 
 function openBuyTicketPage(sessionId) {
-  // Создаем URL для покупки билетов согласно стандарту API
-  const ticketUrl = `https://saleframe.24afisha.by/?lang=${import.meta.env.VITE_API_LANG}&sid=${sessionId}&distributor_company_id=${import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID}`;
-  
-  // Открываем в новой вкладке
+  // Use apiService to generate the ticket URL
+  const ticketUrl = apiService.getTicketUrl(sessionId);
   window.open(ticketUrl, '_blank');
+}
+
+// We can directly buy a ticket for the first session if date clicked
+async function buyTicketForDate(date) {
+  if (date.sessions && date.sessions.length > 0) {
+    // If sessions already loaded, use the first session
+    openBuyTicketPage(date.sessions[0].id);
+  } else {
+    // If sessions not loaded yet, load them first
+    date.loading = true;
+    try {
+      const sessions = await apiService.getEventSessions(eventId, date.date);
+      date.sessions = sessions;
+      if (sessions.length > 0) {
+        openBuyTicketPage(sessions[0].id);
+      } else {
+        console.error('[buyTicketForDate] No sessions available');
+      }
+    } catch (e) {
+      console.error('[buyTicketForDate] Error:', e);
+    } finally {
+      date.loading = false;
+    }
+  }
 }
 
 async function fetchEventData() {
@@ -156,26 +154,10 @@ async function fetchEventData() {
   error.value = '';
   
   try {
-    // Формируем параметры запроса согласно стандарту API
-    const params = {
-      lang: import.meta.env.VITE_API_LANG,
-      jsonld: import.meta.env.VITE_API_JSONLD,
-      time: Math.floor(Date.now() / 1000),
-      cityId: import.meta.env.VITE_API_CITY_ID,
-      onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-      domain: import.meta.env.VITE_API_DOMAIN,
-      distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID
-    };
+    // Use apiService instead of direct axios call
+    const event = await apiService.getEventDetails(eventId);
     
-    console.log('[SingleEventView] Запрос деталей события:', eventId, params);
-    
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v3/arena/events/${eventId}`, { params });
-    console.log('[SingleEventView] API response:', response.data);
-    
-    // Обрабатываем ответ согласно стандарту API
-    const event = response.data;
-    
-    // Устанавливаем основные поля события
+    // Set basic event details
     eventName.value = event.name || event.performance?.name || 'Событие без названия';
     eventDescription.value = 
       event.description || 
@@ -184,7 +166,7 @@ async function fetchEventData() {
       event.performance?.shortDescription || 
       'Описание отсутствует';
       
-    // Устанавливаем изображение согласно стандарту API
+    // Set event image
     eventImage.value = 
       event.image?.['300x430'] || 
       event.performance?.image?.['300x430'] || 
@@ -192,21 +174,20 @@ async function fetchEventData() {
       event.performance?.image?.original || 
       '/src/assets/images/speaker/speaker1.png';
     
-    // Обрабатываем даты календаря
+    // Process calendar dates
     if (event.calendar && Array.isArray(event.calendar)) {
-      // Фильтрация - только будущие даты
       const now = moment().startOf('day');
       calendarDates.value = event.calendar
         .filter(dateObj => moment(dateObj.date).isSameOrAfter(now))
         .map(dateObj => ({
           ...dateObj,
-          sessions: [], // Будет заполнено при клике на кнопку "Показать сеансы"
+          sessions: [], // Will be populated on demand
           loading: false,
           error: null
         }));
     }
     
-    // Установка SEO данных
+    // Set SEO data
     useHead({
       title: `${eventName.value} | Афиша событий`,
       meta: [
@@ -215,7 +196,7 @@ async function fetchEventData() {
     });
     
   } catch (e) {
-    console.error('[SingleEventView] Ошибка загрузки события:', e);
+    console.error('[fetchEventData] Ошибка загрузки события:', e);
     error.value = 'Не удалось загрузить информацию о событии';
     eventName.value = 'Событие не найдено';
     eventDescription.value = '';

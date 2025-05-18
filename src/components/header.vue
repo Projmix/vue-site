@@ -49,7 +49,7 @@ const siteMenu = computed(() => layoutStore.getSiteMenu);
                       <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
                         class="rt-dropdown-menu">
                         <li v-for="cat in eventCategories" :key="cat.slug">
-                          <router-link :to="{ name: 'events-category', params: { category: cat.slug } }">
+                          <router-link :to="`/afisha/${cat.slug}`">
                             {{ cat.name }}
                           </router-link>
                         </li>
@@ -73,7 +73,7 @@ const siteMenu = computed(() => layoutStore.getSiteMenu);
                       <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
                         class="rt-dropdown-menu">
                         <li v-for="cat in eventCategories" :key="cat.slug">
-                          <router-link :to="{ name: 'events-category', params: { category: cat.slug } }">
+                          <router-link :to="`/afisha/${cat.slug}`">
                             {{ cat.name }}
                           </router-link>
                         </li>

@@ -304,7 +304,7 @@ export default {
       <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
         <div class="section-heading title-black color-dark all-category text-left">
             <h2>{{ category.name }}</h2>
-            <router-link :to="{ name: 'events-category', params: { category: slug } }"
+            <router-link :to="`/afisha/${slug}`"
               class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
               Все события
             </router-link>

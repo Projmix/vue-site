@@ -7,7 +7,6 @@ import { useLayoutStore } from "../stores/layout.js";
 import { useHead } from '@vueuse/head';
 import moment from 'moment';
 import ru from 'moment/locale/ru';
-import axios from 'axios';
 import EventCard from '../components/EventCard.vue';
 
 export default {
@@ -18,7 +17,7 @@ export default {
     EventCard,
   },
   props: {
-      layoutLoaded: Promise // Пропс из App.vue
+    layoutLoaded: Promise // Пропс из App.vue
   },
   setup(props) {
     const layoutStore = useLayoutStore();
@@ -27,6 +26,7 @@ export default {
     const logo2 = computed(() => layoutStore.getLogo2);
 
     const route = useRoute(); 
+    const apiService = inject('apiService');
 
     const loading = ref(true);
     const moreLoading = ref(false);
@@ -34,93 +34,29 @@ export default {
     const categoryInfo = ref(null);
     const allEvents = ref([]);
     const errorMsg = ref('');
-    const displayCount = ref(12); // Начальное количество
-    const loadStep = 12; // Сколько подгружать за раз
-
-    // Получение общих параметров запросов API
-    const getCommonParams = () => ({
-      lang: import.meta.env.VITE_API_LANG,
-      jsonld: import.meta.env.VITE_API_JSONLD,
-      cityId: import.meta.env.VITE_API_CITY_ID,
-      onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-      domain: import.meta.env.VITE_API_DOMAIN,
-      distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-    });
+    const displayCount = ref(6); // Начальное количество
+    const loadStep = ref(6); // Сколько подгружать за раз
 
     const fetchCategoryEvents = async () => {
-      console.log('[fetchCategoryEvents] categorySlug:', categorySlug.value);
+      console.log('[EventsView] Загрузка категории:', categorySlug.value);
       loading.value = true;
       allEvents.value = [];
       categoryInfo.value = null;
-      displayCount.value = 12; // Сброс при загрузке новой категории
+      displayCount.value = 6; // Сброс при загрузке новой категории
       errorMsg.value = '';
       
       try {
-        // Используем параметры API в соответствии с документацией
-        const params = {
-          ...getCommonParams(),
-          date: Math.floor(Date.now() / 1000), // текущий timestamp
-          ignoreEndTime: 1, // по документации
-          objectsIds: 0, // по документации
-        };
+        // Используем apiService вместо прямых вызовов axios
+        const result = await apiService.getCategoryEvents(categorySlug.value);
         
-        const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/mobile/afisha/${categorySlug.value}`;
-        const response = await axios.get(apiUrl, { params });
-        console.log('[fetchCategoryEvents] API response:', response.data);
-
-        categoryInfo.value = response.data.type || {
+        allEvents.value = result.events;
+        categoryInfo.value = result.categoryInfo || {
           name: `Категория "${categorySlug.value}"`,
           slug: categorySlug.value
         };
-
-        // Собираем события из всех секций, согласно API
-        let events = [];
         
-        // Приоритетно берем данные из month.performances как указано в API
-        if (response.data.data?.month?.length) {
-          response.data.data.month.forEach(monthData => {
-            if (monthData.performances?.length) {
-              events = events.concat(monthData.performances);
-            }
-          });
-        }
-        
-        // Также добавляем события из currentDate, если они есть
-        if (response.data.data?.currentDate?.length) {
-          events = events.concat(response.data.data.currentDate);
-        }
-        
-        // Также добавляем события из weekend и soon, если они есть
-        if (response.data.data?.weekend?.length) {
-          response.data.data.weekend.forEach(dayData => {
-            if (dayData.performances?.length) {
-              events = events.concat(dayData.performances);
-            }
-          });
-        }
-        
-        if (response.data.data?.soon?.length) {
-          response.data.data.soon.forEach(monthData => {
-            if (monthData.performances?.length) {
-              events = events.concat(monthData.performances);
-            }
-          });
-        }
-        
-        // Удаляем дубликаты по ID
-        const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-        
-        // Сортируем события по дате начала
-        const sortedEvents = uniqueEvents.sort((a, b) => {
-          // Если нет timestamp, размещаем в конце
-          if (!a.start_timestamp && !b.start_timestamp) return 0;
-          if (!a.start_timestamp) return 1;
-          if (!b.start_timestamp) return -1;
-          return a.start_timestamp - b.start_timestamp;
-        });
-        
-        allEvents.value = sortedEvents;
-        console.log('[fetchCategoryEvents] allEvents.value:', allEvents.value);
+        console.log('[EventsView] Загружено событий:', allEvents.value.length);
+        console.log('[EventsView] Категория:', categoryInfo.value);
 
         // Устанавливаем SEO заголовок и описание
         useHead({
@@ -133,10 +69,10 @@ export default {
           ]
         });
       } catch (error) {
-        console.error(`Ошибка загрузки категории ${categorySlug.value}:`, error);
+        console.error(`[EventsView] Ошибка загрузки категории ${categorySlug.value}:`, error);
         categoryInfo.value = { name: `Категория "${categorySlug.value}" не найдена` };
         allEvents.value = [];
-        errorMsg.value = `Ошибка загрузки: ${error.response?.status || ''} ${error.response?.statusText || ''} ${error.message}`;
+        errorMsg.value = `Ошибка загрузки: ${error.message}`;
       } finally {
         loading.value = false;
       }
@@ -145,7 +81,7 @@ export default {
     const loadMoreEvents = () => {
       moreLoading.value = true;
       setTimeout(() => {
-        displayCount.value += loadStep;
+        displayCount.value += loadStep.value;
         moreLoading.value = false;
       }, 300); // Небольшая задержка для UX
     };
@@ -158,7 +94,7 @@ export default {
       return displayCount.value < allEvents.value.length;
     });
 
-    // Следим за изменением параметра роута
+    // Следим за изменением параметра роута и подстраиваемся под новый формат /afisha/:category
     watch(() => route.params.category, (newSlug) => {
       if (newSlug && newSlug !== categorySlug.value) {
         categorySlug.value = newSlug;
@@ -166,15 +102,15 @@ export default {
       }
     });
 
-     onMounted(() => {
-        // Убедимся, что layout загружен перед запросом событий
-        props.layoutLoaded.then(() => {
-            fetchCategoryEvents();
-        }).catch(error => {
-            console.error("Ошибка ожидания layoutLoaded:", error);
-            fetchCategoryEvents(); // Пытаемся загрузить в любом случае
-        });
-     });
+    onMounted(() => {
+      // Убедимся, что layout загружен перед запросом событий
+      props.layoutLoaded.then(() => {
+        fetchCategoryEvents();
+      }).catch(error => {
+        console.error("[EventsView] Ошибка ожидания layoutLoaded:", error);
+        fetchCategoryEvents(); // Пытаемся загрузить в любом случае
+      });
+    });
 
     return {
       background,
@@ -208,23 +144,6 @@ export default {
 
       <!-- Banner -->
        <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="breadcrumbs-area">
-                                <h1 v-if="categoryInfo">{{ categoryInfo.name || categoryInfo.itemsName || 'Категория' }}</h1>
-                                <h1 v-else-if="loading">Загрузка...</h1>
-                                <h1 v-else>Категория</h1>
-                                <ul>
-                                    <li>
-                                        <router-link to="/">Главная</router-link>
-                                    </li>
-                                    <li>{{ categoryInfo?.name || 'События' }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
       </section>
 
       <!-- Events List -->
