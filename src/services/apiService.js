@@ -133,7 +133,7 @@ class ApiService {
    * Получение сеансов для события на определенную дату
    * @param {Number|String} eventId - ID события
    * @param {String} date - Дата в формате YYYY-MM-DD
-   * @returns {Promise} Промис с результатом запроса
+   * @returns {Promise} Промис с результатом запроса, содержащий все данные ответа API
    */
   async getEventSessions(eventId, date) {
     try {
@@ -145,25 +145,11 @@ class ApiService {
         time: timestamp,
       };
       
+      console.log(`[apiService] Requesting sessions for event ${eventId} on ${date} (timestamp: ${timestamp})`);
       const response = await this.axiosInstance.get(`/api/v2/schedule/events/${eventId}`, { params });
       
-      // Собираем сессии из всех объектов
-      const sessions = [];
-      if (response.data.objects && Array.isArray(response.data.objects)) {
-        response.data.objects.forEach(obj => {
-          if (obj.sessions && Array.isArray(obj.sessions)) {
-            const objSessions = obj.sessions.map(session => ({
-              ...session,
-              objectName: obj.name,
-              objectAddress: obj.address
-            }));
-            sessions.push(...objSessions);
-          }
-        });
-      }
-      
-      // Сортируем по времени
-      return sessions.sort((a, b) => a.timeSpending - b.timeSpending);
+      // Return the whole response structure to process in component
+      return response.data;
     } catch (error) {
       console.error(`API error: getEventSessions for ${eventId} on ${date}`, error);
       throw error;

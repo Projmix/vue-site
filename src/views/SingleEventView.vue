@@ -136,21 +136,31 @@ async function loadSessions(date) {
   venuesList.value = [];
   
   try {
-    const eventDataWithSessions = await apiService.getEventSessions(eventId, date);
+    const response = await apiService.getEventSessions(eventId, date);
     
-    if (eventDataWithSessions.objects && Array.isArray(eventDataWithSessions.objects)) {
-      // Transform data to venue list with sessions
-      venuesList.value = eventDataWithSessions.objects.map(obj => {
-        // Sort sessions by time
-        const sortedSessions = obj.sessions ? [...obj.sessions].sort((a, b) => a.timeSpending - b.timeSpending) : [];
-        
-        return {
-          id: obj.id,
-          name: obj.name,
-          address: obj.address,
-          sessions: sortedSessions
-        };
-      }).filter(venue => venue.sessions && venue.sessions.length > 0);
+    console.log('[loadSessions] Raw API response:', response);
+    
+    // Check if the response has the expected data structure
+    if (response.data && Array.isArray(response.data) && response.data[0] && response.data[0].objects) {
+      // Access the objects inside the first item in data array
+      const objects = response.data[0].objects;
+      
+      if (Array.isArray(objects)) {
+        // Transform data to venue list with sessions
+        venuesList.value = objects
+          .filter(obj => obj.sessions && obj.sessions.length > 0)
+          .map(obj => {
+            // Sort sessions by time
+            const sortedSessions = [...obj.sessions].sort((a, b) => a.timeSpending - b.timeSpending);
+            
+            return {
+              id: obj.id,
+              name: obj.name,
+              address: obj.address,
+              sessions: sortedSessions
+            };
+          });
+      }
     }
     
     console.log('[loadSessions] Venues with sessions:', venuesList.value);
