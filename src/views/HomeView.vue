@@ -596,8 +596,8 @@ body main {
 }
 
 .title.title-medium.color-light.hover-yellow.size-md {
-  width: 85%;
-  font-size: 2rem;
+  /*width: 85%;
+  font-size: 2rem;*/
 }
 
 .section-heading.title-black.color-dark.all-category {
