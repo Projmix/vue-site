@@ -10,7 +10,6 @@ import axios from 'axios';
 import '@splidejs/vue-splide/css';
 import ru from 'moment/locale/ru'; // Убедитесь, что локаль импортирована
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
-import EventDetailModal from '../components/EventDetailModal.vue';
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
 // import apiService from '@/services/apiService'; // Используйте централизованный сервис, если он есть
 
@@ -23,7 +22,6 @@ export default {
     SplideSlide,
     EventCard,
     NewsCard,
-    EventDetailModal,
   },
   setup() {
     // Флаг для отслеживания инициализации Nivo Slider
@@ -41,35 +39,6 @@ export default {
     const newsLoading = ref(true);
     const generalLoading = ref(true); // Общий лоадер для страницы
     const loading = generalLoading;
-
-    // Для модального окна
-    const showModal = ref(false);
-    const selectedEvent = ref(null);
-    const selectedSessions = ref([]);
-
-    function openEventDetail(event) {
-      selectedEvent.value = event;
-      // sessions: ищем до 3 ближайших дат/сеансов, если есть
-      let sessions = [];
-      if (event.sessions && Array.isArray(event.sessions)) {
-        sessions = event.sessions.slice(0, 3);
-      } else if (event.dates && Array.isArray(event.dates)) {
-        sessions = event.dates.slice(0, 3);
-      } else if (event.seances && Array.isArray(event.seances)) {
-        sessions = event.seances.slice(0, 3);
-      } else if (event.performances && Array.isArray(event.performances)) {
-        sessions = event.performances.slice(0, 3);
-      } else if (event.times && Array.isArray(event.times)) {
-        sessions = event.times.slice(0, 3);
-      }
-      selectedSessions.value = sessions;
-      showModal.value = true;
-    }
-    function closeEventDetail() {
-      showModal.value = false;
-      selectedEvent.value = null;
-      selectedSessions.value = [];
-    }
 
     const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID); // Можно сделать динамическим
 
@@ -198,11 +167,6 @@ export default {
       generalLoading,
       loading,
       formatDate,
-      showModal,
-      selectedEvent,
-      selectedSessions,
-      openEventDetail,
-      closeEventDetail,
       moment,
       //afisha,
       //sportEventsAll,
@@ -298,7 +262,6 @@ export default {
         </div>
       </div>
     </div>
-    <EventDetailModal :show="showModal" :event="selectedEvent" :sessions="selectedSessions" @close="closeEventDetail" />
     <section v-for="(category, slug) in layoutStore.filteredCategoriesData" :key="slug"
       class="section-space-default bg-light overlay-icon-layout4">
       <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
@@ -324,9 +287,7 @@ export default {
           <template v-else-if="category.events.length">
             <div v-for="event in category.events.slice(0, 8)" :key="event.id"
               class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
-              <div @click="openEventDetail(event)">
-                <EventCard :event="event" />
-              </div>
+              <EventCard :event="event" />
             </div>
           </template>
           <template v-else>
