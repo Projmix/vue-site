@@ -561,7 +561,6 @@ body main {
 
 
 .row.menu-list {
-  max-width: 70%;
   margin-right: auto;
   margin-left: auto;
 }

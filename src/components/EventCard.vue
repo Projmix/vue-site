@@ -77,16 +77,13 @@ export default {
 }
 .speaker-layout3 .img-fluid {
   width: 100%;
-  height: 406px;
+  height: 485px;
   object-fit: cover;
   border-radius: 10px 10px 0 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.speaker-layout3 .item-title {
-  padding: 18px 18px 0 18px;
-}
+
 .speaker-layout3 .title {
-  font-size: 1.15rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 8px;
@@ -140,7 +137,7 @@ export default {
 
 @media (max-width: 991px) {
   .speaker-layout3 .img-fluid {
-    height: 350px;
+    height: 435px;
   }
 }
 @media (max-width: 767px) {
@@ -150,6 +147,9 @@ export default {
   .speaker-layout3 .img-fluid {
     height: 300px;
   }
+  .speaker-layout3 .item-title {
+   left:10px;
+}
 }
 
 </style>
