@@ -27,36 +27,52 @@
           </div>
         </div>
       </div>
+      
+      <!-- Calendar dates selector -->
       <div class="container mt-4" v-if="!loading && !error">
-        <div class="row">
-          <div class="col-12">
-            <div class="profile-event-list row">
-              <div class="col-lg-4 col-md-6 col-sm-12" v-for="(date, idx) in calendarDates" :key="idx">
-                <div class="profile-event">
-                  <div class="profile-event-date">{{ formatDate(date.date) }}</div>
-                  <div v-if="date.sessions && date.sessions.length">
-                    <div v-for="(session, sIndex) in date.sessions" :key="sIndex" class="session-item">
-                      <div class="session-time mb-2">{{ formatTime(session.timeSpending) }}</div>
-                      <button class="btn-fill size-xs color-yellow border-radius-5" 
-                              @click="openBuyTicketPage(session.id)">
-                        Купить билет (от {{ formatPrice(session.minPrice) }} руб.)
-                      </button>
-                    </div>
-                  </div>
-                  <div v-else class="text-center my-2">
-                    <button class="btn-fill size-xs color-yellow border-radius-5" 
-                            @click="buyTicketForDate(date)" 
-                            :disabled="date.loading">
-                      {{ date.loading ? 'Загрузка...' : 'Купить' }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div v-if="calendarDates.length === 0" class="col-12 text-center">
-                <p>Нет ближайших дат для этого события.</p>
+        <div class="date-selector">
+          <div class="date-selector-inner">
+            <div 
+              v-for="(date, idx) in calendarDates" 
+              :key="idx" 
+              class="date-item" 
+              :class="{ active: selectedDateIndex === idx }"
+              @click="selectDate(idx)">
+              <div class="date-day">{{ formatDateShort(date.date, 'DD') }}</div>
+              <div class="date-weekday">{{ formatDateShort(date.date, 'dd') }}</div>
+              <div class="date-month">{{ formatDateShort(date.date, 'MMM') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Venues and sessions -->
+      <div class="container mt-4" v-if="!loading && !error">
+        <div v-if="loadingSelectedDate" class="text-center py-3">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading sessions...</span>
+          </div>
+        </div>
+        <div v-else-if="venuesList.length" class="venues-container">
+          <div v-for="venue in venuesList" :key="venue.id" class="venue-card">
+            <h3 class="venue-name">{{ venue.name }}</h3>
+            <p class="venue-address">{{ venue.address }}</p>
+            <div class="sessions-container">
+              <div v-for="session in venue.sessions" :key="session.id" 
+                   class="session-time-btn" 
+                   :class="{'tag-3d': hasTag(session, '3D'), 'tag-2d': hasTag(session, '2D')}"
+                   @click="openBuyTicketPage(session.id)">
+                <span class="time">{{ formatTime(session.timeSpending) }}</span>
+                <span class="price">от {{ formatPrice(session.minPrice) }} руб.</span>
               </div>
             </div>
           </div>
+        </div>
+        <div v-else-if="selectedDate" class="text-center py-4">
+          <p>Нет сеансов на выбранную дату.</p>
+        </div>
+        <div v-else class="text-center py-4">
+          <p>Нет доступных сеансов для этого события.</p>
         </div>
       </div>
     </section>
@@ -65,12 +81,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue';
+import { ref, onMounted, inject, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import headerSection from '../components/header.vue';
 import footerSection from '../components/footer.vue';
 import moment from 'moment';
+import 'moment/locale/ru';
 
 const route = useRoute();
 const eventId = route.params.id;
@@ -80,12 +97,23 @@ const eventName = ref('');
 const eventDescription = ref('');
 const eventImage = ref('');
 const calendarDates = ref([]);
+const selectedDateIndex = ref(0);
+const selectedDate = computed(() => calendarDates.value[selectedDateIndex.value]?.date || null);
+const loadingSelectedDate = ref(false);
+const venuesList = ref([]);
 
 // Inject apiService
 const apiService = inject('apiService');
 
+// Set moment to Russian locale
+moment.locale('ru');
+
 function formatDate(dateStr) {
   return moment(dateStr).format('DD MMMM YYYY');
+}
+
+function formatDateShort(dateStr, format) {
+  return moment(dateStr).format(format);
 }
 
 function formatTime(timestamp) {
@@ -93,60 +121,57 @@ function formatTime(timestamp) {
 }
 
 function formatPrice(price) {
-  // Простой форматтер, можно заменить на более сложный при необходимости
   return (price / 100).toFixed(2);
 }
 
+function hasTag(session, tagName) {
+  if (!session.tags || !Array.isArray(session.tags)) return false;
+  return session.tags.some(tag => tag.name === tagName);
+}
+
 async function loadSessions(date) {
-  if (date.sessions && date.sessions.length) {
-    // Sessions already loaded, no need to reload
-    return;
-  }
+  if (!date) return;
   
-  date.loading = true;
+  loadingSelectedDate.value = true;
+  venuesList.value = [];
   
   try {
-    // Use apiService instead of direct axios call
-    const sessions = await apiService.getEventSessions(eventId, date.date);
-    date.sessions = sessions;
-    console.log('[loadSessions] Loaded sessions:', sessions);
+    const eventDataWithSessions = await apiService.getEventSessions(eventId, date);
+    
+    if (eventDataWithSessions.objects && Array.isArray(eventDataWithSessions.objects)) {
+      // Transform data to venue list with sessions
+      venuesList.value = eventDataWithSessions.objects.map(obj => {
+        // Sort sessions by time
+        const sortedSessions = obj.sessions ? [...obj.sessions].sort((a, b) => a.timeSpending - b.timeSpending) : [];
+        
+        return {
+          id: obj.id,
+          name: obj.name,
+          address: obj.address,
+          sessions: sortedSessions
+        };
+      }).filter(venue => venue.sessions && venue.sessions.length > 0);
+    }
+    
+    console.log('[loadSessions] Venues with sessions:', venuesList.value);
   } catch (e) {
     console.error('[loadSessions] Ошибка загрузки сеансов:', e);
-    date.error = 'Не удалось загрузить сеансы';
-    date.sessions = [];
+    error.value = 'Не удалось загрузить информацию о сеансах';
   } finally {
-    date.loading = false;
+    loadingSelectedDate.value = false;
   }
+}
+
+function selectDate(index) {
+  if (selectedDateIndex.value === index) return;
+  selectedDateIndex.value = index;
+  loadSessions(calendarDates.value[index].date);
 }
 
 function openBuyTicketPage(sessionId) {
   // Use apiService to generate the ticket URL
   const ticketUrl = apiService.getTicketUrl(sessionId);
   window.open(ticketUrl, '_blank');
-}
-
-// We can directly buy a ticket for the first session if date clicked
-async function buyTicketForDate(date) {
-  if (date.sessions && date.sessions.length > 0) {
-    // If sessions already loaded, use the first session
-    openBuyTicketPage(date.sessions[0].id);
-  } else {
-    // If sessions not loaded yet, load them first
-    date.loading = true;
-    try {
-      const sessions = await apiService.getEventSessions(eventId, date.date);
-      date.sessions = sessions;
-      if (sessions.length > 0) {
-        openBuyTicketPage(sessions[0].id);
-      } else {
-        console.error('[buyTicketForDate] No sessions available');
-      }
-    } catch (e) {
-      console.error('[buyTicketForDate] Error:', e);
-    } finally {
-      date.loading = false;
-    }
-  }
 }
 
 async function fetchEventData() {
@@ -181,10 +206,14 @@ async function fetchEventData() {
         .filter(dateObj => moment(dateObj.date).isSameOrAfter(now))
         .map(dateObj => ({
           ...dateObj,
-          sessions: [], // Will be populated on demand
-          loading: false,
-          error: null
+          date: dateObj.date
         }));
+      
+      // If we have dates, automatically load sessions for the first date
+      if (calendarDates.value.length > 0) {
+        selectedDateIndex.value = 0;
+        loadSessions(calendarDates.value[0].date);
+      }
     }
     
     // Set SEO data
@@ -218,28 +247,127 @@ onMounted(fetchEventData);
 .speaker-profile {
   margin-bottom: 2rem;
 }
-.profile-event {
+
+/* Date selector styles */
+.date-selector {
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+.date-selector-inner {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.date-item {
+  min-width: 60px;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.date-item:hover {
+  border-color: #fad03b;
+}
+.date-item.active {
+  border-color: #fad03b;
+  background-color: #fad03b;
+  color: #000;
+}
+.date-day {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+.date-weekday {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  margin-top: -5px;
+}
+.date-month {
+  font-size: 0.9rem;
+  margin-top: -3px;
+}
+
+/* Venues styles */
+.venues-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.venue-card {
   background: #f8f8f8;
   border-radius: 8px;
-  padding: 1.2rem 1rem;
+  padding: 1.5rem;
+}
+.venue-name {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+.venue-address {
+  color: #666;
   margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+}
+.sessions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.session-time-btn {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+  min-width: 85px;
   text-align: center;
 }
-.profile-event-date {
-  font-weight: bold;
+.session-time-btn:hover {
+  border-color: #fad03b;
+  transform: translateY(-2px);
+}
+.session-time-btn .time {
+  font-weight: 600;
   font-size: 1.1rem;
-  margin-bottom: 1rem;
 }
-.profile-event-place {
-  margin-top: 0.7rem;
+.session-time-btn .price {
+  font-size: 0.8rem;
+  color: #666;
 }
-.session-item {
-  border-top: 1px solid #e5e5e5;
-  padding-top: 10px;
-  margin-top: 10px;
+.tag-3d {
+  border-left: 4px solid #fad03b;
 }
-.session-time {
-  font-weight: 500;
+.tag-3d::after {
+  content: "3D";
+  background: #fad03b;
+  color: #000;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  margin-top: -20px;
+  margin-left: 5px;
+}
+.tag-2d {
+  border-left: 4px solid #9ce3ff;
+}
+.tag-2d::after {
+  content: "2D";
+  background: #9ce3ff;
+  color: #000;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  margin-top: -20px;
+  margin-left: 5px;
 }
 .spinner-border {
   width: 3rem;

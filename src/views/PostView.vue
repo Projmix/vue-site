@@ -109,19 +109,7 @@ export default {
 
       <!-- Banner -->
        <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="breadcrumbs-area">
-                                <h1>Новости</h1>
-                                <ul>
-                                    <li><router-link to="/">Главная</router-link></li>
-                                    <li>Новости</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+               
       </section>
 
       <!-- Posts Grid -->
