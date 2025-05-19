@@ -162,12 +162,12 @@ export default {
       // Инициализация jQuery-плагинов
       if (window.$ && typeof window.$.fn.meanmenu === 'function') {
         $('nav#dropdown').meanmenu({
-          siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
+          siteLogo: `<div class='mobile-menu-nav-back'><a href='/'><img src='${layoutStore.getLogo}' alt="logo" style="width:120px; height:auto; object-fit:contain;"/></a></div>`
         });
       }
       if (window.$ && typeof window.$.scrollUp === 'function') {
         $.scrollUp({
-          scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
+          scrollText: '<i class="fa fa-angle-up"></i><p>ВВЕРХ</p>',
           easingType: 'linear',
           scrollSpeed: 900,
         });
