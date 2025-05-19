@@ -1,71 +1,71 @@
 <template>
   <router-link :to="{ name: 'news-single', params: { slug: post.slug } }" class="news-card-link">
-    <div class="blog-layout3 overlay-gradient news-aspect">
-      <div class="image-wrapper news-img-aspect">
-        <img
-          :src="post.image['1300x560'] || placeholderImage"
-          :alt="post.title"
-          class="img-fluid news-img-crop"
-          @error="onImgError"
-        >
-        <div class="item-date-wrap" style="position: absolute; top: 10px; left: 15px; z-index: 2;">
-          <div class="item-date">
-            {{ getNewsDay(post) }}
-          </div>
-        </div>
-      </div>
-      <div class="item-content news-title-only">
-        <div class="item-title">
-          <h3 class="title-medium color-light hover-yellow">
-            {{ post.title }}
-          </h3>
+  <div class="blog-layout3 overlay-gradient news-aspect">
+    <div class="image-wrapper news-img-aspect">
+      <img
+        :src="post.image['1300x560'] || placeholderImage"
+        :alt="post.title"
+        class="img-fluid news-img-crop"
+        @error="onImgError"
+      >
+      <div class="item-date-wrap" style="position: absolute; top: 10px; left: 15px; z-index: 2;">
+        <div class="item-date">
+          {{ getNewsDay(post) }}
         </div>
       </div>
     </div>
+    <div class="item-content news-title-only">
+      <div class="item-title">
+        <h3 class="title-medium color-light hover-yellow">
+          {{ post.title }}
+        </h3>
+      </div>
+    </div>
+  </div>
   </router-link>
 </template>
   
-<script>
-import placeholder from '@/assets/images/blog/blog11.jpg'; // Запасное изображение для новостей
-import moment from 'moment';
+  <script>
+  import placeholder from '@/assets/images/blog/blog11.jpg'; // Запасное изображение для новостей
+  import moment from 'moment';
   
-export default {
-  name: 'NewsCard',
-  props: {
-    post: {
-      type: Object,
-      required: true,
+  export default {
+    name: 'NewsCard',
+    props: {
+      post: {
+        type: Object,
+        required: true,
+      },
     },
-  },
-  data() {
-    return {
-      placeholderImage: placeholder
-    }
-  },
-  methods: {
-    onImgError(event) {
-      event.target.src = this.placeholderImage;
-    },
-    getNewsDay(post) {
-      const dateStr = post.published_at || post.publishedAt || '';
-      if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
-        return moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
-      } else if (moment(dateStr).isValid()) {
-        return moment(dateStr).format('DD MMM');
+    data() {
+      return {
+        placeholderImage: placeholder
       }
-      return '';
     },
-    formatDate(dateString, format = 'DD MMM YYYY') {
-      // API возвращает строку вида "DD.MM.YYYY", парсим её
-      return moment(dateString, 'DD.MM.YYYY').isValid()
-        ? moment(dateString, 'DD.MM.YYYY').format(format)
-        : dateString; // Возвращаем как есть, если формат не распознан
-    }
-  },
-};
+    methods: {
+      onImgError(event) {
+        event.target.src = this.placeholderImage;
+      },
+      getNewsDay(post) {
+        const dateStr = post.published_at || post.publishedAt || '';
+        if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
+          return moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
+        } else if (moment(dateStr).isValid()) {
+          return moment(dateStr).format('DD MMM');
+        }
+        return '';
+      },
+      formatDate(dateString, format = 'DD MMM YYYY') {
+        // API возвращает строку вида "DD.MM.YYYY", парсим её
+        return moment(dateString, 'DD.MM.YYYY').isValid()
+          ? moment(dateString, 'DD.MM.YYYY').format(format)
+          : dateString; // Возвращаем как есть, если формат не распознан
+      }
+    },
+  };
 </script>
   
-<style scoped>
+  <style scoped>
 .news-card-link {
   display: block;
   text-decoration: none;

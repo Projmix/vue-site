@@ -51,8 +51,8 @@
         <div v-if="loadingSelectedDate" class="text-center py-3">
           <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading sessions...</span>
-          </div>
-        </div>
+                </div>
+              </div>
         <div v-else-if="venuesList.length" class="venues-container">
           <div v-for="venue in venuesList" :key="venue.id" class="venue-card">
             <h3 class="venue-name">{{ venue.name }}</h3>
@@ -211,7 +211,7 @@ async function fetchEventData() {
     
     // Process calendar dates
     if (event.calendar && Array.isArray(event.calendar)) {
-      const now = moment().startOf('day');
+    const now = moment().startOf('day');
       calendarDates.value = event.calendar
         .filter(dateObj => moment(dateObj.date).isSameOrAfter(now))
         .map(dateObj => ({

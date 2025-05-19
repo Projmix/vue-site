@@ -123,12 +123,12 @@ export default {
         }
         
         // Finally, load news posts
-        await fetchNews();
+      await fetchNews();
         
       } catch (error) {
         console.error('[HomeView] Error loading data:', error);
       } finally {
-        generalLoading.value = false;
+      generalLoading.value = false;
       }
     };
 
@@ -159,19 +159,19 @@ export default {
             nivoInitialized = true;
           }
           
-          // Инициализация jQuery-плагинов
-          if (window.$ && typeof window.$.fn.meanmenu === 'function') {
-            $('nav#dropdown').meanmenu({
-              siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
-            });
-          }
-          if (window.$ && typeof window.$.scrollUp === 'function') {
-            $.scrollUp({
-              scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
-              easingType: 'linear',
-              scrollSpeed: 900,
-            });
-          }
+      // Инициализация jQuery-плагинов
+      if (window.$ && typeof window.$.fn.meanmenu === 'function') {
+        $('nav#dropdown').meanmenu({
+          siteLogo: "<div class='mobile-menu-nav-back'><a href='index.html'><img src='../assets/images/logo.png'/></a></div>"
+        });
+      }
+      if (window.$ && typeof window.$.scrollUp === 'function') {
+        $.scrollUp({
+          scrollText: '<i class="fa fa-angle-up"></i><p>TOP</p>',
+          easingType: 'linear',
+          scrollSpeed: 900,
+        });
+      }
         }, 200); // задержка чтобы DOM точно был готов
       });
     });

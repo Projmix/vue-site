@@ -17,7 +17,7 @@ export default {
     EventCard,
   },
   props: {
-    layoutLoaded: Promise // Пропс из App.vue
+      layoutLoaded: Promise // Пропс из App.vue
   },
   setup(props) {
     const layoutStore = useLayoutStore();
@@ -97,20 +97,20 @@ export default {
     // Следим за изменением параметра роута и подстраиваемся под новый формат /afisha/:category
     watch(() => route.params.category, (newSlug) => {
       if (newSlug && newSlug !== categorySlug.value) {
-        categorySlug.value = newSlug;
-        fetchCategoryEvents();
-      }
+            categorySlug.value = newSlug;
+            fetchCategoryEvents();
+        }
     });
 
-    onMounted(() => {
-      // Убедимся, что layout загружен перед запросом событий
-      props.layoutLoaded.then(() => {
-        fetchCategoryEvents();
-      }).catch(error => {
+     onMounted(() => {
+        // Убедимся, что layout загружен перед запросом событий
+        props.layoutLoaded.then(() => {
+            fetchCategoryEvents();
+        }).catch(error => {
         console.error("[EventsView] Ошибка ожидания layoutLoaded:", error);
-        fetchCategoryEvents(); // Пытаемся загрузить в любом случае
-      });
-    });
+            fetchCategoryEvents(); // Пытаемся загрузить в любом случае
+        });
+     });
 
     return {
       background,
@@ -152,7 +152,7 @@ export default {
                 <div v-if="!loading && errorMsg" class="alert alert-danger">
                     {{ errorMsg }}
                 </div>
-                
+
                 <div v-if="!loading && !errorMsg">
                     <div v-if="categoryInfo?.description" class="category-description mb-4">
                         <p v-html="categoryInfo.description"></p>
@@ -168,11 +168,11 @@ export default {
                             {{ moreLoading ? 'Загрузка...' : 'Показать ещё' }}
                         </button>
                     </div>
-                </div>
+                 </div>
                 
                 <div v-else-if="loading" class="text-center py-5">
-                    <p>Загрузка событий...</p>
-                </div>
+                      <p>Загрузка событий...</p>
+                 </div>
             </div>
       </section>
 

@@ -77,7 +77,7 @@ export default {
 }
 .speaker-layout3 .img-fluid {
   width: 100%;
-  height: 485px;
+  /* height: 485px; */
   object-fit: cover;
   border-radius: 10px 10px 0 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -145,7 +145,7 @@ export default {
     max-width: 350px;
   } 
   .speaker-layout3 .img-fluid {
-    height: 300px;
+    /* height: 300px; */
   }
   .speaker-layout3 .item-title {
    left:10px;
