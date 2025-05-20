@@ -177,6 +177,11 @@ export default {
 
     <headerSection />
 
+    <!-- Inner page banner for when there's no slider -->
+    <section v-if="!hasSliderData" class="inner-page-banner" :style="{ backgroundImage: `url(${background || ''})` }">
+      <div class="banner-overlay"></div>
+    </section>
+
     <!-- Slider Area Start Here - отображаем только если есть данные-->
     <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
       <div class="bend niceties preview-1">
@@ -321,6 +326,24 @@ body main {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Inner page banner for when there's no slider */
+.inner-page-banner {
+  height: 90px;
+  background-size: cover;
+  background-position: center center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.inner-page-banner .banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .section-heading-container {

@@ -104,6 +104,11 @@ export default {
 
       <headerSection />
 
+      <!-- Inner page banner section -->
+      <section class="inner-page-banner" :style="{ backgroundImage: `url(${background || ''})` }">
+        <div class="banner-overlay"></div>
+      </section>
+
       <div v-if="error" class="container error-container">
         <div class="row">
           <div class="col-md-12 text-center">
@@ -165,5 +170,22 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.inner-page-banner {
+  height: 90px;
+  background-size: cover;
+  background-position: center center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.inner-page-banner .banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
 }
 </style>

@@ -3,28 +3,63 @@ import { useLayoutStore } from "../stores/layout.js";
 import { computed, onMounted } from 'vue';
 
 const layoutStore = useLayoutStore();
-onMounted(() => {
-  layoutStore.fetchCompanyInfo();
-});
 const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
 const layout = computed(() => layoutStore.getLayout);
-const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData);
-const eventCategories = computed(() => layoutStore.getEventCategories);
 const siteMenu = computed(() => layoutStore.getSiteMenu);
 
 // Проверяем наличие дочерних элементов в пунктах меню
 function hasChildren(menuItem) {
   return menuItem.children && menuItem.children.length > 0;
 }
+
+// Инициализация sticky header
+onMounted(() => {
+  initStickyHeader();
+  
+  // Re-initialize on window resize
+  window.addEventListener('resize', initStickyHeader);
+  
+  // Handle scroll event for sticky header
+  window.addEventListener('scroll', handleStickyHeader);
+});
+
+function initStickyHeader() {
+  // Ensure jQuery is loaded
+  if (window.$) {
+    // Reset any existing styles
+    $('#sticker').removeClass('stick');
+    $('body').css('padding-top', '');
+  }
+}
+
+function handleStickyHeader() {
+  if (!window.$) return;
+  
+  const s = $('#sticker');
+  const w = $('body');
+  const h = s.outerHeight();
+  const windowpos = $(window).scrollTop();
+  const windowWidth = $(window).width();
+  const h1 = s.parent('#header-one');
+  
+  if (windowWidth > 991) {
+    w.css('padding-top', '');
+    let topBarH = 1;
+    
+    if (windowpos >= topBarH) {
+      s.addClass('stick');
+    } else {
+      s.removeClass('stick');
+      w.css('padding-top', 0);
+    }
+  }
+}
 </script>
 
 <template>
   <!-- BEGIN | Header -->
-  <!-- Категории афиши с элементами -->
-
-
   <header class="ht-header full-width-hd">
-
+    <section class="inner-page-banner"></section>
     <div id="header-one" class="header-area header-fixed full-width-compress">
       <div class="main-menu-area" id="sticker">
         <div class="container-fluid">
@@ -32,8 +67,8 @@ function hasChildren(menuItem) {
             <div class="col-lg-2 col-md-2 d-none d-lg-block">
               <div class="logo-area">
                 <router-link :to="{ name: 'home' }">
-  <img :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
-</router-link>
+                  <img :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
+                </router-link>
               </div>
             </div>
             <div class="col-lg-7 col-md-6 possition-static">
@@ -110,5 +145,23 @@ function hasChildren(menuItem) {
 <style scoped>
 .eventalk-main-menu {
   padding-right: 22%;
+}
+
+.inner-page-banner {
+  height: 5px;
+  background-color: rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Sticky header styling */
+.main-menu-area.stick {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 999;
+  background-color: #ffffff;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
 }
 </style>
