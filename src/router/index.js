@@ -46,6 +46,25 @@ const router = createRouter({
       name: 'about',
       component: () => import('../views/SponsorsView.vue')
     },
+    // Custom page routes - must be before the catchall but after specific routes
+    {
+      path: '/:slug',
+      name: 'custom-page',
+      component: () => import('../views/PageView.vue'),
+      // Exclude paths that have their own routes
+      beforeEnter: (to, from, next) => {
+        const reservedPaths = [
+          'event', 'afisha', 'news', 'about', 'post', 'sponsors', 'posts', 
+          'objects', 'object', 'page'
+        ];
+        // Check if the route is a reserved path
+        if (reservedPaths.includes(to.params.slug)) {
+          next({ name: 'ErrorView' });
+        } else {
+          next();
+        }
+      }
+    },
     // Legacy routes
     {
       path: '/post/:slug',

@@ -19,12 +19,15 @@ class ApiService {
    * @returns {Object} Объект с общими параметрами
    */
   getCommonParams() {
+    // Используем текущий hostname без протокола и слеша
+    const currentDomain = window.location.hostname;
+    
     return {
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
       cityId: import.meta.env.VITE_API_CITY_ID,
       onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-      domain: import.meta.env.VITE_API_DOMAIN,
+      domain: currentDomain,
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     };
   }
@@ -105,6 +108,25 @@ class ApiService {
       };
     } catch (error) {
       console.error(`API error: getCategoryEvents for ${categorySlug}`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Получение всех событий из API объектов
+   * @returns {Promise} Промис с результатом запроса
+   */
+  async fetchAllEvents() {
+    try {
+      const companyId = import.meta.env.VITE_API_COMPANY_OBJECTS_ID;
+      if (!companyId) throw new Error('VITE_API_COMPANY_OBJECTS_ID is not set');
+      
+      const params = this.getCommonParams();
+      const response = await this.axiosInstance.get(`/api/v3/pages/objects/${companyId}`, { params });
+      
+      return response.data?.more || [];
+    } catch (error) {
+      console.error('API error: fetchAllEvents', error);
       throw error;
     }
   }
@@ -220,6 +242,26 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('API error: getLayout', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Получение данных страницы по слагу
+   * @param {String} slug - Слаг страницы
+   * @returns {Promise} Промис с результатом запроса
+   */
+  async getPageBySlug(slug) {
+    try {
+      const params = {
+        ...this.getCommonParams(),
+        expand: 'sessions'
+      };
+      
+      const response = await this.axiosInstance.get(`/api/v3/arena/page/${slug}`, { params });
+      return response.data;
+    } catch (error) {
+      console.error(`API error: getPageBySlug for ${slug}`, error);
       throw error;
     }
   }

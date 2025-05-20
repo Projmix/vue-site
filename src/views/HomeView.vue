@@ -11,7 +11,7 @@ import '@splidejs/vue-splide/css';
 import ru from 'moment/locale/ru'; // Убедитесь, что локаль импортирована
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
-// import apiService from '@/services/apiService'; // Используйте централизованный сервис, если он есть
+import apiService from '../services/apiService';
 
 export default {
   name: "Home",
@@ -30,51 +30,40 @@ export default {
     const background = computed(() => layoutStore.getBackground);
     const logo = computed(() => layoutStore.getLogo);
     const logo2 = computed(() => layoutStore.getLogo2);
-
-    // // Добавлено: categoriesData из Pinia store
-    // const categoriesData = computed(() => layoutStore.getEventCategories || []);
-
+    
+    // Флаг наличия слайдера в данных лейаута
+    const hasSliderData = computed(() => layoutStore.getHasSliderData);
+    
+    // Получаем слайдер из layoutStore
+    const siteSlider = computed(() => layoutStore.getSiteSlider);
+    
+    // События по категориям из layoutStore, фильтруем только непустые
+    const eventsByCategory = computed(() => {
+      const allCategories = layoutStore.getEventsByCategory;
+      // Фильтруем непустые категории
+      const nonEmptyCategories = {};
+      Object.entries(allCategories).forEach(([slug, category]) => {
+        if (category.events && category.events.length > 0) {
+          nonEmptyCategories[slug] = category;
+        }
+      });
+      return nonEmptyCategories;
+    });
+    
+    // Проверка наличия событий в любой категории
+    const hasAnyEvents = computed(() => layoutStore.getHasAnyEvents);
 
     const newsItems = ref([]);
     const newsLoading = ref(true);
     const generalLoading = ref(true); // Общий лоадер для страницы
     const loading = generalLoading;
 
-    const selectedCityId = ref(import.meta.env.VITE_API_CITY_ID); // Можно сделать динамическим
-
-    const getCommonParams = (cityId = null) => ({
-      lang: import.meta.env.VITE_API_LANG,
-      jsonld: import.meta.env.VITE_API_JSONLD,
-      cityId: cityId || selectedCityId.value,
-      onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-      domain: import.meta.env.VITE_API_DOMAIN,
-      distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-    });
-
+    // Функция для загрузки новостей
     const fetchNews = async () => {
       newsLoading.value = true;
       try {
-        const params = {
-          ...getCommonParams(),
-          page: 1,
-          perPage: 6, // Количество новостей на главной
-        };
-        console.log('[fetchNews] params:', params);
-        const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/posts`;
-        const response = await axios.get(apiUrl, { params });
-        console.log('[fetchNews] response:', response);
-        let posts = response.data.posts || [];
-        console.log(params);
-        posts = posts.slice().sort((a, b) => {
-          const dateA = moment(a.published_at || a.publishedAt, ["DD.MM.YYYY", moment.ISO_8601], true);
-          const dateB = moment(b.published_at || b.publishedAt, ["DD.MM.YYYY", moment.ISO_8601], true);
-          if (!dateA.isValid() && !dateB.isValid()) return 0;
-          if (!dateA.isValid()) return 1;
-          if (!dateB.isValid()) return -1;
-          return dateB.valueOf() - dateA.valueOf();
-        });
-        newsItems.value = posts.slice(0, 6);
-        newsItems.value = response.data.posts || [];
+        const result = await apiService.getPosts({ page: 1, perPage: 6 });
+        newsItems.value = result.posts || [];
       } catch (error) {
         console.error("Ошибка загрузки новостей:", error);
         newsItems.value = [];
@@ -83,7 +72,7 @@ export default {
       }
     };
 
-    // Загрузка только новостей, категории — через layoutStore
+    // Загрузка только новостей, категории и события через layoutStore
     const loadAllData = async () => {
       generalLoading.value = true;
       
@@ -91,56 +80,23 @@ export default {
         // Wait for the layout to be loaded from props.layoutLoaded first
         await props.layoutLoaded;
         
-        // Ensure categories are loaded
-        if (!layoutStore.categories || layoutStore.categories.length === 0) {
-          console.log('[HomeView] No categories found, fetching them');
-          await layoutStore.fetchCategories();
-        }
-        
-        // Initialize categories data structure
-        layoutStore.initCategoriesData();
-        
-        // Try to load from cache first
-        const fromCache = layoutStore.loadCategoriesFromCache();
-        
-        // If cache loading failed, fetch each category
-        if (!fromCache) {
-          console.log('[HomeView] Categories not in cache, fetching them');
-          const fetchPromises = [];
-          
-          // Make sure we have categories before trying to load them
-          if (layoutStore.categories && layoutStore.categories.length > 0) {
-            for (const cat of layoutStore.categories.filter(cat => cat.slug !== 'top')) {
-              fetchPromises.push(layoutStore.fetchCategoryEvents(cat));
-            }
-            
-            // Wait for all category event fetches to complete
-            await Promise.all(fetchPromises);
-            
-            // Save to cache for future visits
-            layoutStore.saveCategoriesToCache();
-          }
-        }
-        
-        // Finally, load news posts
-      await fetchNews();
-        
+        // Загружаем новости
+        await fetchNews();
       } catch (error) {
         console.error('[HomeView] Error loading data:', error);
       } finally {
-      generalLoading.value = false;
+        generalLoading.value = false;
       }
     };
 
-
     onMounted(() => {
-      // Load all data (categories and news)
+      // Load all data (news)
       loadAllData();
       
       // Setup UI components after a small delay
       nextTick(() => {
         setTimeout(() => {
-          if (window.$ && typeof window.$.fn.nivoSlider === 'function') {
+          if (hasSliderData.value && window.$ && typeof window.$.fn.nivoSlider === 'function') {
             // Очищаем предыдущую инициализацию
             $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
             $('#ensign-nivoslider-3').nivoSlider({
@@ -181,31 +137,27 @@ export default {
         $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
         nivoInitialized = false;
       }
-      // destroy
     });
 
     const formatDate = (date, format = 'DD MMM YYYY') => {
       return moment(date).format(format);
     };
 
-
-
-
     return {
       layoutStore,
       background,
       logo,
       logo2,
-      // Категории теперь только через layoutStore
-
+      hasSliderData,
+      siteSlider,
+      eventsByCategory,
+      hasAnyEvents,
       newsItems,
       newsLoading,
       generalLoading,
       loading,
       formatDate,
       moment,
-      //afisha,
-      //sportEventsAll,
     };
   },
   props: ['layoutLoaded'],
@@ -225,80 +177,59 @@ export default {
 
     <headerSection />
 
-    <!-- Slider Area Start Here -->
-    <div class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
+    <!-- Slider Area Start Here - отображаем только если есть данные-->
+    <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
       <div class="bend niceties preview-1">
         <div id="ensign-nivoslider-3" class="slides">
-          <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
-            @click="$router.push(`/event/1`)" />
-          <img src="@/assets/images/slider/slide4-2.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
-            @click="$router.push(`/event/2`)" />
-          <img src="@/assets/images/slider/slide4-3.jpg" alt="slider" title="#slider-direction-2" style="cursor:pointer"
-            @click="$router.push(`/event/3`)" />
+          <template v-for="(slide, index) in siteSlider" :key="index">
+            <img :src="slide.href" alt="slider" :title="`#slider-direction-${index + 1}`" style="cursor:pointer"
+                 @click="$router.push(slide.url || '/')" />
+          </template>
+          <!-- Если нет слайдов, используем заглушки -->
+          <template v-if="siteSlider.length === 0">
+            <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-1" />
+          </template>
         </div>
-        <div id="slider-direction-1" class="t-cn slider-direction">
-          <div class="slider-content s-tb slide-1">
-            <div class="title-container s-tb-c title-light">
-              <div class="container text-left">
-                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">18 October, 2025 | Minsk</a>
-                </h3>
-                <div class="slider-big-text first-line">
-                  <p>Application</p>
-                </div>
-                <div class="slider-big-text second-line">
-                  <p>Developer Meetup 2025</p>
+        
+        <!-- Содержимое слайдов -->
+        <template v-for="(slide, index) in siteSlider" :key="`content-${index}`">
+          <div :id="`slider-direction-${index + 1}`" class="t-cn slider-direction">
+            <div class="slider-content s-tb">
+              <div class="title-container s-tb-c title-light">
+                <div class="container text-left">
+                  <h3 class="title title-bold color-light hover-yellow size-xl first-line">
+                    <a :href="slide.url || '#'" @click.prevent="$router.push(slide.url || '/')">
+                      {{ slide.title || '' }}
+                    </a>
+                  </h3>
+                  <div class="slider-big-text first-line">
+                    <p>{{ slide.subtitle || '' }}</p>
+                  </div>
+                  <div class="slider-big-text second-line">
+                    <p>{{ slide.text || '' }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="slider-btn-area forth-line margin-t-30">
-              <a href="#" class="btn-fill color-yellow" @click.prevent="$router.push(`/event/1`)">Buy Tickets Now!</a>
-            </div>
-          </div>
-        </div>
-        <div id="slider-direction-2" class="t-cn slider-direction">
-          <div class="slider-content s-tb slide-2">
-            <div class="title-container s-tb-c title-light">
-              <div class="container text-left">
-                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">20 October, 2025 | Minsk</a>
-                </h3>
-                <div class="slider-big-text first-line">
-                  <p>Application</p>
-                </div>
-                <div class="slider-big-text second-line">
-                  <p>Developer Meetup 2025</p>
-                </div>
+              <div v-if="slide.buttonText" class="slider-btn-area forth-line margin-t-30">
+                <a :href="slide.url || '#'" class="btn-fill color-yellow" 
+                   @click.prevent="$router.push(slide.url || '/')">
+                  {{ slide.buttonText }}
+                </a>
               </div>
             </div>
-            <div class="slider-btn-area forth-line margin-t-30">
-              <a href="#" class="btn-fill color-yellow" @click.prevent="$router.push(`/event/1`)">Buy Tickets Now!</a>
-            </div>
           </div>
-        </div>
-        <div id="slider-direction-3" class="t-cn slider-direction">
-          <div class="slider-content s-tb slide-3">
-            <div class="title-container s-tb-c title-light">
-              <div class="container text-left">
-                <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                  <a href="#" @click.prevent="$router.push(`/event/1`)">22 October, 2025 | Minsk</a>
-                </h3>
-                <div class="slider-big-text first-line">
-                  <p>Application</p>
-                </div>
-                <div class="slider-big-text second-line">
-                  <p>Developer Meetup 2018</p>
-                </div>
-              </div>
-            </div>
-            <div class="slider-btn-area forth-line margin-t-30">
-              <a href="#" class="btn-fill color-yellow" @click.prevent="$router.push(`/event/1`)">Buy Tickets Now!</a>
-            </div>
-          </div>
-        </div>
+        </template>
       </div>
     </div>
-    <section v-for="(category, slug) in layoutStore.filteredCategoriesData" :key="slug"
+
+    <!-- Блок с событиями по категориям -->
+    <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
+      <div class="container text-center">
+        <h2>Данных о мероприятиях нет</h2>
+      </div>
+    </div>
+    
+    <section v-for="(category, slug) in eventsByCategory" :key="slug"
       class="section-space-default bg-light overlay-icon-layout4">
       <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
         <div class="section-heading title-black color-dark all-category text-left">
@@ -320,8 +251,8 @@ export default {
               <p>Не удалось загрузить события.</p>
             </div>
           </template>
-          <template v-else-if="category.events.length">
-            <div v-for="event in category.events.slice(0, 8)" :key="event.id"
+          <template v-else-if="category.events && category.events.length">
+            <div v-for="event in category.events" :key="event.id"
               class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
               <EventCard :event="event" />
             </div>
@@ -337,7 +268,7 @@ export default {
     </section>
 
     <!-- Раздел новостей -->
-    <section class="news-section section-space-default-less30 bg-light" v-if="!newsLoading && newsItems.length">
+    <section class="news-section section-space-default-less30 bg-light">
       <div class="container">
         <div class="section-heading-container">
           <div class="section-heading title-black color-dark text-left">
@@ -350,8 +281,16 @@ export default {
           </div>
         </div>
 
-        <div class="news-grid home-grid">
+        <div v-if="newsLoading" class="text-center p-5">
+          <p>Загрузка новостей...</p>
+        </div>
+        
+        <div v-else-if="newsItems.length" class="news-grid home-grid">
           <NewsCard v-for="post in newsItems" :key="post.id" :post="post" />
+        </div>
+        
+        <div v-else class="text-center p-5">
+          <p>Нет новостей</p>
         </div>
       </div>
     </section>
@@ -376,6 +315,13 @@ body main {
   padding-top: 20px;
 }
 
+.no-events-container {
+  padding: 80px 0;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .section-heading-container {
   display: flex;

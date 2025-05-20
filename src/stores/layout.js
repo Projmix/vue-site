@@ -5,8 +5,8 @@ import apiService from '../services/apiService';
 export const useLayoutStore = defineStore("layout", {
     state: () => ({
         layout: null,
-        logo: `/src/assets/images/${window.location.hostname}/logo1.png`,
-        logo2: `/src/assets/images/${window.location.hostname}/logo2.png`,
+        logo: `/src/assets/images/${window.location.hostname}/logo1.png`, // Default fallback logo
+        logo2: `/src/assets/images/${window.location.hostname}/logo2.png`, // Default fallback logo 2
         companyInfo: null, // Данные объекта компании из API
         companyInfoLoading: false,
         companyInfoError: null,
@@ -16,6 +16,9 @@ export const useLayoutStore = defineStore("layout", {
         categoriesError: null,
         initialDataLoaded: false,
         layoutFetchPromise: null,
+        eventsFromObjects: [],
+        eventsLoading: true,
+        eventsByCategory: {}, // События, распределенные по категориям
     }),
     getters: {
       getLayout(state) {
@@ -25,11 +28,16 @@ export const useLayoutStore = defineStore("layout", {
         return state.background;
       },
       getLogo(state) {
-        // Если companyInfo загружен — используем его логотип
-        return state.companyInfo?.logoUrl?.original || state.logo;
+        // Используем логотип из layout, если доступен, иначе fallback
+        const footerImages = state.layout?.site_footer_images || [];
+        const logoImage = footerImages.find(img => img?.text?.toLowerCase().includes('logo'));
+        return logoImage?.href || state.logo;
       },
       getCompanyLogoUrl(state) {
-        return state.companyInfo?.logoUrl?.original || '';
+        // Используем логотип из layout, если доступен
+        const footerImages = state.layout?.site_footer_images || [];
+        const logoImage = footerImages.find(img => img?.text?.toLowerCase().includes('logo'));
+        return logoImage?.href || state.logo;
       },
       getCompanyInfo(state) {
         return state.companyInfo;
@@ -65,10 +73,25 @@ export const useLayoutStore = defineStore("layout", {
       },
       getSiteFooterImages(state) {
         return state.layout?.site_footer_images || [];
+      },
+      getSiteSlider(state) {
+        return state.layout?.site_slider || [];
+      },
+      getHasSliderData(state) {
+        return !!(state.layout?.site_slider && state.layout.site_slider.length > 0);
+      },
+      getEventsByCategory(state) {
+        return state.eventsByCategory;
+      },
+      getHasAnyEvents(state) {
+        return Object.values(state.eventsByCategory).some(
+          category => category.events && category.events.length > 0
+        );
       }
     },
     actions: {
       async fetchCompanyInfo() {
+        // We're keeping this for backwards compatibility but preferring layout data for logo
         this.companyInfoLoading = true;
         this.companyInfoError = null;
         try {
@@ -158,6 +181,59 @@ export const useLayoutStore = defineStore("layout", {
           this.categoriesData[category.slug].loading = false;
         }
       },
+      async fetchAllEvents() {
+        this.eventsLoading = true;
+        try {
+          // Получаем все события из API
+          const events = await apiService.fetchAllEvents();
+          this.eventsFromObjects = events;
+          
+          // Распределяем события по категориям
+          this.organizeEventsByCategory(events);
+          
+          console.log('[fetchAllEvents] Получено событий:', events.length);
+        } catch (error) {
+          console.error('Ошибка загрузки событий:', error);
+          this.eventsFromObjects = [];
+          this.eventsByCategory = {};
+        } finally {
+          this.eventsLoading = false;
+        }
+      },
+      organizeEventsByCategory(events) {
+        // Создаем объект для хранения событий по категориям
+        const eventsByCategory = {};
+        
+        // Перебираем все события
+        events.forEach(event => {
+          // Если у события есть типы/категории
+          if (event.types && event.types.length > 0) {
+            event.types.forEach(type => {
+              // Если такой категории еще нет в объекте, создаем ее
+              if (!eventsByCategory[type.slug]) {
+                eventsByCategory[type.slug] = {
+                  name: type.name,
+                  slug: type.slug,
+                  events: [],
+                  loading: false,
+                  error: false
+                };
+              }
+              
+              // Добавляем событие в соответствующую категорию
+              eventsByCategory[type.slug].events.push(event);
+            });
+          }
+        });
+        
+        // Фильтруем только категории с событиями
+        Object.keys(eventsByCategory).forEach(slug => {
+          // Ограничиваем до 8 событий для главной
+          eventsByCategory[slug].events = eventsByCategory[slug].events.slice(0, 8);
+        });
+        
+        this.eventsByCategory = eventsByCategory;
+      },
       async fetchLayout() {
         if (this.layoutFetchPromise) {
           return this.layoutFetchPromise;
@@ -168,24 +244,10 @@ export const useLayoutStore = defineStore("layout", {
             // 1. Сначала загружаем layout для получения меню и footer
             this.layout = await apiService.getLayout();
             
-            // 2. Затем загружаем категории с API
-            await this.fetchCategories();
+            // 2. Загружаем события из объектов
+            await this.fetchAllEvents();
             
-            // 3. Затем пробуем загрузить из кеша или заново
-            const loadedFromCache = this.loadCategoriesFromCache();
-            
-            if (!loadedFromCache) {
-              this.initCategoriesData();
-              
-              // Загружаем события для каждой категории
-              const categoryFetchPromises = this.categories
-                .filter(cat => cat.slug !== 'top')
-                .map(cat => this.fetchCategoryEvents(cat));
-              
-              await Promise.all(categoryFetchPromises);
-              this.saveCategoriesToCache();
-            }
-            
+            // 3. Сохраняем что данные загружены
             this.initialDataLoaded = true;
             resolve(this.layout);
           } catch (error) {

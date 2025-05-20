@@ -3,9 +3,6 @@ import { useLayoutStore } from "../stores/layout.js";
 import { computed, onMounted } from 'vue';
 
 const layoutStore = useLayoutStore();
-onMounted(() => {
-  layoutStore.fetchCompanyInfo();
-});
 const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
 const layout = computed(() => layoutStore.getLayout);
 const background = computed(() => layoutStore.getBackground);

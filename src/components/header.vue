@@ -12,6 +12,10 @@ const filteredCategoriesData = computed(() => layoutStore.filteredCategoriesData
 const eventCategories = computed(() => layoutStore.getEventCategories);
 const siteMenu = computed(() => layoutStore.getSiteMenu);
 
+// Проверяем наличие дочерних элементов в пунктах меню
+function hasChildren(menuItem) {
+  return menuItem.children && menuItem.children.length > 0;
+}
 </script>
 
 <template>
@@ -45,13 +49,15 @@ const siteMenu = computed(() => layoutStore.getSiteMenu);
                         {{ item.text }}
                       </a>
                       
-                      <!-- Специальная обработка для пункта "Афиша" - показываем выпадающий список категорий -->
-                      <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
-                        class="rt-dropdown-menu">
-                        <li v-for="cat in eventCategories" :key="cat.slug">
-                          <router-link :to="`/afisha/${cat.slug}`">
-                            {{ cat.name }}
+                      <!-- Выпадающее меню для пунктов с дочерними элементами -->
+                      <ul v-if="hasChildren(item)" class="rt-dropdown-menu">
+                        <li v-for="child in item.children" :key="child.href">
+                          <router-link v-if="child.href.startsWith('/')" :to="child.href" :title="child.title">
+                            {{ child.text }}
                           </router-link>
+                          <a v-else :href="child.href" :title="child.title" :target="child.target">
+                            {{ child.text }}
+                          </a>
                         </li>
                       </ul>
                     </li>
@@ -69,13 +75,15 @@ const siteMenu = computed(() => layoutStore.getSiteMenu);
                         {{ item.text }}
                       </a>
                       
-                      <!-- Специальная обработка для пункта "Афиша" - показываем выпадающий список категорий -->
-                      <ul v-if="item.text === 'Афиша' && eventCategories && eventCategories.length"
-                        class="rt-dropdown-menu">
-                        <li v-for="cat in eventCategories" :key="cat.slug">
-                          <router-link :to="`/afisha/${cat.slug}`">
-                            {{ cat.name }}
+                      <!-- Выпадающее меню для пунктов с дочерними элементами -->
+                      <ul v-if="hasChildren(item)" class="rt-dropdown-menu">
+                        <li v-for="child in item.children" :key="child.href">
+                          <router-link v-if="child.href.startsWith('/')" :to="child.href" :title="child.title">
+                            {{ child.text }}
                           </router-link>
+                          <a v-else :href="child.href" :title="child.title" :target="child.target">
+                            {{ child.text }}
+                          </a>
                         </li>
                       </ul>
                     </li>

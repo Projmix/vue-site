@@ -10,6 +10,9 @@ import { useHead } from '@vueuse/head';
 import '@splidejs/vue-splide/css';
 import moment from 'moment';
 import ru from 'moment/locale/ru';
+import apiService from '../services/apiService';
+import axios from 'axios';
+
 export default {
   name: "Page",
   components: {
@@ -36,51 +39,40 @@ export default {
     return {
       page: {},
       loading: true,
+      error: null,
     };
   },
   methods: {
     async getPage() {
-      const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/page/${this.$route.params.slug}`;
-      const params = {
-          lang: import.meta.env.VITE_API_LANG,
-          jsonld: import.meta.env.VITE_API_JSONLD,
-          cityId: import.meta.env.VITE_API_CITY_ID,
-
-          onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-          domain: import.meta.env.VITE_API_DOMAIN,
-          distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
-          expand: 'sessions',
-
-      };
-      
-      await axios.get(apiUrl, { params }).then(response => {
-
-        if (!response.data) {
+      try {
+        const response = await apiService.getPageBySlug(this.$route.params.slug);
+        
+        if (!response || !response.page) {
+          this.error = 'Страница не найдена';
           return;
         }
 
-        this.page = response.data.page;
+        this.page = response.page;
 
+        // Установка SEO-метатегов
         useHead({
           title: this.page.seoTitle ? this.page.seoTitle : this.page.title,
           meta: [
             {
               name: 'description',
-              content: this.page.seoDescription.replace(/<[^>]+>/g, '')
+              content: this.page.seoDescription ? this.page.seoDescription.replace(/<[^>]+>/g, '') : ''
             }
           ]
         });
-        
-      });
-
-      // await this.getSchedule(null);
-
-      setTimeout(() => {
-            this.loading = false;
-      }, 500);
+      } catch (error) {
+        console.error("Ошибка загрузки страницы:", error);
+        this.error = 'Ошибка загрузки страницы';
+      } finally {
+        setTimeout(() => {
+          this.loading = false;
+        }, 300);
+      }
     },
-
-    
 
     strTimestampToHumanTime(timestamp) {
       return moment(timestamp * 1000).format('DD.MM.YYYY');
@@ -110,40 +102,68 @@ export default {
           </div>
       </div>
 
-      <headerSection :filteredCategoriesData="layoutStore.filteredCategoriesData" />
+      <headerSection />
 
+      <div v-if="error" class="container error-container">
+        <div class="row">
+          <div class="col-md-12 text-center">
+            <h2>{{ error }}</h2>
+            <router-link to="/" class="btn-fill color-yellow">Вернуться на главную</router-link>
+          </div>
+        </div>
+      </div>
 
-      <div class="hero common-hero" :style="{ 'background': background }">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12">
-              <div class="hero-ct" v-if="page.content">
-                <h1>{{ page.seoTitle ? page.seoTitle : page.title }}</h1>
-                <ul class="breadcumb">
-                  <li class="active"><router-link to="/">Главная</router-link></li>
-                  <li> <span class="ion-ios-arrow-right"></span>{{ page.seoTitle ? page.seoTitle : page.title }}</li>
-                </ul>
+      <template v-else-if="page.content">
+        <div class="hero common-hero" :style="{ 'background': background }">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="hero-ct">
+                  <h1>{{ page.seoTitle ? page.seoTitle : page.title }}</h1>
+                  <ul class="breadcumb">
+                    <li class="active"><router-link to="/">Главная</router-link></li>
+                    <li> <span class="ion-ios-arrow-right"></span>{{ page.seoTitle ? page.seoTitle : page.title }}</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <!-- blog detail section-->
-      <div class="page-single">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12 col-sm-12 col-xs-12">
-              <div class="blog-detail-ct" v-if="page.content" v-html="page.content">
-                
+        <!-- blog detail section-->
+        <div class="page-single">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="blog-detail-ct" v-html="page.content">
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <!-- end of  blog detail section-->
+      </template>
       
+      <template v-else-if="!loading && !page.content">
+        <div class="container empty-content-container">
+          <div class="row">
+            <div class="col-md-12 text-center">
+              <h2>{{ page.title || 'Страница' }}</h2>
+              <p>Контент отсутствует</p>
+            </div>
+          </div>
+        </div>
+      </template>
 
       <footerSection />
       
     </main>
 </template>
+
+<style scoped>
+.error-container, .empty-content-container {
+  padding: 80px 0;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
