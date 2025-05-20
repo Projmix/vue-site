@@ -68,7 +68,6 @@ export default {
   overflow: hidden;
   box-shadow: 0 4px 18px rgba(0,0,0,0.13);
   text-align: center;
-  padding-bottom: 24px;
   transition: box-shadow 0.3s, transform 0.3s;
 }
 .speaker-layout3:hover {
