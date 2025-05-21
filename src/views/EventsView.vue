@@ -142,9 +142,6 @@ export default {
 
       <headerSection />
 
-      <!-- Banner -->
-       <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-      </section>
 
       <!-- Events List -->
       <section class="section-space-default bg-light">

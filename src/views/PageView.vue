@@ -104,10 +104,7 @@ export default {
 
       <headerSection />
 
-      <!-- Inner page banner section -->
-      <section class="inner-page-banner" :style="{ backgroundImage: `url(${background || ''})` }">
-        <div class="banner-overlay"></div>
-      </section>
+
 
       <div v-if="error" class="container error-container">
         <div class="row">
