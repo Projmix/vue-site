@@ -37,5 +37,13 @@ export default defineConfig({
     // },
     // historyApiFallback: true // This ensures 404 requests return the index.html
   },
-  base: './'
+  base: '/',
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  }
 })

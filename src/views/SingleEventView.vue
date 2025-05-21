@@ -1,8 +1,7 @@
 <template>
   <main>
     <headerSection />
-    <section class="inner-page-banner">
-    </section>
+
     <section class="section-space-less30">
       <div class="container">
         <div v-if="loading" class="text-center py-4">

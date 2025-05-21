@@ -177,10 +177,7 @@ export default {
 
     <headerSection />
 
-    <!-- Inner page banner for when there's no slider -->
-    <section v-if="!hasSliderData" class="inner-page-banner" :style="{ backgroundImage: `url(${background || ''})` }">
-      <div class="banner-overlay"></div>
-    </section>
+
 
     <!-- Slider Area Start Here - отображаем только если есть данные-->
     <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">

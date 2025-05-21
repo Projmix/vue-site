@@ -1,7 +1,6 @@
 <template>
   <main>
     <HeaderSection />
-    <section class="inner-page-banner"></section>
     <section class="single-blog-page">
       <div class="container">
         <div class="row">

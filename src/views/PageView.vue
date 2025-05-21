@@ -124,11 +124,7 @@ export default {
             <div class="row">
               <div class="col-md-12">
                 <div class="hero-ct">
-                  <h1>{{ page.seoTitle ? page.seoTitle : page.title }}</h1>
-                  <ul class="breadcumb">
-                    <li class="active"><router-link to="/">Главная</router-link></li>
-                    <li> <span class="ion-ios-arrow-right"></span>{{ page.seoTitle ? page.seoTitle : page.title }}</li>
-                  </ul>
+                  <h1>{{ page.title }}</h1>
                 </div>
               </div>
             </div>

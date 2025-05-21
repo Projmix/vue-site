@@ -107,10 +107,6 @@ export default {
 
       <headerSection />
 
-      <!-- Banner -->
-       <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-               
-      </section>
 
       <!-- Posts Grid -->
       <section class="section-space-default bg-light">

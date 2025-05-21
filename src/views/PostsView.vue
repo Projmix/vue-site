@@ -145,10 +145,7 @@ export default {
 
     <headerSection />
 
-    <!-- Banner and Breadcrumbs -->
-    <section class="inner-page-banner" :style="{ backgroundImage: 'url(' + background + ')' }">
-      
-    </section>
+
     
     <!-- Posts Section -->
     <section class="section-space-equal">
@@ -273,5 +270,8 @@ export default {
   height: 240px;
   object-fit: cover;
   border-radius: 6px 6px 0 0;
+}
+.news-meta-info{
+  font-size: 20px;
 }
 </style>

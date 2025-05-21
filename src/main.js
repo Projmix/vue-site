@@ -37,6 +37,12 @@ const head = createHead();
 
 const app = createApp(App)
 
+// Configure the router base URL if needed
+if (import.meta.env.PROD) {
+  // Make sure history API fallback works in production
+  console.log('Running in production mode with base URL:', import.meta.env.BASE_URL || '/')
+}
+
 app.component('VueDatePicker', VueDatePicker)
 
 // Регистрируем сервисы как глобальные свойства
