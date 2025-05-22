@@ -1,7 +1,5 @@
 <template>
   <headerSection />
-    <section class="inner-page-banner" style="background-image: url(@/assets/images/figure/inner-page-figure.jpg);">
-            </section>
             <!-- Inne Page Banner Area End Here -->
             <!-- Sponsonrs Area Start Here -->
             <section class="section-space-default bg-light">

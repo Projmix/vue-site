@@ -146,11 +146,6 @@ function handleStickyHeader() {
   padding-right: 22%;
 }
 
-.inner-page-banner {
-  height: 5px;
-  background-color: rgba(0, 0, 0, 0.05);
-  position: relative;
-}
 
 /* Sticky header styling */
 .main-menu-area{
