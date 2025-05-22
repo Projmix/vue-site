@@ -84,6 +84,7 @@ onMounted(() => {
                       </a>
                     </li>
                   </ul>
+
                 </div>
               </div>
             </div>
@@ -109,7 +110,7 @@ onMounted(() => {
   margin-bottom: 0px;
 }
 
-.footer-layout2 .footer-top-area .container-fluid .col-lg-8:first-child{
+.footer-layout2 .footer-top-area .container .col-lg-8:first-child{
   display: flex;
   gap: 20px;
 }
