@@ -61,7 +61,7 @@ onMounted(() => {
       <div class="footer-top-area footer-box-layout">
         <div class="container">
           <div class="row">
-            <div class="col-lg-3">
+            <div class="col-lg-1">
               <div class="widget">
                 <router-link class="footer-widget-logo" :to="{ name: 'home' }">
                   <img class="img-fluid" :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
@@ -69,6 +69,7 @@ onMounted(() => {
               </div>
             </div>
             <!-- Динамические ссылки футера из API -->
+            <div class="col-lg-8">
             <div class="col-lg-3" v-for="(linkGroup, index) in footerLinks" :key="index">
               <div class="widget">
                 <h3 class="widgettitle">{{ linkGroup.text }}</h3>
@@ -86,6 +87,8 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+            </div>
+          <div class="col-lg-3"></div>
           </div>
         </div>
       </div>
@@ -105,4 +108,10 @@ onMounted(() => {
 .footer-layout2 .footer-top-area .widget .footer-widget-logo{
   margin-bottom: 0px;
 }
+
+.footer-layout2 .footer-top-area .container-fluid .col-lg-8:first-child{
+  display: flex;
+  gap: 20px;
+}
+
 </style>
