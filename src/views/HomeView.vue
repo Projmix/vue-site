@@ -80,16 +80,18 @@ export default {
         // Wait for the layout to be loaded from props.layoutLoaded first
         await props.layoutLoaded;
         
-        // Если мы переходим на главную страницу без перезагрузки, загружаем события
-        // Это происходит при навигации внутри SPA
-        if (Object.keys(layoutStore.eventsByCategory).length === 0 || !layoutStore.initialDataLoaded) {
-          console.log('[HomeView] Загружаем события для главной страницы');
+        // Проверяем, есть ли события и загружены ли данные
+        // Избегаем дублирующих запросов, если события уже загружены в layoutStore
+        if (Object.keys(layoutStore.eventsByCategory).length === 0 && !layoutStore.eventsLoading) {
+          console.log('[HomeView] События не загружены, загружаем их');
           try {
             const events = await apiService.getEventsWithSessionsByCategory();
             layoutStore.eventsByCategory = events;
           } catch (error) {
             console.error('[HomeView] Ошибка загрузки событий:', error);
           }
+        } else {
+          console.log('[HomeView] События уже загружены или загружаются через layoutStore');
         }
         
         // Загружаем новости

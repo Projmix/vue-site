@@ -265,10 +265,11 @@ export const useLayoutStore = defineStore("layout", {
             const isHomePage = window.location.pathname === '/' || 
                               window.location.pathname === '/index.html';
             
-            // Загружаем события только если находимся на главной странице
-            if (isHomePage) {
+            // Загружаем события только если находимся на главной странице и они еще не загружены
+            if (isHomePage && Object.keys(this.eventsByCategory).length === 0) {
               console.log('[fetchLayout] На главной странице, загружаем события');
-              this.eventsLoading = true;
+              this.eventsLoading = true; // Устанавливаем флаг загрузки перед запросом
+              
               try {
                 // Получаем события с сессиями, сгруппированные по категориям
                 this.eventsByCategory = await apiService.getEventsWithSessionsByCategory();
@@ -277,10 +278,12 @@ export const useLayoutStore = defineStore("layout", {
                 console.error('[fetchLayout] Ошибка получения событий:', error);
                 this.eventsByCategory = {};
               } finally {
-                this.eventsLoading = false;
+                this.eventsLoading = false; // Сбрасываем флаг после завершения запроса
               }
-            } else {
+            } else if (!isHomePage) {
               console.log('[fetchLayout] Не на главной странице, события не загружаем');
+            } else {
+              console.log('[fetchLayout] События уже загружены, пропускаем запрос');
             }
             
             // 3. Сохраняем что данные загружены

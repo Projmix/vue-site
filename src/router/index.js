@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { useLayoutStore } from '../stores/layout.js'
+import apiService from '../services/apiService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || '/'),
@@ -121,6 +122,9 @@ router.afterEach((to, from) => {
       if (layoutStore) {
         layoutStore.resetEventsCache();
       }
+      
+      // Also clear API service cache for home page
+      apiService.clearCache('home');
     } catch (error) {
       console.error('[Router] Error resetting layout store:', error);
     }

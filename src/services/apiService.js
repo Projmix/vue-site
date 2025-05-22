@@ -12,6 +12,9 @@ class ApiService {
       baseURL: this.apiUrl,
       withCredentials: false,
     });
+    
+    // Cache for API calls
+    this.homePageDataPromise = null;
   }
   
   /**
@@ -274,18 +277,32 @@ class ApiService {
    * @returns {Promise} Промис с результатом запроса
    */
   async getHomePageData() {
-    try {
-      const params = {
-        ...this.getCommonParams(),
-        expand: 'sessions'
-      };
-      
-      const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
-      return response.data;
-    } catch (error) {
-      console.error('API error: getHomePageData', error);
-      throw error;
+    // Use cached promise if exists (prevents duplicate requests)
+    if (this.homePageDataPromise) {
+      console.log('[apiService] getHomePageData: Используем кэшированные данные');
+      return this.homePageDataPromise;
     }
+    
+    // Create a new promise
+    this.homePageDataPromise = new Promise(async (resolve, reject) => {
+      try {
+        console.log('[apiService] getHomePageData: Запрос данных для главной страницы');
+        const params = {
+          ...this.getCommonParams(),
+          expand: 'sessions'
+        };
+        
+        const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
+        console.log('[apiService] getHomePageData: Данные получены');
+        resolve(response.data);
+      } catch (error) {
+        console.error('API error: getHomePageData', error);
+        this.homePageDataPromise = null; // Reset cache on error
+        reject(error);
+      }
+    });
+    
+    return this.homePageDataPromise;
   }
   
   /**
@@ -294,6 +311,7 @@ class ApiService {
    */
   async getEventsWithSessionsByCategory() {
     try {
+      console.log('[apiService] getEventsWithSessionsByCategory: Запрос событий');
       const data = await this.getHomePageData();
       const categorizedEvents = {};
       
@@ -324,10 +342,22 @@ class ApiService {
         });
       }
       
+      console.log('[apiService] getEventsWithSessionsByCategory: Событий получено:', Object.keys(categorizedEvents).length);
       return categorizedEvents;
     } catch (error) {
       console.error('API error: getEventsWithSessionsByCategory', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Очистка кэша API запросов
+   * @param {String} cacheKey - ключ кэша для очистки (если не указан, очищаются все кэши)
+   */
+  clearCache(cacheKey = null) {
+    if (cacheKey === 'home' || cacheKey === null) {
+      console.log('[apiService] clearCache: Очищаем кэш данных главной страницы');
+      this.homePageDataPromise = null;
     }
   }
 }
