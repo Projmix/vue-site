@@ -59,7 +59,6 @@ function handleStickyHeader() {
 <template>
   <!-- BEGIN | Header -->
   <header class="ht-header full-width-hd">
-    <section class="inner-page-banner"></section>
     <div id="header-one" class="header-area header-fixed full-width-compress">
       <div class="main-menu-area" id="sticker">
         <div class="container-fluid">
@@ -154,13 +153,15 @@ function handleStickyHeader() {
 }
 
 /* Sticky header styling */
+.main-menu-area{
+  background-color: rgba(17, 17, 17, 0.9)
+}
 .main-menu-area.stick {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 999;
-  background-color: #ffffff;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease-in-out;
 }

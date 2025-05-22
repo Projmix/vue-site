@@ -3,7 +3,7 @@
   <div class="blog-layout3 overlay-gradient news-aspect">
     <div class="image-wrapper news-img-aspect">
       <img
-        :src="post.image['1300x560'] || placeholderImage"
+        :src="post.image['250x170'] || placeholderImage"
         :alt="post.title"
         class="img-fluid news-img-crop"
         @error="onImgError"
@@ -95,7 +95,7 @@
 }
 .news-img-crop {
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  top: 0; left: 0; width: 100%;
   object-fit: cover;
   display: block;
 }
