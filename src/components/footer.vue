@@ -16,7 +16,7 @@ onMounted(() => {
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    script.onerror = function() {
+    script.onerror = function () {
       console.error('Google Translate script failed to load.');
     };
     document.head.appendChild(script);
@@ -64,55 +64,56 @@ onMounted(() => {
             <div class="col-lg-1">
               <div class="widget">
                 <router-link class="footer-widget-logo" :to="{ name: 'home' }">
-                  <img class="img-fluid" :src="logoUrl" alt="logo" style="width:179px; height:46px; object-fit:contain;">
+                  <img class="img-fluid" :src="logoUrl" alt="logo"
+                    style="width:179px; height:46px; object-fit:contain;">
                 </router-link>
               </div>
             </div>
             <!-- Динамические ссылки футера из API -->
             <div class="col-lg-8">
-            <div class="col-lg-3" v-for="(linkGroup, index) in footerLinks" :key="index">
-              <div class="widget">
-                <h3 class="widgettitle">{{ linkGroup.text }}</h3>
-                <div class="footer-widget-menu" v-if="linkGroup.children && linkGroup.children.length">
-                  <ul>
-                    <li v-for="(link, linkIdx) in linkGroup.children" :key="linkIdx">
-                      <router-link v-if="link.href.startsWith('/')" :to="link.href" :title="link.title">
-                        {{ link.text }}
-                      </router-link>
-                      <a v-else :href="link.href" :title="link.title" :target="link.target || '_self'">
-                        {{ link.text }}
-                      </a>
-                    </li>
-                  </ul>
-
+              <div class="col-lg-3" v-for="(linkGroup, index) in footerLinks" :key="index">
+                <div class="widget">
+                  <h3 class="widgettitle">{{ linkGroup.text }}</h3>
+                  <div class="footer-widget-menu" v-if="linkGroup.children && linkGroup.children.length">
+                    <ul>
+                      <li v-for="(link, linkIdx) in linkGroup.children" :key="linkIdx">
+                        <router-link v-if="link.href.startsWith('/')" :to="link.href" :title="link.title">
+                          {{ link.text }}
+                        </router-link>
+                        <a v-else :href="link.href" :title="link.title" :target="link.target || '_self'">
+                          {{ link.text }}
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
-            </div>
+
           <div class="col-lg-3"></div>
-          </div>
         </div>
       </div>
-      <div class="footer-bottom-area footer-box-layout">
-        <p>© 2012-2025 "Arcom Group". Все права защищены.</p>
-      </div>
+    </div>
+    <div class="footer-bottom-area footer-box-layout">
+      <p>© 2012-2025 "Arcom Group". Все права защищены.</p>
+    </div>
     </div>
   </footer>
   <!-- end of footer v2 section-->
 </template>
 
 <style scoped>
-.footer-top-area .container-fluid .col-lg-3:first-child{
+.footer-top-area .container-fluid .col-lg-3:first-child {
   display: flex;
   align-items: center;
 }
-.footer-layout2 .footer-top-area .widget .footer-widget-logo{
+
+.footer-layout2 .footer-top-area .widget .footer-widget-logo {
   margin-bottom: 0px;
 }
 
-.footer-layout2 .footer-top-area .container .col-lg-8:first-child{
+.footer-layout2 .footer-top-area .container .col-lg-8:first-child {
   display: flex;
   gap: 20px;
 }
-
 </style>
