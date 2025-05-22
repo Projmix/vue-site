@@ -91,7 +91,11 @@ export const useLayoutStore = defineStore("layout", {
     },
     actions: {
       async fetchCompanyInfo() {
-        // We're keeping this for backwards compatibility but preferring layout data for logo
+        // This method is no longer needed as we're now getting data from /api/v3/arena/page/mail
+        console.log('[fetchCompanyInfo] This method is deprecated and will be removed in future versions');
+        return null;
+        
+        /* Commented out as per requirement to remove this API call
         this.companyInfoLoading = true;
         this.companyInfoError = null;
         try {
@@ -107,6 +111,7 @@ export const useLayoutStore = defineStore("layout", {
         } finally {
           this.companyInfoLoading = false;
         }
+        */
       },
       async fetchCategories() {
         this.categoriesLoading = true;
@@ -182,6 +187,11 @@ export const useLayoutStore = defineStore("layout", {
         }
       },
       async fetchAllEvents() {
+        // This method is no longer needed as we're now getting events from /api/v3/arena/page/mail
+        console.log('[fetchAllEvents] This method is deprecated and will be removed in future versions');
+        return null;
+        
+        /* Commented out as per requirement to replace with /api/v3/arena/page/mail
         this.eventsLoading = true;
         try {
           // Получаем все события из API
@@ -199,6 +209,7 @@ export const useLayoutStore = defineStore("layout", {
         } finally {
           this.eventsLoading = false;
         }
+        */
       },
       organizeEventsByCategory(events) {
         // Создаем объект для хранения событий по категориям
@@ -244,8 +255,18 @@ export const useLayoutStore = defineStore("layout", {
             // 1. Сначала загружаем layout для получения меню и footer
             this.layout = await apiService.getLayout();
             
-            // 2. Загружаем события из объектов
-            await this.fetchAllEvents();
+            // 2. Вместо загрузки событий из объектов, получаем события из mail endpoint
+            this.eventsLoading = true;
+            try {
+              // Получаем события с сессиями, сгруппированные по категориям
+              this.eventsByCategory = await apiService.getEventsWithSessionsByCategory();
+              console.log('[fetchLayout] Получены события по категориям:', this.eventsByCategory);
+            } catch (error) {
+              console.error('[fetchLayout] Ошибка получения событий:', error);
+              this.eventsByCategory = {};
+            } finally {
+              this.eventsLoading = false;
+            }
             
             // 3. Сохраняем что данные загружены
             this.initialDataLoaded = true;

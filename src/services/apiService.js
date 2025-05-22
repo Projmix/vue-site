@@ -26,7 +26,7 @@ class ApiService {
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
       cityId: import.meta.env.VITE_API_CITY_ID,
-      onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
+      onlyDomain: 1,
       domain: currentDomain,
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     };
@@ -55,6 +55,9 @@ class ApiService {
    */
   async getCategoryEvents(categorySlug) {
     try {
+      // Если categorySlug не указан, используем 'theatre' по умолчанию
+      const slug = categorySlug || 'theatre';
+      
       const params = {
         ...this.getCommonParams(),
         date: Math.floor(Date.now() / 1000), // текущий timestamp
@@ -62,7 +65,7 @@ class ApiService {
         objectsIds: 0,
       };
       
-      const response = await this.axiosInstance.get(`/api/v3/mobile/afisha/${categorySlug}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/mobile/afisha/${slug}`, { params });
       
       // Извлекаем события из всех секций согласно API
       let events = [];
@@ -262,6 +265,68 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error(`API error: getPageBySlug for ${slug}`, error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Получение данных для главной страницы из endpoint /api/v3/arena/page/mail
+   * @returns {Promise} Промис с результатом запроса
+   */
+  async getHomePageData() {
+    try {
+      const params = {
+        ...this.getCommonParams(),
+        expand: 'sessions'
+      };
+      
+      const response = await this.axiosInstance.get('/api/v3/arena/page/mail', { params });
+      return response.data;
+    } catch (error) {
+      console.error('API error: getHomePageData', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Получение списка событий с сессиями, сгруппированных по категориям
+   * @returns {Promise} Промис с объектом категорий и соответствующими событиями
+   */
+  async getEventsWithSessionsByCategory() {
+    try {
+      const data = await this.getHomePageData();
+      const categorizedEvents = {};
+      
+      // Проверяем наличие performances в данных
+      if (data && data.performances) {
+        // Обрабатываем каждую категорию
+        data.performances.forEach(category => {
+          // Пропускаем категорию "top" (рекомендуемые)
+          if (category.viewType === 'top' || category.slug === 'top') {
+            return;
+          }
+          
+          // Фильтруем события с непустыми sessions
+          const eventsWithSessions = category.events?.filter(event => 
+            event.sessions && event.sessions.length > 0
+          ) || [];
+          
+          // Если есть события с сессиями, добавляем категорию
+          if (eventsWithSessions.length > 0) {
+            categorizedEvents[category.slug] = {
+              name: category.name,
+              slug: category.slug,
+              events: eventsWithSessions,
+              loading: false,
+              error: false
+            };
+          }
+        });
+      }
+      
+      return categorizedEvents;
+    } catch (error) {
+      console.error('API error: getEventsWithSessionsByCategory', error);
       throw error;
     }
   }

@@ -19,10 +19,7 @@ const router = createRouter({
     {
       path: '/afisha',
       name: 'afisha',
-      redirect: to => {
-        // Default redirect to 'theatre' category or first available
-        return { name: 'events-category', params: { category: 'theatre' } }
-      }
+      component: () => import('../views/EventsView.vue')
     },
     {
       path: '/afisha/:category',

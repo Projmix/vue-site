@@ -30,7 +30,7 @@ export default {
 
     const loading = ref(true);
     const moreLoading = ref(false);
-    const categorySlug = ref(route.params.category);
+    const categorySlug = ref(route.params.category || 'theatre'); // Если нет категории, используем 'theatre' по умолчанию
     const categoryInfo = ref(null);
     const allEvents = ref([]);
     const errorMsg = ref('');
@@ -96,10 +96,9 @@ export default {
 
     // Следим за изменением параметра роута и подстраиваемся под новый формат /afisha/:category
     watch(() => route.params.category, (newSlug) => {
-      if (newSlug && newSlug !== categorySlug.value) {
-            categorySlug.value = newSlug;
-            fetchCategoryEvents();
-        }
+      // Если newSlug пустой (маршрут /afisha без категории), используем theatre по умолчанию
+      categorySlug.value = newSlug || 'theatre';
+      fetchCategoryEvents();
     });
 
      onMounted(() => {
