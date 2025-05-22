@@ -270,7 +270,7 @@ class ApiService {
   }
   
   /**
-   * Получение данных для главной страницы из endpoint /api/v3/arena/page/mail
+   * Получение данных для главной страницы из endpoint /api/v3/arena/home
    * @returns {Promise} Промис с результатом запроса
    */
   async getHomePageData() {
@@ -280,7 +280,7 @@ class ApiService {
         expand: 'sessions'
       };
       
-      const response = await this.axiosInstance.get('/api/v3/arena/page/mail', { params });
+      const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
       return response.data;
     } catch (error) {
       console.error('API error: getHomePageData', error);
