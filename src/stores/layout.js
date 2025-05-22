@@ -245,6 +245,12 @@ export const useLayoutStore = defineStore("layout", {
         
         this.eventsByCategory = eventsByCategory;
       },
+      // Метод для сброса кэша событий (полезно при навигации на главную)
+      resetEventsCache() {
+        console.log('[layoutStore] Сбрасываем кэш событий');
+        this.eventsByCategory = {};
+        this.eventsFromObjects = [];
+      },
       async fetchLayout() {
         if (this.layoutFetchPromise) {
           return this.layoutFetchPromise;
@@ -255,17 +261,26 @@ export const useLayoutStore = defineStore("layout", {
             // 1. Сначала загружаем layout для получения меню и footer
             this.layout = await apiService.getLayout();
             
-            // 2. Вместо загрузки событий из объектов, получаем события из mail endpoint
-            this.eventsLoading = true;
-            try {
-              // Получаем события с сессиями, сгруппированные по категориям
-              this.eventsByCategory = await apiService.getEventsWithSessionsByCategory();
-              console.log('[fetchLayout] Получены события по категориям:', this.eventsByCategory);
-            } catch (error) {
-              console.error('[fetchLayout] Ошибка получения событий:', error);
-              this.eventsByCategory = {};
-            } finally {
-              this.eventsLoading = false;
+            // 2. Определяем, находимся ли мы на главной странице
+            const isHomePage = window.location.pathname === '/' || 
+                              window.location.pathname === '/index.html';
+            
+            // Загружаем события только если находимся на главной странице
+            if (isHomePage) {
+              console.log('[fetchLayout] На главной странице, загружаем события');
+              this.eventsLoading = true;
+              try {
+                // Получаем события с сессиями, сгруппированные по категориям
+                this.eventsByCategory = await apiService.getEventsWithSessionsByCategory();
+                console.log('[fetchLayout] Получены события по категориям:', this.eventsByCategory);
+              } catch (error) {
+                console.error('[fetchLayout] Ошибка получения событий:', error);
+                this.eventsByCategory = {};
+              } finally {
+                this.eventsLoading = false;
+              }
+            } else {
+              console.log('[fetchLayout] Не на главной странице, события не загружаем');
             }
             
             // 3. Сохраняем что данные загружены

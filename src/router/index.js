@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useLayoutStore } from '../stores/layout.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || '/'),
@@ -106,6 +107,24 @@ const router = createRouter({
       return { top: 0 }
     }
   },
+})
+
+// Add navigation guard to handle/reset cache on navigation to home
+router.afterEach((to, from) => {
+  // If navigating to home, we need to ensure events data is loaded
+  if (to.name === 'home' && from.name !== null) {
+    // Reset cache only when navigating to home page, not on initial load
+    try {
+      console.log('[Router] Navigating to home from:', from.path, 'resetting events cache');
+      const layoutStore = useLayoutStore();
+      // Reset cache for events to force reload when entering home page
+      if (layoutStore) {
+        layoutStore.resetEventsCache();
+      }
+    } catch (error) {
+      console.error('[Router] Error resetting layout store:', error);
+    }
+  }
 })
 
 export default router

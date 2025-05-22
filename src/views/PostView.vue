@@ -47,8 +47,8 @@ export default {
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
       cityId: cityId || selectedCityId.value,
-      onlyDomain: import.meta.env.VITE_API_ONLY_DOMAIN,
-      domain: import.meta.env.VITE_API_DOMAIN,
+      onlyDomain: 1,
+      domain: window.location.hostname,
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     });
 
