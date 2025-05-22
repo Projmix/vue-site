@@ -112,7 +112,7 @@ onMounted(() => {
   margin-bottom: 0px;
 }
 
-.footer-layout2 .footer-top-area .container .col-lg-8:first-child {
+.footer-layout2 .footer-top-area .container .col-lg-8 {
   display: flex;
   gap: 20px;
 }
