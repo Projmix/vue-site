@@ -77,9 +77,9 @@ async function fetchPostData() {
       title: postData?.title || '',
       publishedAt: postData?.publishedAt || postData?.published_at || '',
       // Выбираем наилучшее доступное изображение
-      image: postData?.image?.['800x450'] || 
-             postData?.image?.['1300x560'] || 
-             postData?.image?.original || '',
+      image: postData?.image?.original || 
+             postData?.image?.['800x450'] || 
+             postData?.image?.['1300x560'] ||  '',
       // Выбираем контент, предпочтительно markdown или HTML
       content: postData?.content?.markdown || 
                postData?.content?.html || 

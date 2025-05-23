@@ -165,7 +165,7 @@ export default {
                 <div class="item-image">
                   <router-link :to="`/post/${post.slug}`">
                     <img
-                      :src="post.image['1300x560'] || post.image['1600x900'] || post.image.original"
+                      :src="post.image['250x170'] || post.image.original"
                       class="img-responsive"
                       :alt="post.title"
                       @error="$event.target.src = '/src/assets/images/blog/blog11.jpg'"

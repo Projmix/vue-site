@@ -28,7 +28,6 @@ class ApiService {
     return {
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
-      cityId: import.meta.env.VITE_API_CITY_ID,
       onlyDomain: 1,
       domain: currentDomain,
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
