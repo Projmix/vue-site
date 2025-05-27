@@ -10,7 +10,7 @@
     
         //---------------------------------------------
     
-    
+    /*
     
         $('#ensign-nivoslider-1').nivoSlider({
     
@@ -57,9 +57,9 @@
     
             manualAdvance: false*/
     
-        });
+        //});
 
-        $('#ensign-nivoslider-2').nivoSlider({
+       /* $('#ensign-nivoslider-2').nivoSlider({
     
             effect: 'random', // Specify sets like: 'sliceDownLeft sliceUp sliceUpLeft sliceUpDown sliceUpDownLeft fold fade random slideInRight slideInLeft boxRandom boxRain boxRainReverse boxRainGrow boxRainGrowReverse'
             slices: 15, // For slice animations
@@ -104,9 +104,9 @@
     
             manualAdvance: false*/
     
-        });
+       // });
 
-        $('#ensign-nivoslider-3').nivoSlider({
+       /* $('#ensign-nivoslider-3').nivoSlider({
     
             effect: 'fold', // Specify sets like: 'sliceDownLeft sliceUp sliceUpLeft sliceUpDown sliceUpDownLeft fold fade random slideInRight slideInLeft boxRandom boxRain boxRainReverse boxRainGrow boxRainGrowReverse'
             slices: 15, // For slice animations
@@ -151,7 +151,7 @@
     
             manualAdvance: false*/
     
-        });
+        //});
     
     })(jQuery);
     
