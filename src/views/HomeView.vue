@@ -1,5 +1,5 @@
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import headerSection from '../components/header.vue';
 import footerSection from '../components/footer.vue';
 import { useLayoutStore } from "../stores/layout.js";
@@ -8,10 +8,10 @@ import moment from 'moment';
 import { Splide, SplideSlide } from '@splidejs/vue-splide';
 import axios from 'axios';
 import '@splidejs/vue-splide/css';
-import ru from 'moment/locale/ru'; // Убедитесь, что локаль импортирована
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
 import apiService from '../services/apiService';
+import { useRouter } from 'vue-router';
 
 export default {
   name: "Home",
@@ -24,18 +24,24 @@ export default {
     NewsCard,
   },
   setup(props) {
-    // Флаг для отслеживания инициализации Nivo Slider
     let nivoInitialized = false;
     const layoutStore = useLayoutStore();
+    const router = useRouter();
     const background = computed(() => layoutStore.getBackground);
     const logo = computed(() => layoutStore.getLogo);
     const logo2 = computed(() => layoutStore.getLogo2);
     
-    // Флаг наличия слайдера в данных лейаута
-    const hasSliderData = computed(() => layoutStore.getHasSliderData);
+    const siteSlider = computed(() => {
+        const slides = layoutStore.getSiteSlider;
+        console.log('[HomeView] Slides data:', slides);
+        return slides;
+    });
     
-    // Получаем слайдер из layoutStore
-    const siteSlider = computed(() => layoutStore.getSiteSlider);
+    const hasSliderData = computed(() => {
+        const has = layoutStore.getHasSliderData;
+        console.log('[HomeView] Has slider data:', has);
+        return has;
+    });
     
     // События по категориям из layoutStore, фильтруем только непустые
     const eventsByCategory = computed(() => {
@@ -103,58 +109,92 @@ export default {
       }
     };
 
-    onMounted(() => {
-      // Load all data (news)
-      loadAllData();
-      
-      // Setup UI components after a small delay
-      nextTick(() => {
-        setTimeout(() => {
-          if (hasSliderData.value && window.$ && typeof window.$.fn.nivoSlider === 'function') {
-            // Очищаем предыдущую инициализацию
-            $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
-            $('#ensign-nivoslider-3').nivoSlider({
-              effect: 'fade',
-              slices: 15,
-              boxCols: 8,
-              boxRows: 4,
-              animSpeed: 500,
-              pauseTime: 5000,
-              startSlide: 0,
-              directionNav: true,
-              controlNav: true,
-              pauseOnHover: true,
-              manualAdvance: false,
-            });
-            nivoInitialized = true;
-          }
-          
-      // Инициализация jQuery-плагинов
-      if (window.$ && typeof window.$.fn.meanmenu === 'function') {
-        $('nav#dropdown').meanmenu({
-          siteLogo: `<div class='mobile-menu-nav-back'><a href='/'><img src='${layoutStore.getLogo}' alt="logo" style="width:120px; height:auto; object-fit:contain;"/></a></div>`
-        });
-      }
-      if (window.$ && typeof window.$.scrollUp === 'function') {
-        $.scrollUp({
-          scrollText: '<i class="fa fa-angle-up"></i><p>ВВЕРХ</p>',
-          easingType: 'linear',
-          scrollSpeed: 900,
-        });
-      }
-        }, 200); // задержка чтобы DOM точно был готов
+    const initNivoSlider = () => {
+      const sliderElement = $('#ensign-nivoslider-3');
+      sliderElement.removeClass('nivoSlider');
+      sliderElement.removeData('nivoslider');
+      sliderElement.removeData('nivo:vars');
+      sliderElement.find('.nivo-main-image, .nivo-caption').remove();
+      $('.nivo-controlNav, .nivo-directionNav, .nivo-slice').remove();
+      sliderElement.children('img').show().css('visibility', '');
+
+      sliderElement.nivoSlider({
+        effect: 'fade',
+        slices: 15,
+        boxCols: 8,
+        boxRows: 4,
+        animSpeed: 500,
+        pauseTime: 5000,
+        startSlide: 0,
+        directionNav: true,
+        controlNav: true,
+        pauseOnHover: true,
+        manualAdvance: false
+        // Не нужно afterLoad/afterChange для caption!
       });
+      nivoInitialized = true;
+      // Очищаем цифры в точках
+      $('.nivo-controlNav a.nivo-control').text('');
+    };
+
+    const navigateToSlideUrl = (url) => {
+      if (!url) return;
+      if (url.startsWith('http')) {
+        window.open(url, '_blank');
+      } else {
+        router.push(url);
+      }
+    };
+
+    onMounted(async () => {
+      console.log('[HomeView] Component mounted');
+      await loadAllData();
     });
 
+    // Следим за появлением валидных слайдов и инициализируем слайдер только один раз
+    watch(
+      () => siteSlider.value && siteSlider.value.filter(s => s && s.href).length,
+      (count) => {
+        if (!nivoInitialized && count >= 2) {
+          nextTick(() => {
+            setTimeout(() => {
+              if (!nivoInitialized) {
+                console.log('[HomeView] Initializing slider after data ready');
+                initNivoSlider();
+              }
+            }, 300);
+          });
+        }
+      },
+      { immediate: true }
+    );
+
     onBeforeUnmount(() => {
-      if (nivoInitialized) {
-        $('#ensign-nivoslider-3').data('nivo:vars', null).removeClass('nivoSlider');
-        nivoInitialized = false;
-      }
+      const sliderElement = $('#ensign-nivoslider-3');
+      sliderElement.removeClass('nivoSlider');
+      sliderElement.removeData('nivoslider');
+      sliderElement.removeData('nivo:vars');
+      sliderElement.find('.nivo-main-image, .nivo-caption').remove();
+      $('.nivo-controlNav, .nivo-directionNav, .nivo-slice').remove();
+      nivoInitialized = false;
     });
 
     const formatDate = (date, format = 'DD MMM YYYY') => {
       return moment(date).format(format);
+    };
+
+    // Функция для очистки текста от HTML-сущностей
+    const cleanText = (text) => {
+        if (!text) return '';
+        return text
+            .replace(/&nbsp;/g, ' ')  // Заменяем &nbsp; на обычный пробел
+            .replace(/&amp;/g, '&')   // Заменяем &amp; на &
+            .replace(/&lt;/g, '<')    // Заменяем &lt; на <
+            .replace(/&gt;/g, '>')    // Заменяем &gt; на >
+            .replace(/&quot;/g, '"')  // Заменяем &quot; на "
+            .replace(/&#39;/g, "'")   // Заменяем &#39; на '
+            .replace(/\s+/g, ' ')     // Убираем множественные пробелы
+            .trim();                  // Убираем пробелы в начале и конце
     };
 
     return {
@@ -172,6 +212,8 @@ export default {
       loading,
       formatDate,
       moment,
+      navigateToSlideUrl,
+      cleanText,
     };
   },
   props: ['layoutLoaded'],
@@ -191,52 +233,43 @@ export default {
 
     <headerSection />
 
-
-
-    <!-- Slider Area Start Here - отображаем только если есть данные-->
+    <!-- Slider Area Start Here -->
     <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
       <div class="bend niceties preview-1">
-        <div id="ensign-nivoslider-3" class="slides">
+        <div id="ensign-nivoslider-3" class="slides nivoSlider">
           <template v-for="(slide, index) in siteSlider" :key="index">
-            <img :src="slide.href" alt="slider" :title="`#slider-direction-${index + 1}`" style="cursor:pointer"
-                 @click="$router.push(slide.url || '/')" />
-          </template>
-          <!-- Если нет слайдов, используем заглушки -->
-          <template v-if="siteSlider.length === 0">
-            <img src="@/assets/images/slider/slide4-1.jpg" alt="slider" title="#slider-direction-1" />
+            <img
+              v-if="slide && slide.href"
+              :src="slide.href"
+              alt="slider"
+              :title="`#slider-direction-${index + 1}`"
+              style="width: 100%;"
+            />
           </template>
         </div>
-        
-        <!-- Содержимое слайдов -->
-        <template v-for="(slide, index) in siteSlider" :key="`content-${index}`">
-          <div :id="`slider-direction-${index + 1}`" class="t-cn slider-direction">
-            <div class="slider-content s-tb">
-              <div class="title-container s-tb-c title-light">
-                <div class="container text-left">
-                  <h3 class="title title-bold color-light hover-yellow size-xl first-line">
-                    <a :href="slide.url || '#'" @click.prevent="$router.push(slide.url || '/')">
-                      {{ slide.title || '' }}
-                    </a>
-                  </h3>
-                  <div class="slider-big-text first-line">
-                    <p>{{ slide.subtitle || '' }}</p>
-                  </div>
-                  <div class="slider-big-text second-line">
-                    <p>{{ slide.text || '' }}</p>
+        <!-- Captions for each slide (вне .nivoSlider!) -->
+        <template v-for="(slide, index) in siteSlider" :key="'caption-' + index">
+          <div
+            v-if="slide && slide.href"
+            :id="`slider-direction-${index + 1}`"
+            class="nivo-html-caption"
+            style="display: none;"
+          >
+            <div class='slider-content s-tb'>
+              <div class='title-container s-tb-c title-light'>
+                <div class='container text-left'>
+                  <div class='slider-big-text first-line'><p>{{ cleanText(slide.title) }}</p></div>
+                  <div v-if="slide.buttonText" class='slider-btn-area forth-line margin-t-30'>
+                    <a :href="slide.url || '#'" class='btn-ghost color-yellow' target='_blank'>{{ slide.buttonText }}</a>
                   </div>
                 </div>
-              </div>
-              <div v-if="slide.buttonText" class="slider-btn-area forth-line margin-t-30">
-                <a :href="slide.url || '#'" class="btn-fill color-yellow" 
-                   @click.prevent="$router.push(slide.url || '/')">
-                  {{ slide.buttonText }}
-                </a>
               </div>
             </div>
           </div>
         </template>
       </div>
     </div>
+    <!-- Slider Area End Here -->
 
     <!-- Блок с событиями по категориям -->
     <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
@@ -585,4 +618,133 @@ body main {
 .news-section .container .see-all-button{
   margin-top: 0px;
 }
+
+/* Nivo Control Nav Styling */
+/*
+:global(.slider-direction-layout2 .nivo-controlNav) {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 10;
+  padding: 0;
+  text-align: right;
+}
+
+:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control) {
+  text-indent: -9999px;
+  width: 0.6rem;
+  height: 3rem;
+  background-color: #8cc63e;
+  margin-bottom: 1rem;
+  display: block;
+  cursor: pointer;
+  border: none;
+  box-shadow: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control:hover) {
+  opacity: 1;
+}
+
+:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control.active) {
+  background-color: #fad03b;
+  opacity: 1;
+}
+*/
+/* Slider Text Styling */
+:global(.slider-layout4 .slider-content .slider-big-text p) {
+  padding: 0;
+  line-height: 1.2;
+  font-size: 3rem;
+  text-transform: capitalize;
+  margin-bottom: 0;
+  font-weight: 900;
+  font-family: 'Roboto', sans-serif;
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+:global(.slider-layout4 .slider-content .slider-big-text p::before) {
+  position: absolute;
+  height: 3px;
+  background-color: #ffffff;
+  width: 100%;
+  content: "";
+  left: 0;
+  bottom: 2px;
+}
+
+/* Button styling */
+/* :global(.slider-btn-area a.btn-ghost.color-yellow) {
+  border: 2px solid #fad03b;
+  color: #fad03b;
+  background-color: transparent;
+  padding: 10px 25px;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+:global(.slider-btn-area a.btn-ghost.color-yellow:hover) {
+  background-color: #fad03b;
+  color: #111111;
+} */
+
+/* Responsive styles */
+/* @media (max-width: 991px) {
+  :global(.slider-layout4 .slider-content .slider-big-text p) {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 767px) {
+  :global(.slider-layout4 .slider-content .slider-big-text p) {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 575px) {
+  :global(.slider-layout4 .slider-content .slider-big-text p) {
+    font-size: 2.2rem;
+  }
+  :global(.slider-direction-layout2 .nivo-controlNav) {
+    right: 10px;
+  }
+  :global(.slider-direction-layout2 .nivo-controlNav a.nivo-control) {
+    height: 2rem;
+    width: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+} */
+/* .nivo-controlNav a.nivo-control {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.5;
+  margin: 0 5px;
+  font-size: 0 !important; 
+  border: 2px solid #fad03b;
+  transition: background 0.3s, opacity 0.3s;
+}
+.nivo-controlNav a.nivo-control.active {
+  background: #fad03b;
+  opacity: 1;
+  border-color: #fad03b;
+  font-size: 0 !important;
+}
+
+.nivo-controlNav {
+  text-align: center;
+  margin-top: 30px;
+} */
+
 </style>

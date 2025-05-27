@@ -161,6 +161,6 @@ function handleStickyHeader() {
   transition: all 0.3s ease-in-out;
 }
 header{
-  padding-top: 150px;
+  padding-top: 107px;
 }
 </style>

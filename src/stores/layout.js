@@ -19,6 +19,7 @@ export const useLayoutStore = defineStore("layout", {
         eventsFromObjects: [],
         eventsLoading: true,
         eventsByCategory: {}, // События, распределенные по категориям
+        siteSlider: [], // Для хранения данных слайдера
     }),
     getters: {
       getLayout(state) {
@@ -75,10 +76,10 @@ export const useLayoutStore = defineStore("layout", {
         return state.layout?.site_footer_images || [];
       },
       getSiteSlider(state) {
-        return state.layout?.site_slider || [];
+        return state.siteSlider || [];
       },
       getHasSliderData(state) {
-        return !!(state.layout?.site_slider && state.layout.site_slider.length > 0);
+        return state.siteSlider && state.siteSlider.length > 0;
       },
       getEventsByCategory(state) {
         return state.eventsByCategory;
@@ -258,39 +259,66 @@ export const useLayoutStore = defineStore("layout", {
         
         this.layoutFetchPromise = new Promise(async (resolve, reject) => {
           try {
-            // 1. Сначала загружаем layout для получения меню и footer
+            // 1. Загружаем базовый layout
             this.layout = await apiService.getLayout();
             
-            // 2. Определяем, находимся ли мы на главной странице
-            const isHomePage = window.location.pathname === '/' || 
-                              window.location.pathname === '/index.html';
+            // 2. Загружаем данные для главной страницы
+            const homeData = await apiService.getHomePageData();
+            console.log('[fetchLayout] Получены данные слайдера:', homeData?.data?.topSlider);
             
-            // Загружаем события только если находимся на главной странице и они еще не загружены
-            if (isHomePage && Object.keys(this.eventsByCategory).length === 0) {
-              console.log('[fetchLayout] На главной странице, загружаем события');
-              this.eventsLoading = true; // Устанавливаем флаг загрузки перед запросом
-              
-              try {
-                // Получаем события с сессиями, сгруппированные по категориям
-                this.eventsByCategory = await apiService.getEventsWithSessionsByCategory();
-                console.log('[fetchLayout] Получены события по категориям:', this.eventsByCategory);
-              } catch (error) {
-                console.error('[fetchLayout] Ошибка получения событий:', error);
-                this.eventsByCategory = {};
-              } finally {
-                this.eventsLoading = false; // Сбрасываем флаг после завершения запроса
-              }
-            } else if (!isHomePage) {
-              console.log('[fetchLayout] Не на главной странице, события не загружаем');
+            // Обработка данных слайдера
+            if (homeData?.data?.topSlider?.items) {
+                this.siteSlider = homeData.data.topSlider.items.map(item => ({
+                    title: item.title,
+                    buttonText: item.buttonText,
+                    url: item.url,
+                    href: item.image['1300x560']
+                }));
+                console.log('[fetchLayout] Обработанные данные слайдера:', this.siteSlider);
             } else {
-              console.log('[fetchLayout] События уже загружены, пропускаем запрос');
+                console.warn('[fetchLayout] Нет данных для слайдера');
+                this.siteSlider = [];
+            }
+
+            // 3. Обработка событий для главной страницы
+            const isHomePage = window.location.pathname === '/' || 
+                             window.location.pathname === '/index.html';
+            
+            if (isHomePage) {
+                this.eventsLoading = true;
+                try {
+                    const categorizedEvents = {};
+                    if (homeData && homeData.performances) {
+                        homeData.performances.forEach(category => {
+                            if (category.viewType === 'top' || category.slug === 'top') return;
+                            const eventsWithSessions = category.events?.filter(event => 
+                                event.sessions && event.sessions.length > 0
+                            ) || [];
+                            if (eventsWithSessions.length > 0) {
+                                categorizedEvents[category.slug] = {
+                                    name: category.name,
+                                    slug: category.slug,
+                                    events: eventsWithSessions.slice(0, 8),
+                                    loading: false,
+                                    error: false
+                                };
+                            }
+                        });
+                    }
+                    this.eventsByCategory = categorizedEvents;
+                } catch (error) {
+                    console.error('[fetchLayout] Error processing events:', error);
+                    this.eventsByCategory = {};
+                } finally {
+                    this.eventsLoading = false;
+                }
             }
             
-            // 3. Сохраняем что данные загружены
             this.initialDataLoaded = true;
             resolve(this.layout);
           } catch (error) {
-            console.error('[fetchLayout] Ошибка:', error);
+            console.error('[fetchLayout] Error:', error);
+            this.siteSlider = [];
             this.initialDataLoaded = true;
             reject(error);
           }
