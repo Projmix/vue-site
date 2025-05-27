@@ -58,7 +58,7 @@ export default {
       error.value = null;
       
       try {
-        const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/posts`;
+        const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/posts`;
         const params = getApiParams();
         
         console.log('[PostsView] Запрос новостей:', params);

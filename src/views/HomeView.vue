@@ -110,6 +110,13 @@ export default {
     };
 
     const initNivoSlider = () => {
+      // Проверяем, загружен ли плагин nivoSlider
+      if (!window.$ || !$.fn.nivoSlider) {
+        console.log('[HomeView] Waiting for nivoSlider plugin to load...');
+        setTimeout(() => initNivoSlider(), 100);
+        return;
+      }
+
       const sliderElement = $('#ensign-nivoslider-3');
       sliderElement.removeClass('nivoSlider');
       sliderElement.removeData('nivoslider');
@@ -157,12 +164,10 @@ export default {
       (count) => {
         if (!nivoInitialized && count >= 2) {
           nextTick(() => {
-            setTimeout(() => {
-              if (!nivoInitialized) {
-                console.log('[HomeView] Initializing slider after data ready');
-                initNivoSlider();
-              }
-            }, 300);
+            if (!nivoInitialized) {
+              console.log('[HomeView] Initializing slider after data ready');
+              initNivoSlider();
+            }
           });
         }
       },

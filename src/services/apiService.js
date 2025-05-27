@@ -148,7 +148,7 @@ class ApiService {
         time: Math.floor(Date.now() / 1000),
       };
       
-      const response = await this.axiosInstance.get(`/api/v3/arena/events/${eventId}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/pages/events/${eventId}`, { params });
       return response.data;
     } catch (error) {
       console.error(`API error: getEventDetails for ${eventId}`, error);
@@ -208,7 +208,7 @@ class ApiService {
         perPage
       };
       
-      const response = await this.axiosInstance.get('/api/v3/arena/posts', { params });
+      const response = await this.axiosInstance.get('/api/v3/pages/posts', { params });
       return {
         posts: response.data.posts || [],
         totalPages: response.data.posts_last_page || 1
@@ -227,7 +227,7 @@ class ApiService {
   async getPostDetails(slug) {
     try {
       const params = this.getCommonParams();
-      const response = await this.axiosInstance.get(`/api/v3/arena/posts/${slug}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/pages/posts/${slug}`, { params });
       return response.data.posts;
     } catch (error) {
       console.error(`API error: getPostDetails for ${slug}`, error);
@@ -263,7 +263,7 @@ class ApiService {
         expand: 'sessions'
       };
       
-      const response = await this.axiosInstance.get(`/api/v3/arena/page/${slug}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/pages/page/${slug}`, { params });
       return response.data;
     } catch (error) {
       console.error(`API error: getPageBySlug for ${slug}`, error);
@@ -272,7 +272,7 @@ class ApiService {
   }
   
   /**
-   * Получение данных для главной страницы из endpoint /api/v3/arena/home
+   * Получение данных для главной страницы из endpoint /api/v3/pages/home
    * @returns {Promise} Промис с результатом запроса
    */
   async getHomePageData() {
@@ -291,7 +291,7 @@ class ApiService {
           expand: 'sessions'
         };
         
-        const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
+        const response = await this.axiosInstance.get('/api/v3/pages/home', { params });
         console.log('[apiService] getHomePageData: Данные получены');
         resolve(response.data);
       } catch (error) {

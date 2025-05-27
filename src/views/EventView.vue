@@ -59,7 +59,7 @@ export default {
   },
   methods: {
     async getEvent() {
-      const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/events/${this.$route.params.id}`;
+      const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/events/${this.$route.params.id}`;
       const params = {
           lang: import.meta.env.VITE_API_LANG,
           jsonld: import.meta.env.VITE_API_JSONLD,

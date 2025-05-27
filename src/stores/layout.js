@@ -92,7 +92,6 @@ export const useLayoutStore = defineStore("layout", {
     },
     actions: {
       async fetchCompanyInfo() {
-        // This method is no longer needed as we're now getting data from /api/v3/arena/page/mail
         console.log('[fetchCompanyInfo] This method is deprecated and will be removed in future versions');
         return null;
         
@@ -186,31 +185,6 @@ export const useLayoutStore = defineStore("layout", {
         } finally {
           this.categoriesData[category.slug].loading = false;
         }
-      },
-      async fetchAllEvents() {
-        // This method is no longer needed as we're now getting events from /api/v3/arena/page/mail
-        console.log('[fetchAllEvents] This method is deprecated and will be removed in future versions');
-        return null;
-        
-        /* Commented out as per requirement to replace with /api/v3/arena/page/mail
-        this.eventsLoading = true;
-        try {
-          // Получаем все события из API
-          const events = await apiService.fetchAllEvents();
-          this.eventsFromObjects = events;
-          
-          // Распределяем события по категориям
-          this.organizeEventsByCategory(events);
-          
-          console.log('[fetchAllEvents] Получено событий:', events.length);
-        } catch (error) {
-          console.error('Ошибка загрузки событий:', error);
-          this.eventsFromObjects = [];
-          this.eventsByCategory = {};
-        } finally {
-          this.eventsLoading = false;
-        }
-        */
       },
       organizeEventsByCategory(events) {
         // Создаем объект для хранения событий по категориям
