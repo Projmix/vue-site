@@ -72,7 +72,7 @@ function handleStickyHeader() {
             </div>
             <div class="col-lg-7 col-md-6 possition-static">
               <div class="eventalk-main-menu">
-                <nav class="d-none d-lg-block">
+                <nav class="d-none d-lg-block desktop-menu">
                   <ul>
                     <!-- Динамическое меню из API -->
                     <li v-for="item in siteMenu" :key="item.href">
@@ -98,7 +98,7 @@ function handleStickyHeader() {
                   </ul>
                 </nav>
                 <!-- Mobile Menu start -->
-                <nav id="dropdown" class="d-md-none">
+                <nav id="dropdown" class="d-md-none mobile-menu">
                   <ul>
                     <!-- Динамическое меню для мобильных из API -->
                     <li v-for="item in siteMenu" :key="item.href">
@@ -141,26 +141,99 @@ function handleStickyHeader() {
   <!-- END | Header -->
 </template>
 
-<style scoped>
-.eventalk-main-menu {
-  padding-right: 22%;
-}
+<style>
+  .eventalk-main-menu {
+    padding-right: 22%;
+  }
+  
+  /* Sticky header styling */
+  .main-menu-area{
+    background-color: rgba(17, 17, 17, 0.9)
+  }
+  .main-menu-area.stick {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+  }
+  header{
+    padding-top: 107px;
+  }
 
+  /* FOUC Prevention: Initially hide the main menu wrapper */
+  .eventalk-main-menu {
+    visibility: hidden;
+  }
 
-/* Sticky header styling */
-.main-menu-area{
-  background-color: rgba(17, 17, 17, 0.9)
-}
-.main-menu-area.stick {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 999;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease-in-out;
-}
-header{
-  padding-top: 107px;
-}
+  /* Make desktop menu visible OR when meanMenu has initialized */
+  .desktop-menu,
+  .mean-container .eventalk-main-menu {
+    visibility: visible;
+  }
+
+  /* On desktop screens (>= 992px) */
+  @media (min-width: 992px) {
+    .eventalk-main-menu { /* Ensure main wrapper is visible */
+      visibility: visible;
+    }
+    .desktop-menu { /* Ensure desktop menu is displayed */
+      display: block !important; /* Or whatever its natural display type is */
+    }
+    .mobile-menu { /* Ensure original mobile nav (#dropdown) is hidden */
+      display: none !important;
+    }
+  }
+
+  /* On mobile screens (<= 991px) */
+  @media (max-width: 991px) {
+    /* Hide desktop-specific elements */
+    .desktop-menu,
+    .header-area .col-lg-2.d-none.d-lg-block, /* Desktop Logo Column */
+    .header-area .col-lg-3.d-none.d-lg-block { /* Desktop Tickets Column */
+      display: none !important;
+    }
+
+    header.ht-header { /* Adjust header padding on mobile */
+      padding-top: 0 !important;
+    }
+
+    /* Neutralize #header-one.header-fixed on mobile */
+    #header-one.header-fixed {
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      width: 100% !important; /* Or auto, depending on desired behavior */
+      background-color: transparent !important;
+      box-shadow: none !important;
+      z-index: auto !important;
+      height: auto !important; /* Let its content define its height */
+    }
+
+    .main-menu-area { /* Adjust for meanMenu bar height and remove conflicting background */
+      min-height: 60px; /* Example height, adjust as needed */
+      background-color: transparent !important; /* meanMenu bar will have its own background */
+    }
+    
+    .mobile-menu { /* The source nav#dropdown for meanMenu */
+        /* It is hidden by d-md-none initially, meanMenu will process it. */
+        /* No specific display rule needed here unless to override something. */
+    }
+  }
+
+  /* Styles for the logo within the generated meanMenu bar */
+  :global(.mean-bar .mobile-menu-nav-back) {
+    /* Add padding or background if needed for the logo container */
+    /* background: rgba(17, 17, 17, 0.9); */ /* If mean-bar itself is transparent */
+    padding: 5px 0; /* Adjust vertical padding for the logo */
+  }
+
+  :global(.mean-bar .mobile-menu-nav-back img) {
+    height: 35px;
+    object-fit: contain;
+    display: block; /* Allows margin auto to work for centering */
+    margin: 0 auto; /* Centers the image if its container has width */
+  }
 </style>

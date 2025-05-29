@@ -246,8 +246,28 @@
      jQuery MeanMenu activation code
      --------------------------------------*/
     $('nav#dropdown').meanmenu({
-        siteLogo: "<div class='mobile-menu-nav-back'><a href='/'><img src='./images/logo.png'/></a></div>"
+        siteLogo: "<div class='mobile-menu-nav-back'></div>"
     });
+
+    // Функция для обновления логотипа в мобильном меню
+    function updateMobileLogo() {
+        // Проверяем размер экрана и наличие мобильного меню
+        if ($(window).width() <= 991 && $('.mean-bar').length) {
+            // Получаем логотип из основного хедера
+            const headerLogo = $('.logo-area img').first();
+            if (headerLogo.length) {
+                const logoSrc = headerLogo.attr('src');
+                const logoHtml = `<a href='/'><img src='${logoSrc}' alt='logo' style='height: 35px; object-fit: contain;'/></a>`;
+                $('.mobile-menu-nav-back').html(logoHtml);
+            }
+        }
+    }
+
+    // Обновляем лого при загрузке страницы
+    $(window).on('load', updateMobileLogo);
+
+    // Обновляем лого при изменении размера окна
+    $(window).on('resize', updateMobileLogo);
 
     /*-------------------------------------
     // jquery zoom activation code

@@ -59,7 +59,7 @@ export default {
                ...getCommonParams(),
                perPage: perPage.value,
              };
-             const response = await axiosInstance.get(`/api/v3/pages/posts`, { params });
+             const response = await axiosInstance.get(`/api/v3/arena/posts`, { params });
              posts.value = response.data.posts || [];
              totalPages.value = 1;
         } catch (error) {

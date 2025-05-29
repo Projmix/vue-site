@@ -66,7 +66,7 @@ async function fetchPostData() {
   };
   
   try {
-    const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/pages/posts/${slug}`;
+    const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/posts/${slug}`;
     const { data } = await axios.get(apiUrl, { params });
     console.log('[SingleBlogView] API response:', data);
     

@@ -25,69 +25,59 @@
   </router-link>
 </template>
   
-  <script>
-  import placeholder from '@/assets/images/blog/blog11.jpg'; // Запасное изображение для новостей
-  import moment from 'moment';
-  
-  export default {
-    name: 'NewsCard',
-    props: {
-      post: {
-        type: Object,
-        required: true,
-      },
+<script>
+import placeholder from '@/assets/images/blog/blog11.jpg'; // Запасное изображение для новостей
+
+export default {
+  name: 'NewsCard',
+  props: {
+    post: {
+      type: Object,
+      required: true,
     },
-    data() {
-      return {
-        placeholderImage: placeholder
+  },
+  data() {
+    return {
+      placeholderImage: placeholder
+    }
+  },
+  methods: {
+    onImgError(event) {
+      event.target.src = this.placeholderImage;
+    },
+    formatDateRU(dateStr) {
+      // Если дата в формате DD.MM.YYYY, преобразуем в YYYY-MM-DD
+      if (dateStr.includes('.')) {
+        dateStr = dateStr.split('.').reverse().join('-');
       }
+      
+      const date = new Date(dateStr);
+      const formatted = new Intl.DateTimeFormat('ru-RU', { 
+        day: '2-digit', 
+        month: 'short' 
+      }).format(date);
+      
+      // Делаем первую букву месяца заглавной
+      const [day, month] = formatted.split(' ');
+      return `${day} ${month.charAt(0).toUpperCase()}${month.slice(1)}`;
     },
-    methods: {
-      onImgError(event) {
-        event.target.src = this.placeholderImage;
-      },
-      getNewsDay(post) {
-        const dateStr = post.published_at || post.publishedAt || '';
-        const currentLocale = moment.locale(); // Сохраняем текущую локаль
-        moment.locale('ru'); // Устанавливаем русскую локаль
-        let formattedDate = '';
-
-        if (moment(dateStr, 'DD.MM.YYYY HH:mm:ss', true).isValid()) {
-          formattedDate = moment(dateStr, 'DD.MM.YYYY HH:mm:ss').format('DD MMM');
-        } else if (moment(dateStr, 'YYYY-MM-DD HH:mm:ss', true).isValid()) {
-          formattedDate = moment(dateStr, 'YYYY-MM-DD HH:mm:ss').format('DD MMM');
-        } else if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
-          formattedDate = moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
-        } else if (moment(dateStr).isValid()) { // Общий случай, если другие форматы не подошли
-          formattedDate = moment(dateStr).format('DD MMM');
-        }
-        moment.locale(currentLocale); // Восстанавливаем исходную локаль
-        return formattedDate;
-      },
-      formatDate(dateString, format = 'DD MMM YYYY') {
-        const currentLocale = moment.locale(); // Сохраняем текущую локаль
-        moment.locale('ru'); // Устанавливаем русскую локаль
-        let formattedDate = dateString; // По умолчанию возвращаем исходную строку
-
-        // Пробуем разные форматы исходной даты
-        if (moment(dateString, 'DD.MM.YYYY HH:mm:ss', true).isValid()) {
-          formattedDate = moment(dateString, 'DD.MM.YYYY HH:mm:ss').format(format);
-        } else if (moment(dateString, 'YYYY-MM-DD HH:mm:ss', true).isValid()) {
-          formattedDate = moment(dateString, 'YYYY-MM-DD HH:mm:ss').format(format);
-        } else if (moment(dateString, 'DD.MM.YYYY', true).isValid()) {
-          formattedDate = moment(dateString, 'DD.MM.YYYY').format(format);
-        } else if (moment(dateString).isValid()) { // Общий случай
-          formattedDate = moment(dateString).format(format);
-        }
-
-        moment.locale(currentLocale); // Восстанавливаем исходную локаль
-        return formattedDate;
-      }
+    getNewsDay(post) {
+      const dateStr = post.published_at || post.publishedAt || '';
+      console.log('Original date string:', dateStr);
+      
+      const formattedDate = this.formatDateRU(dateStr);
+      console.log('Formatted date:', formattedDate);
+      
+      return formattedDate;
     },
-  };
+    formatDate(dateString) {
+      return this.formatDateRU(dateString);
+    }
+  },
+};
 </script>
   
-  <style scoped>
+<style scoped>
 .news-card-link {
   display: block;
   text-decoration: none;

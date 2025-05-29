@@ -3816,72 +3816,96 @@ span.menu-trigger i {
   -moz-animation: fadeInRightBig 1000ms ease-in-out;
   -ms-animation: fadeInRightBig 1000ms ease-in-out;
   animation: fadeInRightBig 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-1 .second-line {
   -webkit-animation: fadeInLeft 1000ms ease-in-out;
   -moz-animation: fadeInLeft 1000ms ease-in-out;
   -ms-animation: fadeInLeft 1000ms ease-in-out;
   animation: fadeInLeft 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-1 .third-line {
   -webkit-animation: bounceInUp 1500ms ease-in-out;
   -moz-animation: bounceInUp 1500ms ease-in-out;
   -ms-animation: bounceInUp 1500ms ease-in-out;
   animation: bounceInUp 1500ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-1 .forth-line {
   -webkit-animation: zoomIn 2000ms ease-in-out;
   -moz-animation: zoomIn 2000ms ease-in-out;
   -ms-animation: zoomIn 2000ms ease-in-out;
   animation: zoomIn 2000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-2 .first-line {
   -webkit-animation: fadeInLeftBig 1000ms ease-in-out;
   -moz-animation: fadeInLeftBig 1000ms ease-in-out;
   -ms-animation: fadeInLeftBig 1000ms ease-in-out;
   animation: fadeInLeftBig 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-2 .second-line {
   -webkit-animation: fadeInLeft 1000ms ease-in-out;
   -moz-animation: fadeInLeft 1000ms ease-in-out;
   -ms-animation: fadeInLeft 1000ms ease-in-out;
   animation: fadeInLeft 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-2 .third-line {
   -webkit-animation: fadeInLeft 1500ms ease-in-out;
   -moz-animation: fadeInLeft 1500ms ease-in-out;
   -ms-animation: fadeInLeft 1500ms ease-in-out;
   animation: fadeInLeft 1500ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-2 .forth-line {
   -webkit-animation: fadeInLeft 2000ms ease-in-out;
   -moz-animation: fadeInLeft 2000ms ease-in-out;
   -ms-animation: fadeInLeft 2000ms ease-in-out;
   animation: fadeInLeft 2000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-3 .first-line {
   -webkit-animation: bounceInDown 1000ms ease-in-out;
   -moz-animation: bounceInDown 1000ms ease-in-out;
   -ms-animation: bounceInDown 1000ms ease-in-out;
   animation: bounceInDown 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-3 .second-line {
   -webkit-animation: fadeInLeft 1000ms ease-in-out;
   -moz-animation: fadeInLeft 1000ms ease-in-out;
   -ms-animation: fadeInLeft 1000ms ease-in-out;
   animation: fadeInLeft 1000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-3 .third-line {
   -webkit-animation: bounceInUp 1500ms ease-in-out;
   -moz-animation: bounceInUp 1500ms ease-in-out;
   -ms-animation: bounceInUp 1500ms ease-in-out;
   animation: bounceInUp 1500ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 .slider-area .slide-3 .forth-line {
   -webkit-animation: bounceInUp 2000ms ease-in-out;
   -moz-animation: bounceInUp 2000ms ease-in-out;
   -ms-animation: bounceInUp 2000ms ease-in-out;
   animation: bounceInUp 2000ms ease-in-out;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
 /*======================================================
 [04] About Area Style

@@ -33,15 +33,11 @@ export default {
     
     const siteSlider = computed(() => {
         const slides = layoutStore.getSiteSlider;
-        console.log('[HomeView] Slides data:', slides);
+        console.log('[HomeView] Slider data for Nivo:', slides);
         return slides;
     });
     
-    const hasSliderData = computed(() => {
-        const has = layoutStore.getHasSliderData;
-        console.log('[HomeView] Has slider data:', has);
-        return has;
-    });
+    const hasSliderData = computed(() => layoutStore.getHasSliderData);
     
     // События по категориям из layoutStore, фильтруем только непустые
     const eventsByCategory = computed(() => {
@@ -110,38 +106,92 @@ export default {
     };
 
     const initNivoSlider = () => {
-      // Проверяем, загружен ли плагин nivoSlider
-      if (!window.$ || !$.fn.nivoSlider) {
-        console.log('[HomeView] Waiting for nivoSlider plugin to load...');
-        setTimeout(() => initNivoSlider(), 100);
+      console.log('[HomeView initNivoSlider] Called.');
+
+      if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
+        console.warn('[HomeView initNivoSlider] jQuery or Nivo Slider not loaded yet. Retrying in 200ms...');
+        setTimeout(initNivoSlider, 200);
         return;
       }
+      console.log('[HomeView initNivoSlider] jQuery and Nivo plugin ARE available.');
 
-      const sliderElement = $('#ensign-nivoslider-3');
-      sliderElement.removeClass('nivoSlider');
-      sliderElement.removeData('nivoslider');
-      sliderElement.removeData('nivo:vars');
-      sliderElement.find('.nivo-main-image, .nivo-caption').remove();
-      $('.nivo-controlNav, .nivo-directionNav, .nivo-slice').remove();
-      sliderElement.children('img').show().css('visibility', '');
+      const sliderElement = window.$('#ensign-nivoslider-3');
+      console.log('[HomeView initNivoSlider] sliderElement jQuery object:', sliderElement);
+      console.log('[HomeView initNivoSlider] sliderElement.length:', sliderElement.length);
 
+      if (sliderElement.length === 0) {
+        console.warn('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 NOT found in DOM by jQuery. Exiting.');
+        return;
+      }
+      console.log('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 found by jQuery.');
+
+      // Clean up any existing slider instance and related elements
+      if (nivoInitialized && sliderElement.data('nivoslider')) { 
+        console.log('[HomeView initNivoSlider] nivoInitialized is true AND Nivo slider instance exists. Destroying existing instance before re-init.');
+        try {
+          sliderElement.data('nivoslider').destroy();
+          console.log('[HomeView initNivoSlider] Existing Nivo slider instance destroyed.');
+        } catch (e) {
+          console.warn('[HomeView initNivoSlider] Error destroying existing Nivo slider instance:', e);
+        }
+      }
+      
+      // Important: Clean up ALL Nivo-related elements
+      sliderElement.removeClass('nivoSlider').empty();
+      window.$('.nivo-controlNav, .nivo-directionNav, .nivo-box, .nivo-slice, .nivo-caption').remove();
+      window.$('.slider-direction').hide(); // Hide all direction elements
+
+      // Re-populate images
+      siteSlider.value.forEach((slide, index) => {
+        if (slide && slide.href) {
+          sliderElement.append(
+            `<img src="${slide.href}" alt="slider" title="#slider-direction-${index + 1}" style="display:none;" />`
+          );
+        }
+      });
+      console.log('[HomeView initNivoSlider] Images repopulated in sliderElement.');
+
+      // Initialize with modified options
+      console.log('[HomeView initNivoSlider] Initializing Nivo Slider with options...');
       sliderElement.nivoSlider({
-        effect: 'fade',
+        effect: 'fold',
         slices: 15,
         boxCols: 8,
         boxRows: 4,
-        animSpeed: 500,
+        animSpeed: 1000,
         pauseTime: 5000,
         startSlide: 0,
         directionNav: true,
         controlNav: true,
+        controlNavThumbs: false,
         pauseOnHover: true,
-        manualAdvance: false
-        // Не нужно afterLoad/afterChange для caption!
+        manualAdvance: false,
+        prevText: 'Prev',
+        nextText: 'Next',
+        randomStart: false,
+        beforeChange: function(){
+          console.log('[HomeView Nivo Event] beforeChange');
+          // Hide all direction elements before change
+          window.$('.slider-direction').hide();
+        },
+        afterChange: function(){
+          console.log('[HomeView Nivo Event] afterChange');
+          // Show current direction element after change
+          const currentSlide = window.$('.nivo-main-image').attr('src');
+          const currentIndex = sliderElement.find('img').index(sliderElement.find(`img[src="${currentSlide}"]`));
+          window.$(`#slider-direction-${currentIndex + 1}`).show();
+        },
+        afterLoad: function(){
+          console.log('[HomeView Nivo Event] afterLoad: Slider loaded');
+          window.$('.nivo-controlNav a.nivo-control').text('');
+          // Show first slide direction element
+          window.$('#slider-direction-1').show();
+          console.log('[HomeView Nivo Event] afterLoad: Control nav text cleared and first direction shown.');
+        }
       });
+      console.log('[HomeView initNivoSlider] .nivoSlider() called.');
       nivoInitialized = true;
-      // Очищаем цифры в точках
-      $('.nivo-controlNav a.nivo-control').text('');
+      console.log('[HomeView initNivoSlider] nivoInitialized set to true.');
     };
 
     const navigateToSlideUrl = (url) => {
@@ -155,32 +205,55 @@ export default {
 
     onMounted(async () => {
       console.log('[HomeView] Component mounted');
-      await loadAllData();
+      if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
+        layoutStore.loadExternalScripts(); 
+      }
+      await loadAllData(); 
     });
 
-    // Следим за появлением валидных слайдов и инициализируем слайдер только один раз
     watch(
-      () => siteSlider.value && siteSlider.value.filter(s => s && s.href).length,
-      (count) => {
-        if (!nivoInitialized && count >= 2) {
+      () => siteSlider.value,
+      (newSlides) => {
+        console.log('[HomeView Watcher] siteSlider.value changed. newSlides length:', newSlides ? newSlides.length : 'null');
+        
+        if (newSlides && newSlides.length > 0) {
+          console.log('[HomeView Watcher] Slide data is present. Calling nextTick to check for element and init.');
           nextTick(() => {
-            if (!nivoInitialized) {
-              console.log('[HomeView] Initializing slider after data ready');
-              initNivoSlider();
+            const sliderElementExists = document.getElementById('ensign-nivoslider-3');
+            console.log('[HomeView Watcher nextTick] Inside nextTick. sliderElementExists:', !!sliderElementExists, 'nivoInitialized:', nivoInitialized);
+
+            if (sliderElementExists) {
+              if (!nivoInitialized) {
+                console.log('[HomeView Watcher nextTick] Element found. Attempting to initialize Nivo Slider (first time or after reset).');
+                initNivoSlider();
+              } else {
+                  console.log('[HomeView Watcher nextTick] Element found. Slider data updated, Nivo already initialized. Re-initializing Nivo Slider.');
+                  nivoInitialized = false;
+                  initNivoSlider();
+              }
+            } else {
+              console.warn('[HomeView Watcher nextTick] Element #ensign-nivoslider-3 NOT found in DOM even after nextTick. Slider will not initialize.');
             }
           });
+        } else {
+          console.log('[HomeView Watcher] No slide data (newSlides is null or empty). Not proceeding with init.');
         }
       },
-      { immediate: true }
+      { deep: true, immediate: true }
     );
 
     onBeforeUnmount(() => {
-      const sliderElement = $('#ensign-nivoslider-3');
-      sliderElement.removeClass('nivoSlider');
-      sliderElement.removeData('nivoslider');
-      sliderElement.removeData('nivo:vars');
-      sliderElement.find('.nivo-main-image, .nivo-caption').remove();
-      $('.nivo-controlNav, .nivo-directionNav, .nivo-slice').remove();
+      if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined' && window.$('#ensign-nivoslider-3').data('nivoslider')) {
+        console.log('[HomeView] Destroying Nivo Slider on unmount.');
+        try {
+            window.$('#ensign-nivoslider-3').data('nivoslider').destroy();
+        } catch(e) {
+            console.warn("[HomeView] Error destroying Nivo Slider:", e);
+            const sliderElement = window.$('#ensign-nivoslider-3');
+            sliderElement.removeClass('nivoSlider').empty();
+            window.$('.nivo-controlNav, .nivo-directionNav').remove();
+        }
+      }
       nivoInitialized = false;
     });
 
@@ -241,31 +314,37 @@ export default {
     <!-- Slider Area Start Here -->
     <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
       <div class="bend niceties preview-1">
-        <div id="ensign-nivoslider-3" class="slides nivoSlider">
-          <template v-for="(slide, index) in siteSlider" :key="index">
+        <div id="ensign-nivoslider-3" class="slides">
+          <template v-for="(slide, index) in siteSlider" :key="`slide-img-${index}`">
             <img
               v-if="slide && slide.href"
               :src="slide.href"
               alt="slider"
-              :title="`#slider-direction-${index + 1}`"
-              style="width: 100%;"
-            />
+              :title="`#slider-direction-${index + 1}`" 
+              style="display:none;" />
           </template>
         </div>
-        <!-- Captions for each slide (вне .nivoSlider!) -->
-        <template v-for="(slide, index) in siteSlider" :key="'caption-' + index">
+        
+        <template v-for="(slide, index) in siteSlider" :key="`caption-content-${index}`">
           <div
             v-if="slide && slide.href"
             :id="`slider-direction-${index + 1}`"
-            class="nivo-html-caption"
+            :class="['t-cn', 'slider-direction', `slide-${index + 1}`]"
             style="display: none;"
           >
             <div class='slider-content s-tb'>
               <div class='title-container s-tb-c title-light'>
                 <div class='container text-left'>
-                  <div class='slider-big-text first-line'><p>{{ cleanText(slide.title) }}</p></div>
+                  <div class='slider-big-text first-line'>
+                    <p>{{ cleanText(slide.title) }}</p>
+                  </div>
+                  
                   <div v-if="slide.buttonText" class='slider-btn-area forth-line margin-t-30'>
-                    <a :href="slide.url || '#'" class='btn-ghost color-yellow' target='_blank'>{{ slide.buttonText }}</a>
+                    <a :href="slide.url || '#'" 
+                       class='btn-ghost color-yellow' 
+                       :target="slide.url && slide.url.startsWith('http') ? '_blank' : '_self'">
+                      {{ slide.buttonText }}
+                    </a>
                   </div>
                 </div>
               </div>

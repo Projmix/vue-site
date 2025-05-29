@@ -29,7 +29,7 @@ class ApiService {
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
       onlyDomain: 1,
-      domain: currentDomain,
+      domain: "belorusneft.24afisha.by",
       distributor_company_id: import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID,
     };
   }
@@ -208,7 +208,7 @@ class ApiService {
         perPage
       };
       
-      const response = await this.axiosInstance.get('/api/v3/pages/posts', { params });
+      const response = await this.axiosInstance.get('/api/v3/arena/posts', { params });
       return {
         posts: response.data.posts || [],
         totalPages: response.data.posts_last_page || 1
@@ -227,7 +227,7 @@ class ApiService {
   async getPostDetails(slug) {
     try {
       const params = this.getCommonParams();
-      const response = await this.axiosInstance.get(`/api/v3/pages/posts/${slug}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/arena/posts/${slug}`, { params });
       return response.data.posts;
     } catch (error) {
       console.error(`API error: getPostDetails for ${slug}`, error);

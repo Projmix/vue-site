@@ -94,15 +94,39 @@
         var processCaption = function(settings){
             var nivoCaption = $('.nivo-caption', slider);
             if(vars.currentImage.attr('title') != '' && vars.currentImage.attr('title') != undefined){
-                var title = vars.currentImage.attr('title');
-                if(title.substr(0,1) == '#') title = $(title).html();   
-
+                var titleContentHtml = ''; // Инициализируем пустой строкой
+                var titleSelector = vars.currentImage.attr('title');
+        
+                if(titleSelector.substr(0,1) == '#') {
+                    var sourceElement = $(titleSelector); 
+                    if (sourceElement.length) {
+                        // Клонируем, чтобы не изменять оригинал
+                        var clonedElement = sourceElement.clone();
+                        // Убираем style="display: none;" если он есть на клонированном элементе
+                        clonedElement.css('display', ''); // Это уберет инлайновый display: none
+                        // Оборачиваем, чтобы получить HTML всего элемента
+                        titleContentHtml = clonedElement.wrap('<div></div>').parent().html(); 
+                    }
+                }
+                
+                // Если titleSelector не начинается с #, предполагаем, что это простой текст
+                // (хотя в вашем случае это не так, но оставим для полноты)
+                if (!titleContentHtml && titleSelector.substr(0,1) != '#') {
+                    titleContentHtml = titleSelector;
+                }
+        
                 if(nivoCaption.css('display') == 'block'){
-                    setTimeout(function(){
-                        nivoCaption.html(title);
+                    // Плавная смена содержимого, если caption уже виден
+                    // Можно добавить небольшую задержку, чтобы анимации успели отыграть, если нужно
+                    // nivoCaption.fadeOut(settings.animSpeed / 2, function(){
+                    //     $(this).html(titleContentHtml).fadeIn(settings.animSpeed / 2);
+                    // });
+                    // Или просто обновляем HTML
+                    setTimeout(function(){ // Оставим setTimeout как в вашем коде
+                         nivoCaption.html(titleContentHtml);
                     }, settings.animSpeed);
                 } else {
-                    nivoCaption.html(title);
+                    nivoCaption.html(titleContentHtml);
                     nivoCaption.stop().fadeIn(settings.animSpeed);
                 }
             } else {

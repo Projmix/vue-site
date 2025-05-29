@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import axios from 'axios'
 import { createPinia } from 'pinia'
+import moment from 'moment'
+import 'moment/locale/ru'
 
 import App from './App.vue'
 import router from './router'
@@ -25,9 +27,9 @@ import VueAwesomePaginate from "vue-awesome-paginate";
 
 import { createHead } from '@vueuse/head';
 
-import JQuery from "jquery"
-window.$ = JQuery
-window.jQuery = JQuery
+import $ from 'jquery'
+window.jQuery = $
+window.$ = $
 
 const axiosInstance = axios.create({
     withCredentials: false,
@@ -56,5 +58,8 @@ app.use(VueAwesomePaginate)
 app.use(createPinia())
 app.use(router)
 app.use(head)
+
+// Set moment.js locale globally after import
+moment.locale('ru')
 
 app.mount('#app')
