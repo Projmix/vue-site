@@ -48,18 +48,40 @@
       },
       getNewsDay(post) {
         const dateStr = post.published_at || post.publishedAt || '';
-        if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
-          return moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
-        } else if (moment(dateStr).isValid()) {
-          return moment(dateStr).format('DD MMM');
+        const currentLocale = moment.locale(); // Сохраняем текущую локаль
+        moment.locale('ru'); // Устанавливаем русскую локаль
+        let formattedDate = '';
+
+        if (moment(dateStr, 'DD.MM.YYYY HH:mm:ss', true).isValid()) {
+          formattedDate = moment(dateStr, 'DD.MM.YYYY HH:mm:ss').format('DD MMM');
+        } else if (moment(dateStr, 'YYYY-MM-DD HH:mm:ss', true).isValid()) {
+          formattedDate = moment(dateStr, 'YYYY-MM-DD HH:mm:ss').format('DD MMM');
+        } else if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
+          formattedDate = moment(dateStr, 'DD.MM.YYYY').format('DD MMM');
+        } else if (moment(dateStr).isValid()) { // Общий случай, если другие форматы не подошли
+          formattedDate = moment(dateStr).format('DD MMM');
         }
-        return '';
+        moment.locale(currentLocale); // Восстанавливаем исходную локаль
+        return formattedDate;
       },
       formatDate(dateString, format = 'DD MMM YYYY') {
-        // API возвращает строку вида "DD.MM.YYYY", парсим её
-        return moment(dateString, 'DD.MM.YYYY').isValid()
-          ? moment(dateString, 'DD.MM.YYYY').format(format)
-          : dateString; // Возвращаем как есть, если формат не распознан
+        const currentLocale = moment.locale(); // Сохраняем текущую локаль
+        moment.locale('ru'); // Устанавливаем русскую локаль
+        let formattedDate = dateString; // По умолчанию возвращаем исходную строку
+
+        // Пробуем разные форматы исходной даты
+        if (moment(dateString, 'DD.MM.YYYY HH:mm:ss', true).isValid()) {
+          formattedDate = moment(dateString, 'DD.MM.YYYY HH:mm:ss').format(format);
+        } else if (moment(dateString, 'YYYY-MM-DD HH:mm:ss', true).isValid()) {
+          formattedDate = moment(dateString, 'YYYY-MM-DD HH:mm:ss').format(format);
+        } else if (moment(dateString, 'DD.MM.YYYY', true).isValid()) {
+          formattedDate = moment(dateString, 'DD.MM.YYYY').format(format);
+        } else if (moment(dateString).isValid()) { // Общий случай
+          formattedDate = moment(dateString).format(format);
+        }
+
+        moment.locale(currentLocale); // Восстанавливаем исходную локаль
+        return formattedDate;
       }
     },
   };
