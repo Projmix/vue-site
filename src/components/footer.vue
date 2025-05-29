@@ -114,6 +114,7 @@ onMounted(() => {
 
 .footer-layout2 .footer-top-area .container .col-lg-8 {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
 }
 </style>
