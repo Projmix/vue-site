@@ -145,6 +145,7 @@ function handleStickyHeader() {
   .eventalk-main-menu {
     padding-right: 22%;
   }
+
   
   /* Sticky header styling */
   .main-menu-area{

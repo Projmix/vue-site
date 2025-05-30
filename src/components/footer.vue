@@ -71,7 +71,7 @@ onMounted(() => {
             </div>
             <!-- Динамические ссылки футера из API -->
             <div class="col-lg-8">
-              <div class="col-lg-3" v-for="(linkGroup, index) in footerLinks" :key="index">
+              <div class="col-lg-4" v-for="(linkGroup, index) in footerLinks" :key="index">
                 <div class="widget">
                   <h3 class="widgettitle">{{ linkGroup.text }}</h3>
                   <div class="footer-widget-menu" v-if="linkGroup.children && linkGroup.children.length">
@@ -89,8 +89,6 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-
-          <div class="col-lg-3"></div>
         </div>
       </div>
     </div>
@@ -114,12 +112,14 @@ onMounted(() => {
 
 .footer-layout2 .footer-top-area .container .col-lg-8 {
   display: flex;
-  flex-wrap: wrap;
   gap: 20px;
 }
 @media (max-width: 991px) {
   .footer-layout2 .footer-top-area .container .col-lg-2{
     margin-left: 20px !important;
   }
+  .footer-layout2 .footer-top-area .container .col-lg-8 {
+  flex-wrap: wrap;
+}
 }
 </style>
