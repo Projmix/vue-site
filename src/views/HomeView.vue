@@ -806,7 +806,7 @@ body main {
     min-height: 180px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 2.8rem;
+    font-size: 25px !important;
   }
   :global(.btn-ghost.color-yellow) {
     padding: 10px 25px;
@@ -819,7 +819,7 @@ body main {
     min-height: 150px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 2.2rem;
+    font-size: 20px !important;
   }
   :global(.btn-ghost.color-yellow) {
     padding: 8px 20px;
@@ -834,7 +834,7 @@ body main {
     min-height: 120px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 1.8rem;
+    font-size: 15px !important;
   }
   :global(.btn-ghost.color-yellow) {
     padding: 8px 15px;

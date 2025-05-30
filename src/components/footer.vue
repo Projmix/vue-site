@@ -61,7 +61,7 @@ onMounted(() => {
       <div class="footer-top-area footer-box-layout">
         <div class="container">
           <div class="row">
-            <div class="col-lg-1">
+            <div class="col-lg-2">
               <div class="widget">
                 <router-link class="footer-widget-logo" :to="{ name: 'home' }">
                   <img class="img-fluid" :src="logoUrl" alt="logo"
@@ -116,5 +116,10 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
+}
+@media (max-width: 991px) {
+  .footer-layout2 .footer-top-area .container .col-lg-2{
+    margin-left: 20px !important;
+  }
 }
 </style>
