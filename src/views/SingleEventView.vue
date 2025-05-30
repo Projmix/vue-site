@@ -27,8 +27,8 @@
         </div>
       </div>
       
-      <!-- Calendar dates selector -->
-      <div class="container mt-4" v-if="!loading && !error">
+      <!-- Calendar dates selector - only if there are calendar dates -->
+      <div class="container mt-4" v-if="!loading && !error && calendarDates.length > 0">
         <div class="date-selector">
           <div class="date-selector-inner">
             <div 
@@ -45,8 +45,8 @@
         </div>
       </div>
 
-      <!-- Venues and sessions -->
-      <div class="container mt-4" v-if="!loading && !error">
+      <!-- Venues and sessions - only if there are calendar dates -->
+      <div class="container mt-4" v-if="!loading && !error && calendarDates.length > 0">
         <div v-if="loadingSelectedDate" class="text-center py-3">
           <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading sessions...</span>
@@ -60,7 +60,7 @@
               <div v-for="session in venue.sessions" :key="session.id" 
                    class="session-time-btn" 
                    :class="{'tag-3d': hasTag(session, '3D'), 'tag-2d': hasTag(session, '2D')}"
-                   @click="openBuyTicketPage(session.id)">
+                   @click="openPurchasePage(session)">
                 <span class="time">{{ formatTime(session.timeSpending) }}</span>
                 <span class="price">от {{ formatPrice(session.minPrice) }} руб.</span>
               </div>
@@ -74,6 +74,48 @@
           <p>Нет доступных сеансов для этого события.</p>
         </div>
       </div>
+
+      <!-- Combined Services/Products section - if no calendar dates but offerings exist -->
+      <div class="container mt-4" v-if="!loading && !error && calendarDates.length === 0 && offeringsList.length > 0">
+          <h3 class="related-title">Услуга</h3>
+          <div class="services-container venue-card"> 
+            <div v-for="offering in offeringsList" :key="offering.id" class="service-item">
+              <div class="service-info">
+                <h4>{{ offering.name }}</h4>
+                <p v-if="offering.relatedObjectName" class="object-name">{{ offering.relatedObjectName }}</p>
+                <p v-if="offering.relatedObjectAddress" class="object-address">{{ offering.relatedObjectAddress }}</p>
+                <!-- Conditionally display price only if not a product, or if it's a product AND you decide to show price for products -->
+                <p v-if="offering.type !== 'product' && offering.priceDisplay" class="price">{{ offering.priceDisplay }}</p>
+              </div>
+              <button class="btn-fill size-xs color-yellow border-radius-5" @click="openPurchasePage(offering)">
+                Купить
+              </button>
+            </div>
+          </div>
+        </div>
+
+      <!-- Products section - if no calendar dates but products exist -->
+      <div class="container mt-4" v-if="!loading && !error && calendarDates.length === 0 && offeringsList.length === 0">
+        <h3 class="related-title">Услуга</h3>
+        <div class="products-grid">
+          <div v-for="offering in offeringsList" :key="offering.id" class="product-card">
+            <img v-if="offering.image" :src="offering.image" :alt="offering.name" class="product-image"/>
+            <div class="product-info">
+              <h4>{{ offering.name }}</h4>
+              <p v-if="offering.priceDisplay" class="price">{{ offering.priceDisplay }}</p>
+            </div>
+            <button class="btn-fill size-xs color-yellow border-radius-5" @click="openPurchasePage(offering)">
+              Купить
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- No data message -->
+      <div class="container mt-4 text-center py-4" v-if="!loading && !error && calendarDates.length === 0 && offeringsList.length === 0">
+        <p>Нет доступных сеансов, услуг или товаров для этого события.</p>
+      </div>
+
     </section>
     <footerSection />
   </main>
@@ -94,12 +136,15 @@ const loading = ref(true);
 const error = ref('');
 const eventName = ref('');
 const eventDescription = ref('');
-const eventImage = ref('');
+const eventImage = ref(''); // Default image if none found
+
 const calendarDates = ref([]);
 const selectedDateIndex = ref(0);
 const selectedDate = computed(() => calendarDates.value[selectedDateIndex.value]?.date || null);
 const loadingSelectedDate = ref(false);
 const venuesList = ref([]);
+
+const offeringsList = ref([]); // Unified list for services and products
 
 // Inject apiService
 const apiService = inject('apiService');
@@ -120,6 +165,7 @@ function formatTime(timestamp) {
 }
 
 function formatPrice(price) {
+  // Assuming price is in kopecks/cents
   return (price / 100).toFixed(2);
 }
 
@@ -136,22 +182,13 @@ async function loadSessions(date) {
   
   try {
     const response = await apiService.getEventSessions(eventId, date);
-    
-    console.log('[loadSessions] Raw API response:', response);
-    
-    // Check if the response has the expected data structure
     if (response.data && Array.isArray(response.data) && response.data[0] && response.data[0].objects) {
-      // Access the objects inside the first item in data array
       const objects = response.data[0].objects;
-      
       if (Array.isArray(objects)) {
-        // Transform data to venue list with sessions
         venuesList.value = objects
           .filter(obj => obj.sessions && obj.sessions.length > 0)
           .map(obj => {
-            // Sort sessions by time
             const sortedSessions = [...obj.sessions].sort((a, b) => a.timeSpending - b.timeSpending);
-            
             return {
               id: obj.id,
               name: obj.name,
@@ -161,11 +198,9 @@ async function loadSessions(date) {
           });
       }
     }
-    
-    console.log('[loadSessions] Venues with sessions:', venuesList.value);
   } catch (e) {
     console.error('[loadSessions] Ошибка загрузки сеансов:', e);
-    error.value = 'Не удалось загрузить информацию о сеансах';
+    // Do not set global error here, it's specific to date loading
   } finally {
     loadingSelectedDate.value = false;
   }
@@ -178,20 +213,31 @@ function selectDate(index) {
 }
 
 function openBuyTicketPage(sessionId) {
-  // Use apiService to generate the ticket URL
   const ticketUrl = apiService.getTicketUrl(sessionId);
   window.open(ticketUrl, '_blank');
+}
+
+// Combined purchase function
+function openPurchasePage(offering) {
+  if (offering.type === 'service') {
+    const serviceUrl = apiService.getServicePurchaseUrl(offering.purchaseDetails.objectId, offering.id);
+    window.open(serviceUrl, '_blank');
+  } else if (offering.type === 'product') {
+    const productUrl = apiService.getProductPurchaseUrl(offering.purchaseDetails.institutionId, offering.id);
+    window.open(productUrl, '_blank');
+  }
 }
 
 async function fetchEventData() {
   loading.value = true;
   error.value = '';
+  calendarDates.value = [];
+  venuesList.value = [];
+  offeringsList.value = [];
   
   try {
-    // Use apiService instead of direct axios call
     const event = await apiService.getEventDetails(eventId);
     
-    // Set basic event details
     eventName.value = event.name || event.performance?.name || 'Событие без названия';
     eventDescription.value = 
       event.description || 
@@ -200,32 +246,71 @@ async function fetchEventData() {
       event.performance?.shortDescription || 
       'Описание отсутствует';
       
-    // Set event image
-    eventImage.value = 
+    let primaryImage = 
       event.image?.['300x430'] || 
       event.performance?.image?.['300x430'] || 
       event.image?.original || 
-      event.performance?.image?.original || 
-      '/src/assets/images/speaker/speaker1.png';
-    
-    // Process calendar dates
-    if (event.calendar && Array.isArray(event.calendar)) {
-    const now = moment().startOf('day');
+      event.performance?.image?.original;
+
+    if (event.calendar && Array.isArray(event.calendar) && event.calendar.length > 0) {
+      const now = moment().startOf('day');
       calendarDates.value = event.calendar
         .filter(dateObj => moment(dateObj.date).isSameOrAfter(now))
-        .map(dateObj => ({
-          ...dateObj,
-          date: dateObj.date
-        }));
+        .map(dateObj => ({ ...dateObj, date: dateObj.date }));
       
-      // If we have dates, automatically load sessions for the first date
       if (calendarDates.value.length > 0) {
         selectedDateIndex.value = 0;
-        loadSessions(calendarDates.value[0].date);
+        await loadSessions(calendarDates.value[0].date);
+      }
+    } else {
+      // No calendar dates, check for services (abonements) and products (items)
+      
+      // Process Services (Abonements)
+      if (event.performance?.objectsWithActiveServices && Array.isArray(event.performance.objectsWithActiveServices)) {
+        event.performance.objectsWithActiveServices.forEach(object => {
+          if (object.activeAbonements && Array.isArray(object.activeAbonements)) {
+            object.activeAbonements.forEach(abonement => {
+              offeringsList.value.push({
+                id: abonement.id,
+                type: 'service',
+                name: abonement.name || abonement.performance?.name || event.performance?.name || 'Услуга',
+                price: abonement.minPrice, 
+                priceDisplay: `от ${formatPrice(abonement.minPrice)} руб.`,
+                relatedObjectName: object.name,
+                relatedObjectAddress: object.address,
+                purchaseDetails: { objectId: object.id }
+              });
+            });
+          }
+        });
+      }
+
+      // Process Products (Items)
+      if (event.performance?.items && Array.isArray(event.performance.items)) {
+        event.performance.items.forEach(item => {
+          offeringsList.value.push({
+            id: item.id,
+            type: 'product',
+            name: item.name || 'Товар',
+            price: item.minPrice ? parseFloat(item.minPrice) * 100 : (item.price || 0), // Ensure price is in kopecks if minPrice is used
+            priceDisplay: item.priceStr ? `${item.priceStr} руб.` : (item.minPrice ? `от ${item.minPrice} руб.` : 'Цена по запросу'),
+            image: item.image?.['240x340'] || item.image?.original || null,
+            relatedObjectName: item.institution?.name, // From item.institution
+            relatedObjectAddress: item.institution?.address, // From item.institution
+            purchaseDetails: { institutionId: item.institutionId }
+          });
+          // Fallback image logic
+          if (!primaryImage && item.image?.['300x430']) {
+            primaryImage = item.image['300x430'];
+          } else if (!primaryImage && item.image?.original) {
+            primaryImage = item.image.original;
+          }
+        });
       }
     }
     
-    // Set SEO data
+    eventImage.value = primaryImage || '/src/assets/images/speaker/speaker1.png';
+
     useHead({
       title: `${eventName.value} | Афиша событий`,
       meta: [
@@ -236,10 +321,6 @@ async function fetchEventData() {
   } catch (e) {
     console.error('[fetchEventData] Ошибка загрузки события:', e);
     error.value = 'Не удалось загрузить информацию о событии';
-    eventName.value = 'Событие не найдено';
-    eventDescription.value = '';
-    eventImage.value = '';
-    calendarDates.value = [];
   } finally {
     loading.value = false;
   }
@@ -251,7 +332,11 @@ onMounted(fetchEventData);
 <style scoped>
 .single-speaker-img img {
   width: 100%;
+  max-width: 400px; /* Max width for event image */
+  height: auto;
+  object-fit: cover;
   border-radius: 10px;
+  margin-bottom: 1rem; /* Add some space below image */
 }
 .speaker-profile {
   margin-bottom: 2rem;
@@ -265,7 +350,7 @@ onMounted(fetchEventData);
 .date-selector-inner {
   display: flex;
   gap: 10px;
-  padding-bottom: 10px;
+  padding-bottom: 10px; /* For scrollbar */
 }
 .date-item {
   min-width: 60px;
@@ -275,6 +360,7 @@ onMounted(fetchEventData);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 .date-item:hover {
   border-color: #fad03b;
@@ -304,7 +390,7 @@ onMounted(fetchEventData);
   flex-direction: column;
   gap: 20px;
 }
-.venue-card {
+.venue-card { /* Also used for services-container */
   background: #f8f8f8;
   border-radius: 8px;
   padding: 1.5rem;
@@ -348,11 +434,11 @@ onMounted(fetchEventData);
   font-size: 0.8rem;
   color: #666;
 }
-.tag-3d {
-  border-left: 4px solid #fad03b;
+.tag-3d, .tag-2d {
+ position: relative;
 }
-.tag-3d::after {
-  content: "3D";
+.tag-3d::after, .tag-2d::after {
+  content: "3D"; /* Default, can be overridden */
   background: #fad03b;
   color: #000;
   padding: 1px 4px;
@@ -360,27 +446,89 @@ onMounted(fetchEventData);
   font-size: 0.7rem;
   font-weight: 600;
   position: absolute;
-  margin-top: -20px;
-  margin-left: 5px;
-}
-.tag-2d {
-  border-left: 4px solid #9ce3ff;
+  top: -8px; /* Adjust for better positioning */
+  right: -8px; /* Adjust for better positioning */
 }
 .tag-2d::after {
   content: "2D";
   background: #9ce3ff;
-  color: #000;
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  position: absolute;
-  margin-top: -20px;
-  margin-left: 5px;
 }
 .spinner-border {
   width: 3rem;
   height: 3rem;
   color: #fad03b;
 }
+
+/* Styles for Services and Products */
+.related-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  margin-top: 2rem; /* Space from previous content */
+  color: #333;
+  border-bottom: 2px solid #fad03b;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.services-container .service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+.services-container .service-item:last-child {
+  border-bottom: none;
+}
+.service-info h4 {
+  margin-bottom: 0.3rem;
+  font-size: 1.1rem;
+}
+.service-info .object-name, .service-info .object-address {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.2rem;
+}
+.service-info .price {
+  font-weight: bold;
+  color: #111;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+.product-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+.product-info h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  min-height: 2.5em; /* For 2 lines of text */
+}
+.product-info .price {
+  font-weight: bold;
+  color: #111;
+  margin-bottom: 1rem;
+}
+.product-card button {
+  width: 100%;
+}
+
 </style>

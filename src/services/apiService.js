@@ -193,6 +193,28 @@ class ApiService {
   }
   
   /**
+   * Получение URL для покупки услуги (абонемента)
+   * @param {Number|String} objectId - ID объекта, предоставляющего услугу
+   * @param {Number|String} serviceId - ID услуги (абонемента)
+   * @returns {String} URL для покупки услуги
+   */
+  getServicePurchaseUrl(objectId, serviceId) {
+    const lang = import.meta.env.VITE_API_LANG || 'ru';
+    return `https://saleframe.24afisha.by/?oid=${objectId}&seid=${serviceId}&lang=${lang}`;
+  }
+  
+  /**
+   * Получение URL для покупки товара
+   * @param {Number|String} institutionId - ID организации (часто совпадает с objectId для товаров)
+   * @param {Number|String} itemId - ID товара
+   * @returns {String} URL для покупки товара
+   */
+  getProductPurchaseUrl(institutionId, itemId) {
+    const lang = import.meta.env.VITE_API_LANG || 'ru';
+    return `https://saleframe.24afisha.by/item?oid=${institutionId}&iid=${itemId}&lang=${lang}`;
+  }
+  
+  /**
    * Получение списка новостей
    * @param {Object} options - Параметры запроса
    * @param {Number} options.page - Номер страницы
