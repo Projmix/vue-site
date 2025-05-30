@@ -263,7 +263,7 @@ class ApiService {
         expand: 'sessions'
       };
       
-      const response = await this.axiosInstance.get(`/api/v3/pages/page/${slug}`, { params });
+      const response = await this.axiosInstance.get(`/api/v3/arena/page/${slug}`, { params });
       return response.data;
     } catch (error) {
       console.error(`API error: getPageBySlug for ${slug}`, error);

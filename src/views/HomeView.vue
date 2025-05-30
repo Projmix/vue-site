@@ -358,7 +358,7 @@ export default {
     <!-- Блок с событиями по категориям -->
     <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
       <div class="container text-center">
-        <h2>Данных о мероприятиях нет</h2>
+        <h2>Нет актуального расписания</h2>
       </div>
     </div>
     

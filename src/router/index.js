@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import PageView from '../views/PageView.vue'
 import { useLayoutStore } from '../stores/layout.js'
 import apiService from '../services/apiService'
 
@@ -19,11 +20,6 @@ const router = createRouter({
     },
     // Afisha routes (to match site_menu API)
     {
-      path: '/afisha',
-      name: 'afisha',
-      component: () => import('../views/EventsView.vue')
-    },
-    {
       path: '/afisha/:category',
       name: 'events-category',
       component: () => import('../views/EventsView.vue')
@@ -40,20 +36,15 @@ const router = createRouter({
       component: () => import('../views/SingleBlogView.vue')
     },
     // About route (to match site_menu API)
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/SponsorsView.vue')
-    },
     // Custom page routes - must be before the catchall but after specific routes
     {
       path: '/:slug',
       name: 'custom-page',
-      component: () => import('../views/PageView.vue'),
+      component: PageView,
       // Exclude paths that have their own routes
       beforeEnter: (to, from, next) => {
         const reservedPaths = [
-          'event', 'afisha', 'news', 'about', 'post', 'sponsors', 'posts', 
+          'event', 'news', 'post', 'posts',
           'objects', 'object', 'page'
         ];
         // Check if the route is a reserved path
@@ -69,11 +60,6 @@ const router = createRouter({
       path: '/post/:slug',
       name: 'post',
       component: () => import('../views/SingleBlogView.vue')
-    },
-    {
-      path: '/sponsors',
-      name: 'sponsors',
-      redirect: '/about'
     },
     {
       path: '/posts',
