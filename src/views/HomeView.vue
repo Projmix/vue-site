@@ -703,46 +703,64 @@ body main {
   margin-top: 0px;
 }
 
-/* Nivo Control Nav Styling */
-/*
-:global(.slider-direction-layout2 .nivo-controlNav) {
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  z-index: 10;
-  padding: 0;
-  text-align: right;
-}
-
-:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control) {
-  text-indent: -9999px;
-  width: 0.6rem;
-  height: 3rem;
-  background-color: #8cc63e;
-  margin-bottom: 1rem;
-  display: block;
-  cursor: pointer;
-  border: none;
-  box-shadow: none;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-
-:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control:hover) {
-  opacity: 1;
-}
-
-:global(.slider-direction-layout2 .nivo-controlNav a.nivo-control.active) {
-  background-color: #fad03b;
-  opacity: 1;
-}
-*/
 /* Slider Text Styling */
-:global(.slider-layout4 .slider-content .slider-big-text p) {
+:global(.nivo-caption) {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  padding: 0 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+/* Hide duplicate slider content outside of .nivo-caption */
+:global(.bend.niceties.preview-1 > .slider-direction) {
+  display: none !important;
+}
+
+:global(.nivo-caption .slider-direction) {
+  height: 100%;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+:global(.slider-content.s-tb) {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  min-height: 200px !important;
+}
+
+:global(.title-container.s-tb-c) {
+  width: 100%;
+  height: auto;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+:global(.slider-content .container.text-left) {
+  padding-left: 80px;
+  padding-right: 20px;
+  max-width: 800px;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-height: 200px !important;
+}
+
+:global(.slider-big-text.first-line) {
+  margin-bottom: 20px !important;
+}
+
+:global(.slider-big-text.first-line p) {
   padding: 0;
   line-height: 1.2;
-  font-size: 3rem;
+  font-size: 3.5rem;
   text-transform: capitalize;
   margin-bottom: 0;
   font-weight: 900;
@@ -750,85 +768,94 @@ body main {
   position: relative;
   display: inline-block;
   color: #fff;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
-:global(.slider-layout4 .slider-content .slider-big-text p::before) {
-  position: absolute;
-  height: 3px;
-  background-color: #ffffff;
-  width: 100%;
-  content: "";
-  left: 0;
-  bottom: 2px;
+:global(.slider-btn-area.forth-line.margin-t-30) {
+  margin-top: 20px !important;
+  display: block !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 15 !important;
 }
 
-/* Button styling */
-/* :global(.slider-btn-area a.btn-ghost.color-yellow) {
-  border: 2px solid #fad03b;
-  color: #fad03b;
+:global(.btn-ghost.color-yellow) {
+  padding: 12px 30px;
   background-color: transparent;
-  padding: 10px 25px;
-  text-decoration: none;
-  font-weight: bold;
+  border: 2px solid #fad03b;
+  color: #fad03b !important;
+  font-weight: 600;
+  text-transform: uppercase;
   border-radius: 4px;
   transition: all 0.3s ease;
-  display: inline-block;
+  text-decoration: none;
+  position: relative !important;
+  z-index: 20 !important;
+  opacity: 1 !important;
 }
 
-:global(.slider-btn-area a.btn-ghost.color-yellow:hover) {
+:global(.btn-ghost.color-yellow:hover) {
   background-color: #fad03b;
-  color: #111111;
-} */
+  color: #111111 !important;
+}
 
 /* Responsive styles */
-/* @media (max-width: 991px) {
-  :global(.slider-layout4 .slider-content .slider-big-text p) {
-    font-size: 4rem;
+@media (max-width: 991px) {
+  :global(.slider-content .container.text-left) {
+    padding-left: 60px;
+    min-height: 180px !important;
+  }
+  :global(.slider-big-text.first-line p) {
+    font-size: 2.8rem;
+  }
+  :global(.btn-ghost.color-yellow) {
+    padding: 10px 25px;
   }
 }
 
 @media (max-width: 767px) {
-  :global(.slider-layout4 .slider-content .slider-big-text p) {
-    font-size: 3rem;
+  :global(.slider-content .container.text-left) {
+    padding-left: 40px;
+    min-height: 150px !important;
+  }
+  :global(.slider-big-text.first-line p) {
+    font-size: 2.2rem;
+  }
+  :global(.btn-ghost.color-yellow) {
+    padding: 8px 20px;
+    font-size: 1.9rem;
   }
 }
 
 @media (max-width: 575px) {
-  :global(.slider-layout4 .slider-content .slider-big-text p) {
-    font-size: 2.2rem;
+  :global(.slider-content .container.text-left) {
+    padding-left: 20px;
+    padding-right: 15px;
+    min-height: 120px !important;
   }
-  :global(.slider-direction-layout2 .nivo-controlNav) {
-    right: 10px;
+  :global(.slider-big-text.first-line p) {
+    font-size: 1.8rem;
   }
-  :global(.slider-direction-layout2 .nivo-controlNav a.nivo-control) {
-    height: 2rem;
-    width: 0.5rem;
-    margin-bottom: 0.5rem;
+  :global(.btn-ghost.color-yellow) {
+    padding: 8px 15px;
+    font-size: 1.85rem;
   }
-} */
-/* .nivo-controlNav a.nivo-control {
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  border-radius: 50%;
-  background: #fff;
-  opacity: 0.5;
-  margin: 0 5px;
-  font-size: 0 !important; 
-  border: 2px solid #fad03b;
-  transition: background 0.3s, opacity 0.3s;
-}
-.nivo-controlNav a.nivo-control.active {
-  background: #fad03b;
-  opacity: 1;
-  border-color: #fad03b;
-  font-size: 0 !important;
+  :global(.slider-btn-area.forth-line.margin-t-30) {
+    margin-top: 15px !important;
+  }
 }
 
-.nivo-controlNav {
-  text-align: center;
-  margin-top: 30px;
-} */
+/* Fix for Nivo Caption container */
+:global(.nivo-caption > .slider-direction) {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  opacity: 1 !important;
+}
+
+/* Ensure only one instance of slider content is visible */
+:global(.nivo-caption .slider-direction:not(:first-child)) {
+  display: none !important;
+}
 
 </style>

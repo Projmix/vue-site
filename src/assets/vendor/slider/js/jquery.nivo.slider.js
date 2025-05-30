@@ -122,7 +122,7 @@
                     //     $(this).html(titleContentHtml).fadeIn(settings.animSpeed / 2);
                     // });
                     // Или просто обновляем HTML
-                    setTimeout(function(){ // Оставим setTimeout как в вашем коде
+                    setTimeout(function(){ 
                          nivoCaption.html(titleContentHtml);
                     }, settings.animSpeed);
                 } else {
