@@ -227,78 +227,110 @@ export const useLayoutStore = defineStore("layout", {
         this.eventsFromObjects = [];
       },
       async fetchLayout() {
-        if (this.layoutFetchPromise) {
-          return this.layoutFetchPromise;
-        }
-        
-        this.layoutFetchPromise = new Promise(async (resolve, reject) => {
-          try {
-            // 1. Загружаем базовый layout
-            this.layout = await apiService.getLayout();
-            
-            // 2. Загружаем данные для главной страницы
-            const homeData = await apiService.getHomePageData();
-            console.log('[fetchLayout] Получены данные слайдера:', homeData?.data?.topSlider);
-            
-            // Обработка данных слайдера
-            if (homeData?.data?.topSlider?.items) {
-                this.siteSlider = homeData.data.topSlider.items.map(item => ({
-                    title: item.title,
-                    buttonText: item.buttonText,
-                    url: item.url,
-                    href: item.image['1300x560']
-                }));
-                console.log('[fetchLayout] Обработанные данные слайдера:', this.siteSlider);
-            } else {
-                console.warn('[fetchLayout] Нет данных для слайдера');
-                this.siteSlider = [];
-            }
-
-            // 3. Обработка событий для главной страницы
-            const isHomePage = window.location.pathname === '/' || 
-                             window.location.pathname === '/index.html';
-            
-            if (isHomePage) {
-                this.eventsLoading = true;
-                try {
-                    const categorizedEvents = {};
-                    if (homeData && homeData.performances) {
-                        homeData.performances.forEach(category => {
-                            if (category.viewType === 'top' || category.slug === 'top') return;
-                            const eventsWithSessions = category.events?.filter(event => 
-                                event.sessions && event.sessions.length > 0
-                            ) || [];
-                            if (eventsWithSessions.length > 0) {
-                                categorizedEvents[category.slug] = {
-                                    name: category.name,
-                                    slug: category.slug,
-                                    events: eventsWithSessions.slice(0, 8),
-                                    loading: false,
-                                    error: false
-                                };
-                            }
-                        });
+        // Section 1: Ensure basic layout and slider data are loaded (can be cached by a promise during its run)
+        if (!this.layout) { // Only fetch if layout isn't already populated
+            if (!this.layoutFetchPromise) { // Only create a new promise if one isn't already running
+                this.layoutFetchPromise = new Promise(async (resolve, reject) => {
+                    try {
+                        console.log('[fetchLayout] Initiating fetch for core layout and slider data...');
+                        this.layout = await apiService.getLayout();
+                        const pagesHomeData = await apiService.getHomePageData();
+                        console.log('[fetchLayout] Raw pagesHomeData from /api/v3/pages/home (for slider):', pagesHomeData);
+                        if (pagesHomeData?.data?.topSlider?.items) {
+                            this.siteSlider = pagesHomeData.data.topSlider.items.map(item => ({
+                                title: item.title,
+                                buttonText: item.buttonText,
+                                url: item.url,
+                                href: item.image['1300x560']
+                            }));
+                        } else {
+                            console.warn('[fetchLayout] No data for slider from /api/v3/pages/home');
+                            this.siteSlider = [];
+                        }
+                        resolve(); // Core data fetched
+                    } catch (error) {
+                        console.error('[fetchLayout] Error fetching core layout/slider:', error);
+                        this.siteSlider = []; // Ensure slider is empty on error
+                        reject(error);
+                    } finally {
+                        // Clear the promise regardless of outcome, so next call to fetchLayout (if layout still null)
+                        // or next full page load can re-attempt.
+                        this.layoutFetchPromise = null;
                     }
-                    this.eventsByCategory = categorizedEvents;
-                } catch (error) {
-                    console.error('[fetchLayout] Error processing events:', error);
-                    this.eventsByCategory = {};
-                } finally {
-                    this.eventsLoading = false;
-                }
+                });
             }
-            
-            this.initialDataLoaded = true;
-            resolve(this.layout);
-          } catch (error) {
-            console.error('[fetchLayout] Error:', error);
-            this.siteSlider = [];
-            this.initialDataLoaded = true;
-            reject(error);
-          }
-        });
-        
-        return this.layoutFetchPromise;
+            try {
+                await this.layoutFetchPromise; // Wait if the promise is active
+            } catch (error) {
+                // Error is logged by the promise.
+                console.warn('[fetchLayout] Proceeding after core layout/slider fetch error.');
+            }
+        }
+
+        // Section 2: Handle homepage specific events
+        const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html';
+
+        if (isHomePage) {
+            console.log('[fetchLayout] Currently on Home page. Fetching/refreshing eventsByCategory...');
+            this.eventsLoading = true;
+            this.eventsByCategory = {}; // CRITICAL: Reset events for homepage to ensure fresh data
+            try {
+                const arenaHomeData = await apiService.getArenaHomeEvents();
+                console.log('[fetchLayout] Raw arenaHomeData for categories from /api/v3/arena/home:', arenaHomeData);
+                const organizerEventIds = await apiService.getOrganizerEventIds();
+                console.log('[fetchLayout] Organizer Event IDs for filtering:', organizerEventIds);
+
+                const categorizedEvents = {};
+                if (arenaHomeData && arenaHomeData.data && arenaHomeData.data.performances) {
+                    console.log('[fetchLayout] arenaHomeData.data.performances exists. Content:', JSON.parse(JSON.stringify(arenaHomeData.data.performances)));
+                    arenaHomeData.data.performances.forEach(category => {
+                        if (category.slug === 'top') return; // Skip only if slug is 'top'
+
+                        console.log(`[fetchLayout] Processing category: ${category.name} (slug: ${category.slug}). Full category object:`, JSON.parse(JSON.stringify(category)));
+                        console.log(`[fetchLayout] Category: ${category.name}. Original events count: ${category.events?.length || 0}. Events array:`, category.events ? JSON.parse(JSON.stringify(category.events.slice(0,5))) : 'No events array');
+                        
+                        const filteredEvents = category.events?.filter(event => {
+                            const hasSessions = event.sessions && event.sessions.length > 0;
+                            const isInOrganizerList = event.id && organizerEventIds.has(event.id);
+                            if(!event.id) console.warn(`[fetchLayout] Event in category ${category.name} is missing an ID:`, event);
+                            // Detailed per-event logs can be noisy; keep them commented unless debugging specific event issues.
+                            // if(event.id && !isInOrganizerList) console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} NOT in organizer list.`);
+                            // if(event.id && isInOrganizerList && !hasSessions && event.type !== 'service') console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} IS in organizer list BUT has NO sessions (and not a service).`);
+                            
+                            const isServiceFromArena = event.type === 'service';
+                            return isInOrganizerList && (hasSessions || isServiceFromArena);
+                        }) || [];
+                        
+                        if (filteredEvents.length > 0) {
+                            console.log(`[fetchLayout] Category: ${category.name} has ${filteredEvents.length} events after filtering.`);
+                            categorizedEvents[category.slug] = {
+                                name: category.name,
+                                slug: category.slug,
+                                events: filteredEvents.slice(0, 8), 
+                                loading: false,
+                                error: false
+                            };
+                        } else {
+                            console.log(`[fetchLayout] Category: ${category.name} has NO events after filtering.`);
+                        }
+                    });
+                } else {
+                    console.warn('[fetchLayout] arenaHomeData.data.performances is missing or empty. arenaHomeData:', arenaHomeData);
+                }
+                this.eventsByCategory = categorizedEvents;
+                console.log('[fetchLayout] Filtered eventsByCategory for HomeView:', JSON.parse(JSON.stringify(this.eventsByCategory)));
+            } catch (error) {
+                console.error('[fetchLayout] Error processing and filtering events for homepage from arenaHomeData:', error);
+                this.eventsByCategory = {}; // Ensure it's empty on error
+            } finally {
+                this.eventsLoading = false;
+            }
+        }
+        // If not on home page, eventsByCategory is not touched here by this specific logic block,
+        // preserving its state (e.g. from last Home visit or if cleared by other means).
+
+        this.initialDataLoaded = true; // Mark that the overall process has completed for this call.
+        return this.layout; // Return the (possibly null if fetch failed) layout.
       },
 
       async loadScript(src) {

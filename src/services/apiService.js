@@ -15,6 +15,11 @@ class ApiService {
     
     // Cache for API calls
     this.homePageDataPromise = null;
+
+    // Cache for organizer's event IDs
+    this.organizerEventIdsCache = null;
+    this.organizerEventIdsCacheTime = 0;
+    this.ORGANIZER_EVENT_IDS_CACHE_DURATION = 8 * 60 * 60 * 1000; // 8 hours
   }
   
   /**
@@ -327,13 +332,40 @@ class ApiService {
   }
   
   /**
+   * Получение данных для категорий событий на главной странице из endpoint /api/v3/arena/home
+   * @returns {Promise} Промис с результатом запроса (обычно содержит .performances)
+   */
+  async getArenaHomeEvents() {
+    try {
+      console.log('[apiService] getArenaHomeEvents: Запрос данных для категорий событий с /api/v3/arena/home');
+      const params = {
+        ...this.getCommonParams(),
+        expand: 'sessions' // Ensure sessions are expanded if needed for filtering later
+      };
+      
+      const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
+      console.log('[apiService] getArenaHomeEvents: Данные для категорий получены. Raw data:', JSON.parse(JSON.stringify(response.data)));
+      return response.data; // Should contain the .performances array
+    } catch (error) {
+      console.error('API error: getArenaHomeEvents', error);
+      throw error; // Rethrow to be handled by the caller (e.g., layoutStore)
+    }
+  }
+  
+  /**
    * Получение списка событий с сессиями, сгруппированных по категориям
+   * ВАЖНО: Этот метод теперь будет использовать getArenaHomeEvents для получения исходных данных,
+   * а затем getOrganizerEventIds для их фильтрации в layoutStore.
+   * Логика самого getEventsWithSessionsByCategory может быть упрощена или удалена из apiService,
+   * так как фильтрация теперь будет происходить в layoutStore.
+   * Пока оставим его как есть, но его использование может быть пересмотрено.
    * @returns {Promise} Промис с объектом категорий и соответствующими событиями
    */
   async getEventsWithSessionsByCategory() {
     try {
-      console.log('[apiService] getEventsWithSessionsByCategory: Запрос событий');
-      const data = await this.getHomePageData();
+      console.warn('[apiService] getEventsWithSessionsByCategory: This method is likely superseded by logic in layoutStore using getArenaHomeEvents and getOrganizerEventIds. Review its usage.');
+      // Эта логика теперь будет дублироваться или конфликтовать с layoutStore
+      const data = await this.getHomePageData(); // Использует /pages/home, НЕ /arena/home
       const categorizedEvents = {};
       
       // Проверяем наличие performances в данных
@@ -379,6 +411,86 @@ class ApiService {
     if (cacheKey === 'home' || cacheKey === null) {
       console.log('[apiService] clearCache: Очищаем кэш данных главной страницы');
       this.homePageDataPromise = null;
+    }
+  }
+
+  /**
+   * Получение ID событий организатора с кэшированием
+   * @returns {Promise<Set<Number>>} Промис с множеством ID событий организатора
+   */
+  async getOrganizerEventIds() {
+    const now = Date.now();
+    if (this.organizerEventIdsCache && (now - this.organizerEventIdsCacheTime < this.ORGANIZER_EVENT_IDS_CACHE_DURATION)) {
+      console.log('[apiService] getOrganizerEventIds: Using cached organizer event IDs. Count:', this.organizerEventIdsCache.size);
+      return this.organizerEventIdsCache;
+    }
+
+    try {
+      const apiKey = import.meta.env.VITE_API_SECRET_KEY;
+      const companyId = import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID;
+
+      if (!apiKey) {
+        console.error('[apiService] getOrganizerEventIds: VITE_API_SECRET_KEY is not set.');
+        throw new Error('VITE_API_SECRET_KEY is not set');
+      }
+      if (!companyId) {
+        // VITE_API_DISTRIBUTOR_COMPANY_ID is used in getCommonParams, but good to check if specifically needed here
+        console.warn('[apiService] getOrganizerEventIds: VITE_API_DISTRIBUTOR_COMPANY_ID might be needed directly if not in common params for this endpoint.');
+      }
+
+      console.log('[apiService] getOrganizerEventIds: Fetching new organizer event IDs.');
+      const syncParams = { key: apiKey };
+      if (companyId) {
+        syncParams.company_id = companyId;
+      }
+
+      console.log('[apiService] getOrganizerEventIds: Fetching new organizer event IDs with params:', syncParams);
+      const response = await this.axiosInstance.get('/api/v2/sync/data/performances', {
+        params: syncParams
+      });
+
+      console.log('[apiService] getOrganizerEventIds: Raw response from sync API:', JSON.parse(JSON.stringify(response.data))); // Log raw sync data
+
+      let eventIds = new Set();
+      // Adapt based on the actual structure of response.data for this endpoint
+      // Common patterns: response.data (array of events), response.data.data (array of events)
+      const eventsArray = response.data?.data || response.data; 
+
+      if (Array.isArray(eventsArray)) {
+        console.log('[apiService] getOrganizerEventIds: eventsArray from sync API (first item if exists):', eventsArray.length > 0 ? JSON.parse(JSON.stringify(eventsArray[0])) : 'empty array');
+        eventsArray.forEach((event, index) => {
+          // Log the structure of each event item from sync API
+          if (index < 3) { // Log first 3 items to avoid excessive logging
+             console.log(`[apiService] getOrganizerEventIds: Sync event item [${index}]:`, JSON.parse(JSON.stringify(event)));
+          }
+          if (event && typeof event.id !== 'undefined') {
+            eventIds.add(event.id);
+          } else if (event && typeof event.performance_id !== 'undefined') { // Common alternative
+            console.log(`[apiService] getOrganizerEventIds: Found event.performance_id: ${event.performance_id}`);
+            eventIds.add(event.performance_id);
+          } else if (event && event.performance && typeof event.performance.id !== 'undefined') { // Another common alternative
+            console.log(`[apiService] getOrganizerEventIds: Found event.performance.id: ${event.performance.id}`);
+            eventIds.add(event.performance.id);
+          } else {
+            if(index < 3) console.warn(`[apiService] getOrganizerEventIds: Event item [${index}] from sync API is missing an identifiable ID. Structure:`, JSON.parse(JSON.stringify(event)));
+          }
+        });
+      } else {
+        console.warn('[apiService] getOrganizerEventIds: Unexpected response structure for organizer events. Data:', response.data);
+      }
+      
+      this.organizerEventIdsCache = eventIds;
+      this.organizerEventIdsCacheTime = now;
+      console.log('[apiService] getOrganizerEventIds: Fetched and cached new organizer event IDs. IDs:', Array.from(eventIds), 'Count:', eventIds.size);
+      return eventIds;
+
+    } catch (error) {
+      console.error('API error: getOrganizerEventIds', error);
+      if (this.organizerEventIdsCache) {
+         console.warn('[apiService] getOrganizerEventIds: Failed to fetch new IDs, returning stale cache. Count:', this.organizerEventIdsCache.size);
+         return this.organizerEventIdsCache; // Return stale cache if fetch fails
+      }
+      return new Set(); // Return empty set on error if no cache
     }
   }
 }
