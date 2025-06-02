@@ -104,9 +104,12 @@ router.afterEach((to, from) => {
     try {
       console.log('[Router] Navigating to home from:', from.path, 'resetting events cache');
       const layoutStore = useLayoutStore();
-      // Reset cache for events to force reload when entering home page
       if (layoutStore) {
         layoutStore.resetEventsCache();
+        // Trigger immediate reload of data
+        layoutStore.fetchLayout().catch(error => {
+          console.error('[Router] Error reloading layout data:', error);
+        });
       }
       
       // Also clear API service cache for home page

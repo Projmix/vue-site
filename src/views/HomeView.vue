@@ -11,7 +11,7 @@ import '@splidejs/vue-splide/css';
 import EventCard from '../components/EventCard.vue'; // Предполагаемый компонент
 import NewsCard from '../components/NewsCard.vue'; // Предполагаемый компонент
 import apiService from '../services/apiService';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 export default {
   name: "Home",
@@ -24,6 +24,7 @@ export default {
     NewsCard,
   },
   setup(props) {
+    const route = useRoute();
     let nivoInitialized = false;
     const layoutStore = useLayoutStore();
     const router = useRouter();
@@ -243,15 +244,19 @@ export default {
     );
 
     onBeforeUnmount(() => {
-      if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined' && window.$('#ensign-nivoslider-3').data('nivoslider')) {
+      if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined') {
         console.log('[HomeView] Destroying Nivo Slider on unmount.');
         try {
-            window.$('#ensign-nivoslider-3').data('nivoslider').destroy();
+          const sliderElement = window.$('#ensign-nivoslider-3');
+          if (sliderElement.length) {
+            sliderElement.nivoSlider('destroy');
+            console.log('[HomeView] Nivo Slider destroyed successfully');
+          }
         } catch(e) {
-            console.warn("[HomeView] Error destroying Nivo Slider:", e);
-            const sliderElement = window.$('#ensign-nivoslider-3');
-            sliderElement.removeClass('nivoSlider').empty();
-            window.$('.nivo-controlNav, .nivo-directionNav').remove();
+          console.warn("[HomeView] Error destroying Nivo Slider:", e);
+          const sliderElement = window.$('#ensign-nivoslider-3');
+          sliderElement.removeClass('nivoSlider').empty();
+          window.$('.nivo-controlNav, .nivo-directionNav, .nivo-caption').remove();
         }
       }
       nivoInitialized = false;
@@ -274,6 +279,17 @@ export default {
             .replace(/\s+/g, ' ')     // Убираем множественные пробелы
             .trim();                  // Убираем пробелы в начале и конце
     };
+
+    // Add route watcher
+    watch(
+      () => route.name,
+      (newRouteName) => {
+        if (newRouteName === 'home') {
+          console.log('[HomeView] Route changed to home, reloading data');
+          loadAllData();
+        }
+      }
+    );
 
     return {
       layoutStore,

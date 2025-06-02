@@ -225,6 +225,8 @@ export const useLayoutStore = defineStore("layout", {
         console.log('[layoutStore] Сбрасываем кэш событий');
         this.eventsByCategory = {};
         this.eventsFromObjects = [];
+        this.layoutFetchPromise = null; // Reset the layout fetch promise to ensure fresh data
+        this.initialDataLoaded = false; // Reset the initial data loaded flag
       },
       async fetchLayout() {
         // Section 1: Ensure basic layout and slider data are loaded (can be cached by a promise during its run)
