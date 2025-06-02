@@ -117,41 +117,41 @@ export default {
       <!-- Wrapper for main content, shown only when not loading and no error -->
       <div v-if="!loading && !error">
           <template v-if="page && page.content && Object.keys(page).length > 0">
-            <div class="hero common-hero" :style="{ 'background': background }">
-              <div class="container">
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="hero-ct">
-                      <h1>{{ page.title }}</h1>
-                    </div>
-                  </div>
+        <div class="hero common-hero" :style="{ 'background': background }">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="hero-ct">
+                  <h1>{{ page.title }}</h1>
                 </div>
               </div>
             </div>
-            <!-- blog detail section-->
-            <div class="page-single">
-              <div class="container">
-                <div class="row">
-                  <div class="col-md-12 col-sm-12 col-xs-12">
-                    <div class="blog-detail-ct" v-html="page.content">
-                    </div>
-                  </div>
+          </div>
+        </div>
+        <!-- blog detail section-->
+        <div class="page-single">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="blog-detail-ct" v-html="page.content">
                 </div>
               </div>
             </div>
-          </template>
-          
+          </div>
+        </div>
+      </template>
+      
           <!-- Show "empty content" message if page data is loaded but content is missing, or page object is empty -->
           <template v-else>
-            <div class="container empty-content-container">
-              <div class="row">
-                <div class="col-md-12 text-center">
+        <div class="container empty-content-container">
+          <div class="row">
+            <div class="col-md-12 text-center">
                   <h2>{{ (page && page.title) ? page.title : 'Страница' }}</h2>
-                  <p>Контент отсутствует</p>
-                </div>
-              </div>
+              <p>Контент отсутствует</p>
             </div>
-          </template>
+          </div>
+        </div>
+      </template>
       </div>
 
       <!-- Footer is shown when not loading, regardless of error state -->

@@ -56,68 +56,75 @@ class ApiService {
   }
   
   /**
-   * Получение событий определенной категории
-   * @param {String} categorySlug - Слаг категории (kino, theatre, etc.)
-   * @returns {Promise} Промис с результатом запроса
+   * Получение событий определенной категории (теперь только из sync/data)
+   * @param {String} categorySlug - Слаг категории
+   * @returns {Promise<Object>} Промис с объектом, содержащим события и информацию о категории
    */
   async getCategoryEvents(categorySlug) {
     try {
-      // Если categorySlug не указан, используем 'theatre' по умолчанию
-      const slug = categorySlug || 'theatre';
+      console.log(`[apiService] Getting events for category: ${categorySlug} from organizer data`);
       
-      const params = {
-        ...this.getCommonParams(),
-        date: Math.floor(Date.now() / 1000), // текущий timestamp
-        ignoreEndTime: 1,
-        objectsIds: 0,
+      const organizerEventsMap = await this.getOrganizerEventsMap();
+      const allOrganizerEvents = Array.from(organizerEventsMap.values());
+
+      console.log('[apiService] All organizer events count:', allOrganizerEvents.length);
+
+      const filteredEvents = allOrganizerEvents.filter(itemFromMap => {
+        // itemFromMap - это уже объект performance, который мы положили в карту
+        const event = itemFromMap;
+
+        if (!event || typeof event.id === 'undefined') { // Добавим проверку, что event корректный
+            console.warn('[apiService] Invalid event object from map:', event);
+            return false;
+        }
+        
+        const matchesCategory = event.types?.some(type => type.slug === categorySlug);
+        const isActiveEvent = !event.deletedAt;
+
+        const shouldEventPass = isActiveEvent && matchesCategory;
+
+        console.log(`[apiService] Event ID ${event.id} ('${event.name}') for category '${categorySlug}': 
+          Matches Category: ${matchesCategory}, 
+          Event Active: ${isActiveEvent}, 
+          SHOULD PASS: ${shouldEventPass}`);
+        
+        if (shouldEventPass) {
+            console.log(`[apiService] ---> EVENT ${event.id} ('${event.name}') PASSED filtering for category ${categorySlug}`);
+        }
+
+        return shouldEventPass;
+      });
+
+      console.log(`[apiService] Filtered events for ${categorySlug}. Count:`, filteredEvents.length);
+
+      // Получаем актуальную информацию о категории
+      let categoryInfo = {
+        name: categorySlug, // Имя по умолчанию, если не найдено
+        slug: categorySlug,
+        seoTitle: `События категории ${categorySlug}`,
+        seoDescription: `Афиша событий категории ${categorySlug}`
       };
-      
-      const response = await this.axiosInstance.get(`/api/v3/mobile/afisha/${slug}`, { params });
-      
-      // Извлекаем события из всех секций согласно API
-      let events = [];
-      
-      // 1. Приоритетно берем данные из month.performances
-      if (response.data.data?.month?.length) {
-        response.data.data.month.forEach(monthData => {
-          if (monthData.performances?.length) {
-            events = events.concat(monthData.performances);
-          }
-        });
+
+      try {
+        const allApiCategories = await this.getEventCategories(); // Используем существующий метод
+        const foundCategory = allApiCategories.find(cat => cat.slug === categorySlug);
+        if (foundCategory) {
+          categoryInfo = { ...categoryInfo, ...foundCategory }; // Обновляем данными из API
+          console.log('[apiService] Found category info from API:', categoryInfo);
+        } else {
+          console.warn(`[apiService] Category with slug '${categorySlug}' not found in API categories.`);
+        }
+      } catch (catError) {
+        console.error(`[apiService] Error fetching category details for ${categorySlug}:`, catError);
+        // categoryInfo остается с дефолтными значениями
       }
-      
-      // 2. Добавляем события из currentDate
-      if (response.data.data?.currentDate?.length) {
-        events = events.concat(response.data.data.currentDate);
-      }
-      
-      // 3. Добавляем события из weekend
-      if (response.data.data?.weekend?.length) {
-        response.data.data.weekend.forEach(dayData => {
-          if (dayData.performances?.length) {
-            events = events.concat(dayData.performances);
-          }
-        });
-      }
-      
-      // 4. Добавляем события из soon
-      if (response.data.data?.soon?.length) {
-        response.data.data.soon.forEach(monthData => {
-          if (monthData.performances?.length) {
-            events = events.concat(monthData.performances);
-          }
-        });
-      }
-      
-      // Удаляем дубликаты по ID и возвращаем результат
-      const uniqueEvents = Array.from(new Map(events.map(e => [e.id, e])).values());
-      
+
       return {
-        events: uniqueEvents,
-        categoryInfo: response.data.type
+        events: filteredEvents, // Возвращаем отфильтрованные события
+        categoryInfo: categoryInfo // Возвращаем информацию о категории
       };
     } catch (error) {
-      console.error(`API error: getCategoryEvents for ${categorySlug}`, error);
+      console.error(`[apiService] Error in getCategoryEvents for ${categorySlug}:`, error);
       throw error;
     }
   }
@@ -491,6 +498,93 @@ class ApiService {
          return this.organizerEventIdsCache; // Return stale cache if fetch fails
       }
       return new Set(); // Return empty set on error if no cache
+    }
+  }
+
+  /**
+   * Получение и кэширование всех событий организатора с их категориями
+   * @returns {Promise<Map>} Карта событий организатора с их данными
+   */
+  async getOrganizerEventsMap() {
+    try {
+      // Пока уберем использование кэша для диагностики
+      // if (this.organizerEventsCache && 
+      //     (Date.now() - this.organizerEventIdsCacheTime < this.ORGANIZER_EVENT_IDS_CACHE_DURATION)) {
+      //   console.log('[apiService] Using cached organizer events map. Size:', this.organizerEventsCache.size);
+      //   return this.organizerEventsCache;
+      // }
+      console.log('[apiService] Always fetching new organizer events map (cache disabled for diagnostics).');
+
+      const apiKey = import.meta.env.VITE_API_SECRET_KEY;
+      const companyId = import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID;
+
+      if (!apiKey) {
+        throw new Error('VITE_API_SECRET_KEY is not set');
+      }
+
+      console.log('[apiService] Fetching organizer events data');
+      const response = await this.axiosInstance.get('/api/v2/sync/data/performances', {
+        params: {
+          key: apiKey,
+          company_id: companyId
+        }
+      });
+
+      // Создаем Map для быстрого доступа к данным события
+      const eventsMap = new Map();
+      
+      if (response.data?.data) {
+        console.log('[apiService] Processing raw sync data. Total items:', response.data.data.length);
+        
+        response.data.data.forEach((item, index) => {
+          let eventId = null;
+          let eventData = null;
+
+          if (item.performance_id) {
+            eventId = Number(item.performance_id);
+            eventData = {
+              id: eventId,
+              name: item.name, // Предполагаем, что имя есть на верхнем уровне
+              types: item.types || [],
+              deletedAt: item.deletedAt || null, // Важно!
+              // ... другие поля с верхнего уровня item, если они нужны для eventData
+              // ИЛИ, если вся информация о performance лежит отдельно, а тут только ID
+              // то нам нужно будет как-то её смержить или выбрать источник истины
+            };
+            // Если основная информация в item.performance, а performance_id - дубликат
+            if (item.performance && item.performance.id === eventId) {
+                 eventData = item.performance; // Предпочитаем полный объект performance
+            }
+
+          } else if (item.performance) {
+            eventId = Number(item.performance.id);
+            eventData = item.performance;
+          }
+
+          if (eventId && eventData) {
+            console.log(`[apiService] Adding to eventsMap - ID: ${eventId}, Name: ${eventData.name}, Types: ${JSON.stringify(eventData.types)}, DeletedAt: ${eventData.deletedAt}`);
+            eventsMap.set(eventId, eventData);
+          } else {
+            console.warn(`[apiService] Could not determine eventId or eventData for item at index ${index}:`, JSON.stringify(item, null, 2));
+          }
+        });
+      }
+
+      console.log('[apiService] Created events map with size:', eventsMap.size);
+      console.log('[apiService] Events map first entry:', 
+        eventsMap.size > 0 ? 
+        JSON.stringify([...eventsMap.values()][0], null, 2) : 
+        'No events'
+      );
+
+      // Сохраняем в кэш
+      // this.organizerEventsCache = eventsMap;
+      this.organizerEventIdsCacheTime = Date.now();
+
+      return eventsMap;
+    } catch (error) {
+      console.error('[apiService] Error fetching organizer events:', error);
+      throw error;
     }
   }
 }

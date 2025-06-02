@@ -30,49 +30,92 @@ export default {
 
     const loading = ref(true);
     const moreLoading = ref(false);
-    const categorySlug = ref(route.params.category || 'theatre'); // Если нет категории, используем 'theatre' по умолчанию
+    const categorySlug = ref(route.params.category || 'theatre');
     const categoryInfo = ref(null);
     const allEvents = ref([]);
     const errorMsg = ref('');
-    const displayCount = ref(6); // Начальное количество
-    const loadStep = ref(6); // Сколько подгружать за раз
+    const displayCount = ref(6);
+    const loadStep = ref(6);
+    const filterLoading = ref(false); // New ref for filter loading state
 
     const fetchCategoryEvents = async () => {
       console.log('[EventsView] Загрузка категории:', categorySlug.value);
       loading.value = true;
       allEvents.value = [];
       categoryInfo.value = null;
-      displayCount.value = 6; // Сброс при загрузке новой категории
+      displayCount.value = 6;
       errorMsg.value = '';
       
       try {
-        // Используем apiService вместо прямых вызовов axios
         const result = await apiService.getCategoryEvents(categorySlug.value);
         
-        allEvents.value = result.events;
-        categoryInfo.value = result.categoryInfo || {
-          name: `Категория "${categorySlug.value}"`,
-          slug: categorySlug.value
-        };
-        
-        console.log('[EventsView] Загружено событий:', allEvents.value.length);
-        console.log('[EventsView] Категория:', categoryInfo.value);
+        console.log('[EventsView] API response for organizer events:', {
+          categoryInfo: result.categoryInfo,
+          eventsCount: result.events?.length || 0
+        });
 
-        // Устанавливаем SEO заголовок и описание
+        if (!result.events || result.events.length === 0) {
+          console.log('[EventsView] Нет событий в категории:', categorySlug.value);
+          errorMsg.value = 'В этой категории пока нет доступных событий.';
+        } else {
+          console.log('[EventsView] Загружено событий:', result.events.length);
+          
+          // Преобразуем данные для EventCard
+          allEvents.value = result.events.map(eventFromApiService => {
+            // eventFromApiService - это уже объект performance, который мы получили от apiService
+            // Он был взят из eventsMap, куда мы клали item.performance
+            return {
+              id: eventFromApiService.id,
+              name: eventFromApiService.name,
+              image: eventFromApiService.image,
+              minPrice: eventFromApiService.minPrice,
+              maxPrice: eventFromApiService.maxPrice,
+              // Сессии и услуги для EventCard должны браться с того же уровня, 
+              // на котором они были в исходном item из sync/data.
+              // Однако, apiService.getCategoryEvents сейчас возвращает только отфильтрованные performance объекты.
+              // Нам нужно либо модифицировать apiService, чтобы он возвращал весь item, 
+              // либо EventCard должен уметь работать только с данными performance.
+              // Пока предположим, что EventCard ожидает sessions/services на том же уровне, что и id, name.
+              // Это потребует доработки в apiService или EventCard.
+              // Для временного исправления ошибки, если sessions/services не являются частью eventFromApiService:
+              sessions: eventFromApiService.sessions || [], // Это поле может отсутствовать в eventFromApiService
+              services: eventFromApiService.services || [], // Это поле может отсутствовать в eventFromApiService
+              types: eventFromApiService.types || [],
+            };
+          });
+
+          if (allEvents.value[0]) {
+            console.log('[EventsView] Пример первого преобразованного события:', allEvents.value[0]);
+          }
+        }
+        
+        if (result.categoryInfo) {
+          categoryInfo.value = result.categoryInfo;
+          console.log('[EventsView] Информация о категории:', categoryInfo.value);
+        } else {
+          categoryInfo.value = {
+            name: `Категория "${categorySlug.value}"`,
+            slug: categorySlug.value
+          };
+          console.warn('[EventsView] Нет информации о категории, используем значение по умолчанию');
+        }
+
         useHead({
-          title: categoryInfo.value.seoTitle || categoryInfo.value.h1 || `События: ${categoryInfo.value.name}` || 'События',
+          title: categoryInfo.value.seoTitle || categoryInfo.value.h1 || `${categoryInfo.value.name} - Афиша событий` || 'События',
           meta: [
             {
               name: 'description',
-              content: categoryInfo.value.seoDescription || `Афиша событий категории ${categoryInfo.value.name}` || 'Список событий'
+              content: categoryInfo.value.seoDescription || 
+                      `Афиша ${categoryInfo.value.name.toLowerCase()}. Расписание мероприятий, цены на билеты.` || 
+                      'Список событий'
             }
           ]
         });
       } catch (error) {
         console.error(`[EventsView] Ошибка загрузки категории ${categorySlug.value}:`, error);
-        categoryInfo.value = { name: `Категория "${categorySlug.value}" не найдена` };
+        categoryInfo.value = { name: `Категория "${categorySlug.value}"` };
         allEvents.value = [];
-        errorMsg.value = `Ошибка загрузки: ${error.message}`;
+        errorMsg.value = 'Не удалось загрузить события. Пожалуйста, попробуйте позже.';
       } finally {
         loading.value = false;
       }
@@ -117,6 +160,7 @@ export default {
       logo2,
       loading,
       moreLoading,
+      filterLoading,
       categoryInfo,
       displayedEvents,
       hasMoreEvents,
@@ -141,7 +185,6 @@ export default {
 
       <headerSection />
 
-
       <!-- Events List -->
       <section class="section-space-default bg-light">
             <div class="container">
@@ -150,31 +193,45 @@ export default {
                 </div>
 
                 <div v-if="!loading && !errorMsg">
-                    <div v-if="categoryInfo?.description" class="category-description mb-4">
-                        <p v-html="categoryInfo.description"></p>
+                    <div class="section-title text-center mb-5">
+                        <div v-if="categoryInfo?.description" class="category-description mt-3" v-html="categoryInfo.description"></div>
+                    </div>
+
+                    <div v-if="filterLoading" class="text-center py-4">
+                        <p>Фильтрация событий...</p>
                     </div>
 
                     <transition-group name="fade-list" tag="div" class="events-view-grid">
-                      <EventCard v-for="event in displayedEvents" :key="event.id" :event="event" class="fade-list-item" />
-                      <p v-if="displayedEvents.length === 0" class="no-events-message">В этой категории пока нет событий.</p>
+                        <EventCard 
+                            v-for="event in displayedEvents" 
+                            :key="event.id" 
+                            :event="event" 
+                            class="fade-list-item" 
+                        />
+                        <div v-if="displayedEvents.length === 0" class="no-events-message" key="no-events">
+                            <p>В этой категории пока нет доступных событий.</p>
+                        </div>
                     </transition-group>
 
                     <div v-if="hasMoreEvents" class="load-more-container">
-                        <button @click="loadMoreEvents" :disabled="moreLoading" class="btn-fill size-lg color-yellow border-radius-5">
+                        <button 
+                            @click="loadMoreEvents" 
+                            :disabled="moreLoading" 
+                            class="btn-fill size-lg color-yellow border-radius-5"
+                        >
                             {{ moreLoading ? 'Загрузка...' : 'Показать ещё' }}
                         </button>
                     </div>
-                 </div>
+                </div>
                 
                 <div v-else-if="loading" class="text-center py-5">
-                      <p>Загрузка событий...</p>
-                 </div>
+                    <p>Загрузка событий...</p>
+                </div>
             </div>
       </section>
 
       <footerSection />
-
-    </main>
+  </main>
 </template>
 
 <style scoped>
@@ -260,5 +317,42 @@ export default {
 .fade-list-enter-to, .fade-list-leave-from {
   opacity: 1;
   transform: translateY(0);
+}
+
+.section-title {
+    margin-bottom: 2rem;
+}
+
+.section-title h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.alert-danger {
+    background-color: #fff3f3;
+    border: 1px solid #ffcdd2;
+    color: #d32f2f;
+}
+
+.no-events-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 0;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.no-events-message p {
+    font-size: 1.2rem;
+    color: #666;
+    margin: 0;
 }
 </style>

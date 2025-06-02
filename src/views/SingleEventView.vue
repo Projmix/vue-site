@@ -251,9 +251,9 @@ async function fetchEventData() {
       event.performance?.image?.['300x430'] || 
       event.image?.original || 
       event.performance?.image?.original;
-
+    
     if (event.calendar && Array.isArray(event.calendar) && event.calendar.length > 0) {
-      const now = moment().startOf('day');
+    const now = moment().startOf('day');
       calendarDates.value = event.calendar
         .filter(dateObj => moment(dateObj.date).isSameOrAfter(now))
         .map(dateObj => ({ ...dateObj, date: dateObj.date }));
