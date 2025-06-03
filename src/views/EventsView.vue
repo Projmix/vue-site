@@ -22,8 +22,7 @@ export default {
   setup(props) {
     const layoutStore = useLayoutStore();
     const background = computed(() => layoutStore.getBackground);
-    const logo = computed(() => layoutStore.getLogo);
-    const logo2 = computed(() => layoutStore.getLogo2);
+    const logo = computed(() => layoutStore.getSiteHeaderLogo);
 
     const route = useRoute(); 
     const apiService = inject('apiService');
@@ -155,7 +154,6 @@ export default {
     return {
       background,
       logo,
-      logo2,
       loading,
       moreLoading,
       filterLoading,
@@ -174,7 +172,7 @@ export default {
   <main>
       <!--preloading-->
       <div id="preloader" v-if="loading">
-          <img class="logo" :src="logo2" alt="Загрузка..." width="119" height="58">
+          <img class="logo" :src="logo" :alt="categoryInfo?.name || 'Загрузка...'" width="119" height="58" :style="{ objectFit: 'contain' }">
           <div id="status">
               <span></span>
               <span></span>
@@ -303,6 +301,9 @@ export default {
 }
 #preloader .logo {
     margin-bottom: 20px;
+    max-width: 179px; /* Match header logo max width */
+    height: auto; /* Let height adjust automatically */
+    object-fit: contain;
 }
 .container .events-view-grid .speaker-layout3{
   padding-bottom: 0px;

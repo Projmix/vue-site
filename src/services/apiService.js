@@ -120,7 +120,7 @@ class ApiService {
         seoTitle: `События категории ${categorySlug}`,
         seoDescription: `Афиша событий категории ${categorySlug}`
       };
-
+      
       return {
         events: filteredEvents, // Возвращаем отфильтрованные события
         categoryInfo: categoryInfo // Возвращаем информацию о категории
@@ -353,11 +353,20 @@ class ApiService {
       };
       
       const response = await this.axiosInstance.get('/api/v3/arena/home', { params });
-      console.log('[apiService] getArenaHomeEvents: Данные для категорий получены. Raw data:', JSON.parse(JSON.stringify(response.data)));
-      return response.data; // Should contain the .performances array
+      if (response.data?.data?.objects?.data?.[0]) {
+        console.log('[apiService] getArenaHomeEvents: Найден объект:', response.data.data.objects.data[0]);
+      } else {
+        console.warn('[apiService] getArenaHomeEvents: Структура ответа:', {
+          hasData: !!response.data,
+          hasNestedData: !!response.data?.data,
+          hasObjects: !!response.data?.data?.objects,
+          objectsData: response.data?.data?.objects?.data
+        });
+      }
+      return response.data;
     } catch (error) {
       console.error('API error: getArenaHomeEvents', error);
-      throw error; // Rethrow to be handled by the caller (e.g., layoutStore)
+      throw error;
     }
   }
   

@@ -1,11 +1,9 @@
 <template>
-  <div class="speaker-layout3">
-    <router-link :to="`/event/${event.id}`">
-      <img :src="event.image['300x430'] || event.image['240x340'] || placeholderImage" :alt="event.name" class="img-fluid" />
-    </router-link>
+  <router-link :to="`/event/${event.id}`" class="speaker-layout3 event-card-link">
+    <img :src="event.image['300x430'] || event.image['240x340'] || placeholderImage" :alt="event.name" class="img-fluid" />
     <div class="item-title">
       <h3 class="title title-bold color-light hover-yellow size-md">
-        <router-link :to="`/event/${event.id}`">{{ event.name }}</router-link>
+        {{ event.name }}
       </h3>
       <div class="title-light size-md text-left color-light" v-if="event.genre">{{ event.genre }}</div>
     </div>
@@ -18,7 +16,7 @@
         </li>
       </ul>
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script>
@@ -60,6 +58,12 @@ export default {
 </script>
 
 <style scoped>
+.event-card-link {
+  display: block; /* Make the link a block element to encompass its content */
+  text-decoration: none; /* Remove default underline from link */
+  color: inherit; /* Ensure text color is inherited from parent or can be styled directly */
+}
+
 .speaker-layout3 {
   position: relative;
   margin-bottom: 32px;
@@ -82,41 +86,35 @@ export default {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+.speaker-layout3 .item-title {
+  /* Ensure item-title is still correctly positioned if needed, 
+     though direct children of a block link should flow naturally. 
+     If it was absolutely positioned, review its context. */
+  padding: 15px; /* Example padding, adjust as per original design */
+}
+
 .speaker-layout3 .title {
   font-weight: 700;
-  color: #fff;
+  color: #fff; /* Explicitly set title color as it's now part of a link */
   margin-bottom: 8px;
   line-height: 1.2;
   text-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.speaker-layout3 .title a {
-  color: #fff;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.speaker-layout3 .title a:hover {
-  color: var(--theme-text-color);
-}
+
+/* Remove specific link styling for title as it's part of the larger card link */
+/* .speaker-layout3 .title a { ... } */
+/* .speaker-layout3 .title a:hover { ... } */
+
 .speaker-layout3 .title-light {
   font-size: 0.98rem;
-  color: var(--theme-text-color);
+  color: var(--theme-text-color); /* Or #ccc if you want it lighter than default link color */
   margin-bottom: 0;
   font-weight: 400;
 }
-.speaker-layout3 .item-social {
-  margin-top: 18px;
-}
-.speaker-layout3 .item-social ul {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-.speaker-layout3 .item-social li {
-  display: inline-block;
-}
+
+/* Social links are actual <a> tags and should remain clickable independently */
+/* Ensure they are not negatively impacted by the parent <a> tag. */
+/* Add z-index if they get hidden or are not clickable, though this is usually not needed for nested <a> */
 .speaker-layout3 .item-social a {
   color: #fff;
   background: var(--theme-button-color);
@@ -128,6 +126,8 @@ export default {
   justify-content: center;
   font-size: 1.18rem;
   transition: background 0.2s, color 0.2s;
+  position: relative; /* Might help if clicks go to parent link */
+  z-index: 1;      /* Might help if clicks go to parent link */
 }
 .speaker-layout3 .item-social a:hover {
   background: #fff;
@@ -147,8 +147,8 @@ export default {
     /* height: 300px; */
   }
   .speaker-layout3 .item-title {
-   left:10px;
+   left:10px; /* This might need review if padding is used instead */
+   padding: 10px; /* Consistent padding example */
 }
 }
-
 </style>

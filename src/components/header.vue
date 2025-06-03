@@ -3,24 +3,38 @@ import { useLayoutStore } from "../stores/layout.js";
 import { computed, onMounted } from 'vue';
 
 const layoutStore = useLayoutStore();
-const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
+// const logoUrl = computed(() => layoutStore.getCompanyLogoUrl); // Old getter
+const logoUrl = computed(() => layoutStore.getSiteHeaderLogo); // New getter for site_logo
 const layout = computed(() => layoutStore.getLayout);
 const siteMenu = computed(() => layoutStore.getSiteMenu);
+const purchaseUrl = computed(() => {
+  const url = layoutStore.getObjectPurchaseUrl;
+  console.log('[header] Current object ID:', layoutStore.getObjectId);
+  console.log('[header] Purchase URL:', url);
+  return url;
+});
 
 // Проверяем наличие дочерних элементов в пунктах меню
 function hasChildren(menuItem) {
   return menuItem.children && menuItem.children.length > 0;
 }
 
-// Инициализация sticky header
-onMounted(() => {
-  initStickyHeader();
-  
-  // Re-initialize on window resize
-  window.addEventListener('resize', initStickyHeader);
-  
-  // Handle scroll event for sticky header
-  window.addEventListener('scroll', handleStickyHeader);
+// Инициализация
+onMounted(async () => {
+  console.log('[header] Component mounted, initializing...');
+  try {
+    // Ensure layout data is loaded
+    await layoutStore.fetchLayout();
+    console.log('[header] Layout data loaded');
+    
+    initStickyHeader();
+    // Re-initialize on window resize
+    window.addEventListener('resize', initStickyHeader);
+    // Handle scroll event for sticky header
+    window.addEventListener('scroll', handleStickyHeader);
+  } catch (error) {
+    console.error('[header] Error during initialization:', error);
+  }
 });
 
 function initStickyHeader() {
@@ -129,7 +143,7 @@ function handleStickyHeader() {
             <div class="col-lg-3 col-md-4 d-none d-lg-block">
               <ul class="header-action-items">
                 <li>
-                  <a href="#" title="Купить" class="btn-fill size-xs color-yellow border-radius-5">Купить</a>
+                  <a :href="purchaseUrl" title="Купить" class="btn-fill size-xs color-yellow border-radius-5" target="_blank">Купить</a>
                 </li>
               </ul>
             </div>

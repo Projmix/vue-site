@@ -28,9 +28,8 @@ export default {
     let nivoInitialized = false;
     const layoutStore = useLayoutStore();
     const router = useRouter();
+    const logo = computed(() => layoutStore.getSiteHeaderLogo);
     const background = computed(() => layoutStore.getBackground);
-    const logo = computed(() => layoutStore.getLogo);
-    const logo2 = computed(() => layoutStore.getLogo2);
     
     const siteSlider = computed(() => {
         const slides = layoutStore.getSiteSlider;
@@ -58,7 +57,7 @@ export default {
     const newsItems = ref([]);
     const newsLoading = ref(true);
     const generalLoading = ref(true); // Общий лоадер для страницы
-    const loading = generalLoading;
+    const loading = computed(() => layoutStore.eventsLoading || !layoutStore.isInitialDataLoaded);
 
     // Функция для загрузки новостей
     const fetchNews = async () => {
@@ -270,7 +269,6 @@ export default {
       layoutStore,
       background,
       logo,
-      logo2,
       hasSliderData,
       siteSlider,
       eventsByCategory,
@@ -293,7 +291,7 @@ export default {
   <main>
     <!--preloading-->
     <div id="preloader" v-if="loading">
-      <img class="logo" :src="logo2" alt="" width="119" height="58">
+      <img class="logo" :src="logo" alt="Загрузка..." width="119" height="58" :style="{ objectFit: 'contain' }">
       <div id="status">
         <span></span>
         <span></span>
@@ -537,6 +535,9 @@ body main {
 
 #preloader .logo {
   margin-bottom: 20px;
+  max-width: 179px; /* Match header logo max width */
+  height: auto; /* Let height adjust automatically */
+  object-fit: contain;
 }
 
 #status {
@@ -690,6 +691,11 @@ body main {
   max-width: none;
 
 }
+.news-section .container .btn-fill.color-yellow:hover {
+  background-color: transparent;
+  color: black;
+}
+
 .news-section .container .see-all-button{
   margin-top: 0px;
 }
@@ -847,5 +853,8 @@ body main {
 :global(.nivo-caption .slider-direction:not(:first-child)) {
   display: none !important;
 }
-
+.section-space-default .btn-fill.color-yellow:hover {
+  background-color: transparent;
+  color: black;
+}
 </style>
