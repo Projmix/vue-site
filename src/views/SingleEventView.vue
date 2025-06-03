@@ -439,7 +439,7 @@ onMounted(fetchEventData);
 }
 .tag-3d::after, .tag-2d::after {
   content: "3D"; /* Default, can be overridden */
-  background: #fad03b;
+  background: var(--theme-button-color);
   color: #000;
   padding: 1px 4px;
   border-radius: 2px;

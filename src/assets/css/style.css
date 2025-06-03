@@ -888,7 +888,7 @@ button:hover {
   }
 }
 .btn-ghost:hover {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .btn-ghost.color-light {
@@ -1026,7 +1026,7 @@ button:hover {
 }
 .btn-fill.color-primary {
   border-color: #4c1864;
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .btn-fill.color-primary:hover {
@@ -1444,7 +1444,7 @@ button:hover {
 }
 .title-bar:before {
   content: "";
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   height: 3px;
   width: 40px;
   position: absolute;
@@ -1458,7 +1458,7 @@ button:hover {
 }
 .sidebar-title-bar:before {
   content: "";
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   height: 4px;
   width: 50px;
   position: absolute;
@@ -2290,7 +2290,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 .table-responsive::-webkit-scrollbar-thumb {
   border-radius: 0;
   border: 0;
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .table-responsive::-webkit-scrollbar {
   -webkit-appearance: none;
@@ -2435,7 +2435,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 }
 #scrollUp:hover,
 #scrollUp:focus {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 #scrollUp {
   animation: blinker 10s linear infinite;
@@ -2636,7 +2636,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   background: #8cc63e;
 }
 .dot-control .owl-controls .owl-dots .active span {
-  background: #fad03b;
+  background: var(--theme-button-color);
 }
 /*======================================================
 [02] Header Area Style
@@ -2647,7 +2647,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   display: block;
 }
 .header-area .stick {
-  background-color: rgba(17, 17, 17, 0.9);
+  background-color: var(--theme-main-color);
   /* border-bottom: 2px solid #4c1864; */
   -webkit-transition: all 1s ease-out;
   -moz-transition: all 1s ease-out;
@@ -2777,14 +2777,14 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li a:hover,
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li a:focus {
-  background: #fad03b;
+  background: var(--theme-button-color);
   color: #242424e6;
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu li:last-child {
   border-bottom: none;
 }
 .eventalk-main-menu nav > ul > li ul.rt-dropdown-menu .current > a {
-  background: #fad03b;
+  background: var(--theme-button-color);
   color: #242424e6;
 }
 .eventalk-main-menu nav > ul > li .rt-dropdown-menu.third-level {
@@ -4427,7 +4427,7 @@ div ~ :last-child .progress-layout2:before {
   -webkit-transform: scale(1.05);
   -moz-transform: scale(1.05);
   transform: scale(1.05);
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .price-table-layout3 .tpt-col-inner:hover .tpt-header .tpt-header-top {
   border-bottom: 1px solid #fad03b;
@@ -4673,7 +4673,7 @@ div ~ :last-child .progress-layout2:before {
 [09] Audio Area Style
 =======================================================*/
 .audio-layout1 {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   position: relative;
   min-height: 10px;
   box-sizing: border-box;
@@ -4977,21 +4977,21 @@ div ~ :last-child .progress-layout2:before {
   height: 10px;
   border: none;
   border-radius: 12px;
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .audio-player-wrap .volume-control input[type="range"]::-moz-range-thumb {
   width: 40px;
   height: 10px;
   border: none;
   border-radius: 12px;
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .audio-player-wrap .volume-control input[type="range"]::-ms-thumb {
   width: 40px;
   height: 10px;
   border-radius: 12px;
   border: 0;
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 /*======================================================
 [10] Schedule Area Style
@@ -5013,7 +5013,7 @@ div ~ :last-child .progress-layout2:before {
   background-color: #8cc63e;
 }
 .schedule-layout1 tbody tr:nth-child(2n) th {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .schedule-layout1 tbody tr:nth-child(3n) th {
   background-color: var(--theme-button-color);
@@ -5028,7 +5028,7 @@ div ~ :last-child .progress-layout2:before {
   background-color: #8cc63e;
 }
 .schedule-layout1 tbody tr:nth-child(7n) th {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
 }
 .schedule-layout1 tbody tr:nth-child(8n) th {
   background-color: var(--theme-button-color);
@@ -6918,7 +6918,7 @@ div ~ :last-child .progress-layout2:before {
   border: 1px solid #cacaca;
 }
 .single-product-wrap .single-product-info .quantity li .cart-btn {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .single-product-wrap .single-product-info .quantity li .cart-btn:hover {
@@ -7012,7 +7012,7 @@ div ~ :last-child .progress-layout2:before {
   text-align: center;
 }
 .product-box-layout1 .item-image .item-action ul .item-button a {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .product-box-layout1 .item-image .item-action ul .item-view {
@@ -7083,7 +7083,7 @@ div ~ :last-child .progress-layout2:before {
   text-align: center;
 }
 .product-box-layout2 .item-image .item-action ul .item-button a {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .product-box-layout2 .item-image .item-action ul .item-view {
@@ -7150,7 +7150,7 @@ div ~ :last-child .progress-layout2:before {
 }
 .item-sorting-wrap .item-sorting-control .dropdown .dropdown-menu .dropdown-item:focus,
 .item-sorting-wrap .item-sorting-control .dropdown .dropdown-menu .dropdown-item:hover {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 /*======================================================
@@ -7761,7 +7761,7 @@ div ~ :last-child .progress-layout2:before {
 .sidebar-widget-area .widget-search .stylish-input-group .input-group-addon {
   border: none;
   border-radius: 0;
-  background: #fad03b;
+  background: var(--theme-button-color);
   padding: 0;
   -webkit-transition: all 0.5s ease-out;
   -moz-transition: all 0.5s ease-out;
@@ -7772,7 +7772,7 @@ div ~ :last-child .progress-layout2:before {
 .sidebar-widget-area .widget-search .stylish-input-group .input-group-addon button {
   padding: 8px 18px;
   cursor: pointer;
-  background: #fad03b;
+  background: var(--theme-button-color);
   border: 0;
   display: block;
   -webkit-transition: all 0.5s ease-out;
@@ -7874,7 +7874,7 @@ div ~ :last-child .progress-layout2:before {
 }
 .sidebar-widget-area .widget-categories ul li:before {
   content: "";
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   width: 0%;
   height: 1px;
   left: 0;
@@ -7942,7 +7942,7 @@ div ~ :last-child .progress-layout2:before {
 }
 .sidebar-widget-area .widget-archives ul li:before {
   content: "";
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   width: 0%;
   height: 1px;
   left: 0;
@@ -8381,7 +8381,7 @@ div ~ :last-child .progress-layout2:before {
   transition: all 0.5s ease-out;
 }
 .isotop-btn a:hover {
-  background-color: #4c1864;
+  background-color: color-mix(in srgb, var(--theme-background-color) 90%, black);
   color: #ffffff;
 }
 .isotop-btn a:last-child {
@@ -8490,7 +8490,7 @@ div ~ :last-child .progress-layout2:before {
 .footer-layout2 .footer-top-area {
   padding-top: 11rem;
   padding-bottom: 5.5rem;
-  background-color: #191919;
+  background-color: var(--theme-main-color);
 }
 .footer-layout2 .footer-top-area .widget {
   color: #bfbfbf;
@@ -8650,7 +8650,7 @@ div ~ :last-child .progress-layout2:before {
   color: #bfbfbf;
 }
 .footer-layout2 .footer-bottom-area {
-  background-color: #0b1013;
+  background-color: color-mix(in srgb, var(--theme-main-color) 90%, black);
   text-align: center;
   color: #b1b1b1;
   padding: 25px 0 1px;

@@ -119,7 +119,7 @@ export default {
 }
 .speaker-layout3 .item-social a {
   color: #fff;
-  background: #fad03b;
+  background: var(--theme-button-color);
   border-radius: 50%;
   width: 36px;
   height: 36px;
