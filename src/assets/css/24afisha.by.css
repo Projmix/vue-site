@@ -1,0 +1,34 @@
+:root {
+  /* Default Fallback Theme Variables */
+
+  --theme-main-color: #007bff;     /* Default Blue - used for primary elements, links, accents */
+  --theme-background-color: #ffffff; /* Default White - main page background */
+  --theme-text-color: #5cc048;       /* Default Dark Gray - general text */
+  --theme-button-color: #007bff;     /* Default Blue - for primary buttons background */
+  /* 
+    For button text color, you might need another variable or have the dynamic theme 
+    provide --theme-button-text-color if buttons can vary significantly.
+    For simplicity here, one might assume buttons with a dark background get light text, 
+    and buttons with a light background get dark text, potentially handled in your main style.css.
+  */
+}
+/*
+  Example usage (you would implement similar logic in your main style.css and components):
+
+  body {
+    background-color: var(--theme-background-color);
+    color: var(--theme-text-color);
+  }
+
+  a,
+  .accent-text,
+  h1, h2, h3 { 
+    color: var(--theme-main-color);
+  }
+
+  .button-primary {
+    background-color: var(--theme-button-color);
+    color: white; // Assuming button color is generally dark enough for white text
+    border: 1px solid var(--theme-button-color);
+  }
+*/

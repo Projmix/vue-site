@@ -3,11 +3,13 @@ import { useLayoutStore } from "../stores/layout.js";
 import { computed, onMounted } from 'vue';
 
 const layoutStore = useLayoutStore();
-const logoUrl = computed(() => layoutStore.getCompanyLogoUrl);
+// logoUrl can be removed if not used elsewhere in this component, or kept if header still relies on a similar setup.
+// For the footer logos, we will use footerImages directly.
+// const logoUrl = computed(() => layoutStore.getCompanyLogoUrl); 
 const layout = computed(() => layoutStore.getLayout);
 const background = computed(() => layoutStore.getBackground);
 const footerLinks = computed(() => layoutStore.getSiteFooterLinks);
-const footerImages = computed(() => layoutStore.getSiteFooterImages);
+const footerImages = computed(() => layoutStore.getSiteFooterImages); // This is the one we need for all logos
 
 // Google Translate init (через onMounted, без this)
 onMounted(() => {
@@ -63,10 +65,14 @@ onMounted(() => {
           <div class="row">
             <div class="col-lg-2">
               <div class="widget">
-                <router-link class="footer-widget-logo" :to="{ name: 'home' }">
-                  <img class="img-fluid" :src="logoUrl" alt="logo"
-                    style="width:179px; height:46px; object-fit:contain;">
-                </router-link>
+                <!-- Loop through all siteFooterImages -->
+                <div v-for="logoItem in footerImages" :key="logoItem.image || logoItem.href" class="footer-logo-item">
+                  <a :href="logoItem.href" :target="logoItem.target || '_self'" :title="logoItem.title" class="footer-widget-logo d-block">
+                    <img :src="logoItem.image" 
+                         :alt="logoItem.title || 'logo'"
+                         style="width: 100%; height: auto; object-fit: contain; display: block;">
+                  </a>
+                </div>
               </div>
             </div>
             <!-- Динамические ссылки футера из API -->
@@ -114,6 +120,21 @@ onMounted(() => {
   display: flex;
   gap: 20px;
 }
+
+.footer-logo-item {
+  margin-bottom: 15px; /* Space between logos */
+  width: 100%; /* Ensure the container item takes full width */
+}
+
+.footer-logo-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure the anchor tag itself doesn't have conflicting margins from general rules */
+.footer-layout2 .footer-top-area .widget .footer-widget-logo.d-block {
+  margin-bottom: 0; 
+}
+
 @media (max-width: 991px) {
   .footer-layout2 .footer-top-area .container .col-lg-2{
     margin-left: 20px !important;

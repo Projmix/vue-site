@@ -6,6 +6,10 @@ import { useWidgetStore } from "./stores/widget.js";
 import { useRouter } from 'vue-router';
 import { computed } from 'vue';
 import Widget from './components/widget.vue'
+import apiService from './services/apiService';
+
+// REMINDER: User should import their fallback CSS here, e.g.:
+// import '@/assets/css/24afisha.by.css';
 
 export default {
   name: "App",
@@ -56,6 +60,59 @@ export default {
   },
   
   methods: {
+    applyDynamicThemeCss(cssText, source) {
+      const themeStyleTagId = 'dynamic-theme-styles';
+      let styleTag = document.getElementById(themeStyleTagId);
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = themeStyleTagId;
+        document.head.appendChild(styleTag);
+      }
+      styleTag.innerHTML = cssText;
+      console.log(`[Theme] Applied CSS from ${source}`);
+    },
+
+    removeDynamicThemeCss() {
+      const themeStyleTagId = 'dynamic-theme-styles';
+      const styleTag = document.getElementById(themeStyleTagId);
+      if (styleTag) {
+        styleTag.remove();
+        console.log('[Theme] Removed dynamic CSS tag.');
+      }
+    },
+
+    async loadAndApplyTheme() {
+      const hostname = window.location.hostname;
+      const themeCacheKey = `dynamicThemeCss_${hostname}`;
+
+      try {
+        console.log(`[Theme] Attempting to fetch theme CSS for ${hostname} from API.`);
+        const fetchedCss = await apiService.getThemeCss(hostname);
+        
+        if (fetchedCss && typeof fetchedCss === 'string') {
+          localStorage.setItem(themeCacheKey, fetchedCss);
+          this.applyDynamicThemeCss(fetchedCss, 'API');
+        } else {
+          // This case handles API success (200) but empty/invalid CSS string from apiService.getThemeCss which returns null in such cases
+          console.warn('[Theme] Fetched theme was null or not a valid CSS string. Trying cache.');
+          // Force to catch block to attempt cache load
+          throw new Error("Fetched theme was null or invalid, try cache"); 
+        }
+      } catch (error) {
+        // This catch block handles failures from apiService.getThemeCss (network errors, 404s, etc.)
+        // OR the explicitly thrown error from the try block above
+        console.warn(`[Theme] Failed to get theme CSS from API (or API returned no CSS): ${error.message}. Trying cache.`);
+        const cachedCss = localStorage.getItem(themeCacheKey);
+        if (cachedCss) {
+          this.applyDynamicThemeCss(cachedCss, 'localStorage cache');
+        } else {
+          console.warn('[Theme] No cached theme CSS found. Fallback CSS (if linked globally) will apply.');
+          // Ensure no stale dynamic styles are present if both API and cache fail, allowing fallback to take over cleanly.
+          this.removeDynamicThemeCss();
+        }
+      }
+    },
+
     async loadScript(src) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -72,6 +129,9 @@ export default {
     customCSS.rel = 'stylesheet';
     customCSS.href = `/src/assets/css/${window.location.hostname}/custom.css?v=2`;
     document.head.appendChild(customCSS);
+
+    // Load dynamic theme CSS variables
+    this.loadAndApplyTheme();
 
     if (!this.layout) {
       this.layoutLoaded = this.fetchLayout()

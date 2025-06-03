@@ -129,7 +129,7 @@ function handleStickyHeader() {
             <div class="col-lg-3 col-md-4 d-none d-lg-block">
               <ul class="header-action-items">
                 <li>
-                  <a href="#" title="Buy Tickets" class="btn-fill size-xs color-yellow border-radius-5">Buy Tickets</a>
+                  <a href="#" title="Купить" class="btn-fill size-xs color-yellow border-radius-5">Купить</a>
                 </li>
               </ul>
             </div>

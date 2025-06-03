@@ -39,7 +39,6 @@ export default {
     const filterLoading = ref(false); // New ref for filter loading state
 
     const fetchCategoryEvents = async () => {
-      console.log('[EventsView] Загрузка категории:', categorySlug.value);
       loading.value = true;
       allEvents.value = [];
       categoryInfo.value = null;
@@ -49,16 +48,14 @@ export default {
       try {
         const result = await apiService.getCategoryEvents(categorySlug.value);
         
-        console.log('[EventsView] API response for organizer events:', {
-          categoryInfo: result.categoryInfo,
-          eventsCount: result.events?.length || 0
-        });
+        categorySlug: categorySlug.value,
+        categoryInfo: result.categoryInfo,
+        eventsCount: result.events?.length || 0,
+      });
 
         if (!result.events || result.events.length === 0) {
-          console.log('[EventsView] Нет событий в категории:', categorySlug.value);
           errorMsg.value = 'В этой категории пока нет доступных событий.';
         } else {
-          console.log('[EventsView] Загружено событий:', result.events.length);
           
           // Преобразуем данные для EventCard
           allEvents.value = result.events.map(eventFromApiService => {
@@ -91,7 +88,6 @@ export default {
         
         if (result.categoryInfo) {
           categoryInfo.value = result.categoryInfo;
-          console.log('[EventsView] Информация о категории:', categoryInfo.value);
         } else {
           categoryInfo.value = {
             name: `Категория "${categorySlug.value}"`,

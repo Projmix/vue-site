@@ -18,6 +18,7 @@ import '@/assets/css/meanmenu.min.css';
 import '@/assets/css/magnific-popup.css';
 import '@/assets/vendor/slider/css/nivo-slider.css';
 import '@/assets/vendor/slider/css/preview.css';
+import '@/assets/css/24afisha.by.css';
 import '@/assets/css/style.css';   
 
 //import '@vuepic/vue-datepicker/dist/main.css'

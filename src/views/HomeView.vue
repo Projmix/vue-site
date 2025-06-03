@@ -34,7 +34,6 @@ export default {
     
     const siteSlider = computed(() => {
         const slides = layoutStore.getSiteSlider;
-        console.log('[HomeView] Slider data for Nivo:', slides);
         return slides;
     });
     
@@ -107,31 +106,24 @@ export default {
     };
 
     const initNivoSlider = () => {
-      console.log('[HomeView initNivoSlider] Called.');
 
       if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
         console.warn('[HomeView initNivoSlider] jQuery or Nivo Slider not loaded yet. Retrying in 200ms...');
         setTimeout(initNivoSlider, 200);
         return;
       }
-      console.log('[HomeView initNivoSlider] jQuery and Nivo plugin ARE available.');
 
       const sliderElement = window.$('#ensign-nivoslider-3');
-      console.log('[HomeView initNivoSlider] sliderElement jQuery object:', sliderElement);
-      console.log('[HomeView initNivoSlider] sliderElement.length:', sliderElement.length);
 
       if (sliderElement.length === 0) {
         console.warn('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 NOT found in DOM by jQuery. Exiting.');
         return;
       }
-      console.log('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 found by jQuery.');
 
       // Clean up any existing slider instance and related elements
       if (nivoInitialized && sliderElement.data('nivoslider')) { 
-        console.log('[HomeView initNivoSlider] nivoInitialized is true AND Nivo slider instance exists. Destroying existing instance before re-init.');
         try {
           sliderElement.data('nivoslider').destroy();
-          console.log('[HomeView initNivoSlider] Existing Nivo slider instance destroyed.');
         } catch (e) {
           console.warn('[HomeView initNivoSlider] Error destroying existing Nivo slider instance:', e);
         }
@@ -150,10 +142,8 @@ export default {
           );
         }
       });
-      console.log('[HomeView initNivoSlider] Images repopulated in sliderElement.');
 
       // Initialize with modified options
-      console.log('[HomeView initNivoSlider] Initializing Nivo Slider with options...');
       sliderElement.nivoSlider({
         effect: 'fold',
         slices: 15,
@@ -171,28 +161,21 @@ export default {
         nextText: 'Next',
         randomStart: false,
         beforeChange: function(){
-          console.log('[HomeView Nivo Event] beforeChange');
-          // Hide all direction elements before change
           window.$('.slider-direction').hide();
         },
         afterChange: function(){
-          console.log('[HomeView Nivo Event] afterChange');
           // Show current direction element after change
           const currentSlide = window.$('.nivo-main-image').attr('src');
           const currentIndex = sliderElement.find('img').index(sliderElement.find(`img[src="${currentSlide}"]`));
           window.$(`#slider-direction-${currentIndex + 1}`).show();
         },
         afterLoad: function(){
-          console.log('[HomeView Nivo Event] afterLoad: Slider loaded');
           window.$('.nivo-controlNav a.nivo-control').text('');
           // Show first slide direction element
           window.$('#slider-direction-1').show();
-          console.log('[HomeView Nivo Event] afterLoad: Control nav text cleared and first direction shown.');
         }
       });
-      console.log('[HomeView initNivoSlider] .nivoSlider() called.');
       nivoInitialized = true;
-      console.log('[HomeView initNivoSlider] nivoInitialized set to true.');
     };
 
     const navigateToSlideUrl = (url) => {
@@ -215,20 +198,15 @@ export default {
     watch(
       () => siteSlider.value,
       (newSlides) => {
-        console.log('[HomeView Watcher] siteSlider.value changed. newSlides length:', newSlides ? newSlides.length : 'null');
         
         if (newSlides && newSlides.length > 0) {
-          console.log('[HomeView Watcher] Slide data is present. Calling nextTick to check for element and init.');
           nextTick(() => {
             const sliderElementExists = document.getElementById('ensign-nivoslider-3');
-            console.log('[HomeView Watcher nextTick] Inside nextTick. sliderElementExists:', !!sliderElementExists, 'nivoInitialized:', nivoInitialized);
 
             if (sliderElementExists) {
               if (!nivoInitialized) {
-                console.log('[HomeView Watcher nextTick] Element found. Attempting to initialize Nivo Slider (first time or after reset).');
                 initNivoSlider();
               } else {
-                  console.log('[HomeView Watcher nextTick] Element found. Slider data updated, Nivo already initialized. Re-initializing Nivo Slider.');
                   nivoInitialized = false;
                   initNivoSlider();
               }
@@ -237,7 +215,6 @@ export default {
             }
           });
         } else {
-          console.log('[HomeView Watcher] No slide data (newSlides is null or empty). Not proceeding with init.');
         }
       },
       { deep: true, immediate: true }
@@ -245,12 +222,10 @@ export default {
 
     onBeforeUnmount(() => {
       if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined') {
-        console.log('[HomeView] Destroying Nivo Slider on unmount.');
         try {
           const sliderElement = window.$('#ensign-nivoslider-3');
           if (sliderElement.length) {
             sliderElement.nivoSlider('destroy');
-            console.log('[HomeView] Nivo Slider destroyed successfully');
           }
         } catch(e) {
           console.warn("[HomeView] Error destroying Nivo Slider:", e);
@@ -628,7 +603,7 @@ body main {
 }
 
 .kp-rating .kp-value {
-  color: #fad03b;
+  color: var(--theme-text-color:);
   font-weight: 700;
   font-size: 1.08em;
   margin-right: 0.15em;
@@ -811,7 +786,7 @@ body main {
 }
 
 :global(.btn-ghost.color-yellow:hover) {
-  background-color: #fad03b;
+  background-color: var(--theme-button-color);
   color: #111111 !important;
 }
 

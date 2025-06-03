@@ -35,10 +35,31 @@ export const useLayoutStore = defineStore("layout", {
         return logoImage?.href || state.logo;
       },
       getCompanyLogoUrl(state) {
-        // Используем логотип из layout, если доступен
+        // Используем первое изображение из site_footer_images как основной логотип
         const footerImages = state.layout?.site_footer_images || [];
-        const logoImage = footerImages.find(img => img?.text?.toLowerCase().includes('logo'));
-        return logoImage?.href || state.logo;
+        if (footerImages.length > 0 && footerImages[0]?.image) {
+          return footerImages[0].image;
+        }
+        return state.logo; // Fallback to default logo
+      },
+      getCompanyLogoLinkDetails(state) {
+        const footerImages = state.layout?.site_footer_images || [];
+        if (footerImages.length > 0) {
+          return {
+            href: footerImages[0].href,
+            target: footerImages[0].target,
+            title: footerImages[0].title
+          };
+        }
+        return { href: '/', target: '_self', title: 'Home' }; // Fallback
+      },
+      getAdditionalFooterLogos(state) {
+        // Остальные изображения из site_footer_images
+        const footerImages = state.layout?.site_footer_images || [];
+        if (footerImages.length > 1) {
+          return footerImages.slice(1);
+        }
+        return [];
       },
       getCompanyInfo(state) {
         return state.companyInfo;
@@ -234,10 +255,8 @@ export const useLayoutStore = defineStore("layout", {
             if (!this.layoutFetchPromise) { // Only create a new promise if one isn't already running
                 this.layoutFetchPromise = new Promise(async (resolve, reject) => {
                     try {
-                        console.log('[fetchLayout] Initiating fetch for core layout and slider data...');
                         this.layout = await apiService.getLayout();
                         const pagesHomeData = await apiService.getHomePageData();
-                        console.log('[fetchLayout] Raw pagesHomeData from /api/v3/pages/home (for slider):', pagesHomeData);
                         if (pagesHomeData?.data?.topSlider?.items) {
                             this.siteSlider = pagesHomeData.data.topSlider.items.map(item => ({
                                 title: item.title,
@@ -273,24 +292,16 @@ export const useLayoutStore = defineStore("layout", {
         const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html';
 
         if (isHomePage) {
-            console.log('[fetchLayout] Currently on Home page. Fetching/refreshing eventsByCategory...');
             this.eventsLoading = true;
             this.eventsByCategory = {}; // CRITICAL: Reset events for homepage to ensure fresh data
             try {
                 const arenaHomeData = await apiService.getArenaHomeEvents();
-                console.log('[fetchLayout] Raw arenaHomeData for categories from /api/v3/arena/home:', arenaHomeData);
                 const organizerEventIds = await apiService.getOrganizerEventIds();
-                console.log('[fetchLayout] Organizer Event IDs for filtering:', organizerEventIds);
 
                 const categorizedEvents = {};
                 if (arenaHomeData && arenaHomeData.data && arenaHomeData.data.performances) {
-                    console.log('[fetchLayout] arenaHomeData.data.performances exists. Content:', JSON.parse(JSON.stringify(arenaHomeData.data.performances)));
                     arenaHomeData.data.performances.forEach(category => {
-                        if (category.slug === 'top') return; // Skip only if slug is 'top'
-
-                        console.log(`[fetchLayout] Processing category: ${category.name} (slug: ${category.slug}). Full category object:`, JSON.parse(JSON.stringify(category)));
-                        console.log(`[fetchLayout] Category: ${category.name}. Original events count: ${category.events?.length || 0}. Events array:`, category.events ? JSON.parse(JSON.stringify(category.events.slice(0,5))) : 'No events array');
-                        
+                        if (category.slug === 'top') return; // Skip only if slug is 'top'                  
                         const filteredEvents = category.events?.filter(event => {
                             const hasSessions = event.sessions && event.sessions.length > 0;
                             const isInOrganizerList = event.id && organizerEventIds.has(event.id);
@@ -304,7 +315,6 @@ export const useLayoutStore = defineStore("layout", {
                         }) || [];
                         
                         if (filteredEvents.length > 0) {
-                            console.log(`[fetchLayout] Category: ${category.name} has ${filteredEvents.length} events after filtering.`);
                             categorizedEvents[category.slug] = {
                                 name: category.name,
                                 slug: category.slug,
@@ -320,7 +330,6 @@ export const useLayoutStore = defineStore("layout", {
                     console.warn('[fetchLayout] arenaHomeData.data.performances is missing or empty. arenaHomeData:', arenaHomeData);
                 }
                 this.eventsByCategory = categorizedEvents;
-                console.log('[fetchLayout] Filtered eventsByCategory for HomeView:', JSON.parse(JSON.stringify(this.eventsByCategory)));
             } catch (error) {
                 console.error('[fetchLayout] Error processing and filtering events for homepage from arenaHomeData:', error);
                 this.eventsByCategory = {}; // Ensure it's empty on error

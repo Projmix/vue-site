@@ -69,55 +69,40 @@ class ApiService {
 
       console.log('[apiService] All organizer events count:', allOrganizerEvents.length);
 
-      const filteredEvents = allOrganizerEvents.filter(itemFromMap => {
-        // itemFromMap - это уже объект performance, который мы положили в карту
-        const event = itemFromMap;
-
-        if (!event || typeof event.id === 'undefined') { // Добавим проверку, что event корректный
-            console.warn('[apiService] Invalid event object from map:', event);
-            return false;
+      const filteredEvents = allOrganizerEvents.filter(item => {
+        if (!item.performance) {
+          return false;
         }
         
+        const event = item.performance;
         const matchesCategory = event.types?.some(type => type.slug === categorySlug);
-        const isActiveEvent = !event.deletedAt;
-
-        const shouldEventPass = isActiveEvent && matchesCategory;
-
-        console.log(`[apiService] Event ID ${event.id} ('${event.name}') for category '${categorySlug}': 
-          Matches Category: ${matchesCategory}, 
-          Event Active: ${isActiveEvent}, 
-          SHOULD PASS: ${shouldEventPass}`);
         
-        if (shouldEventPass) {
-            console.log(`[apiService] ---> EVENT ${event.id} ('${event.name}') PASSED filtering for category ${categorySlug}`);
-        }
+        // Проверяем наличие активных сессий
+        const hasActiveSessions = item.sessions?.some(session => !session.deletedAt);
+        // Проверяем наличие активных услуг
+        const hasActiveServices = item.services?.some(service => !service.deletedAt);
+        
+        const isActive = !event.deletedAt;
 
-        return shouldEventPass;
+        console.log(`[apiService] Checking event ID ${event.id}: 
+          Category: ${matchesCategory}, 
+          Active Sessions: ${hasActiveSessions}, 
+          Active Services: ${hasActiveServices}, 
+          Event Active: ${isActive}`);
+
+        return isActive && matchesCategory && (hasActiveSessions || hasActiveServices);
       });
 
       console.log(`[apiService] Filtered events for ${categorySlug}. Count:`, filteredEvents.length);
 
-      // Получаем актуальную информацию о категории
-      let categoryInfo = {
-        name: categorySlug, // Имя по умолчанию, если не найдено
+      // Формируем информацию о категории (может понадобиться запрос на /api/v3/mobile/afisha/category)
+      // Пока что используем заглушку
+      const categoryInfo = {
+        name: categorySlug, // Нужно будет получить реальное имя
         slug: categorySlug,
         seoTitle: `События категории ${categorySlug}`,
         seoDescription: `Афиша событий категории ${categorySlug}`
       };
-
-      try {
-        const allApiCategories = await this.getEventCategories(); // Используем существующий метод
-        const foundCategory = allApiCategories.find(cat => cat.slug === categorySlug);
-        if (foundCategory) {
-          categoryInfo = { ...categoryInfo, ...foundCategory }; // Обновляем данными из API
-          console.log('[apiService] Found category info from API:', categoryInfo);
-        } else {
-          console.warn(`[apiService] Category with slug '${categorySlug}' not found in API categories.`);
-        }
-      } catch (catError) {
-        console.error(`[apiService] Error fetching category details for ${categorySlug}:`, catError);
-        // categoryInfo остается с дефолтными значениями
-      }
 
       return {
         events: filteredEvents, // Возвращаем отфильтрованные события
@@ -507,13 +492,12 @@ class ApiService {
    */
   async getOrganizerEventsMap() {
     try {
-      // Пока уберем использование кэша для диагностики
-      // if (this.organizerEventsCache && 
-      //     (Date.now() - this.organizerEventIdsCacheTime < this.ORGANIZER_EVENT_IDS_CACHE_DURATION)) {
-      //   console.log('[apiService] Using cached organizer events map. Size:', this.organizerEventsCache.size);
-      //   return this.organizerEventsCache;
-      // }
-      console.log('[apiService] Always fetching new organizer events map (cache disabled for diagnostics).');
+      // Используем существующий кэш если он есть и не устарел
+      if (this.organizerEventsCache && 
+          (Date.now() - this.organizerEventIdsCacheTime < this.ORGANIZER_EVENT_IDS_CACHE_DURATION)) {
+        console.log('[apiService] Using cached organizer events map. Size:', this.organizerEventsCache.size);
+        return this.organizerEventsCache;
+      }
 
       const apiKey = import.meta.env.VITE_API_SECRET_KEY;
       const companyId = import.meta.env.VITE_API_DISTRIBUTOR_COMPANY_ID;
@@ -534,38 +518,20 @@ class ApiService {
       const eventsMap = new Map();
       
       if (response.data?.data) {
-        console.log('[apiService] Processing raw sync data. Total items:', response.data.data.length);
+        console.log('[apiService] Raw sync data first item:', JSON.stringify(response.data.data[0], null, 2));
         
-        response.data.data.forEach((item, index) => {
-          let eventId = null;
-          let eventData = null;
-
+        response.data.data.forEach(item => {
+          // Проверяем структуру данных
           if (item.performance_id) {
-            eventId = Number(item.performance_id);
-            eventData = {
-              id: eventId,
-              name: item.name, // Предполагаем, что имя есть на верхнем уровне
+            // Если ID события находится напрямую в item
+            eventsMap.set(item.performance_id, {
+              id: item.performance_id,
               types: item.types || [],
-              deletedAt: item.deletedAt || null, // Важно!
-              // ... другие поля с верхнего уровня item, если они нужны для eventData
-              // ИЛИ, если вся информация о performance лежит отдельно, а тут только ID
-              // то нам нужно будет как-то её смержить или выбрать источник истины
-            };
-            // Если основная информация в item.performance, а performance_id - дубликат
-            if (item.performance && item.performance.id === eventId) {
-                 eventData = item.performance; // Предпочитаем полный объект performance
-            }
-
+              ...item
+            });
           } else if (item.performance) {
-            eventId = Number(item.performance.id);
-            eventData = item.performance;
-          }
-
-          if (eventId && eventData) {
-            console.log(`[apiService] Adding to eventsMap - ID: ${eventId}, Name: ${eventData.name}, Types: ${JSON.stringify(eventData.types)}, DeletedAt: ${eventData.deletedAt}`);
-            eventsMap.set(eventId, eventData);
-          } else {
-            console.warn(`[apiService] Could not determine eventId or eventData for item at index ${index}:`, JSON.stringify(item, null, 2));
+            // Если данные находятся в поле performance
+            eventsMap.set(item.performance.id, item.performance);
           }
         });
       }
@@ -578,12 +544,47 @@ class ApiService {
       );
 
       // Сохраняем в кэш
-      // this.organizerEventsCache = eventsMap;
+      this.organizerEventsCache = eventsMap;
       this.organizerEventIdsCacheTime = Date.now();
 
       return eventsMap;
     } catch (error) {
       console.error('[apiService] Error fetching organizer events:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Получение CSS темы по hostname
+   * @param {String} hostname - Текущий hostname сайта
+   * @returns {Promise<String|null>} Промис с CSS строкой или null в случае ошибки или пустого ответа
+   */
+  async getThemeCss(hostname) {
+    if (!hostname) {
+      console.warn('[apiService] getThemeCss: Hostname is required.');
+      return null;
+    }
+    try {
+      console.log(`[apiService] Fetching theme CSS for ${hostname}`);
+      const response = await this.axiosInstance.get(`/api/v3/themes/${hostname}.css`, {
+        responseType: 'text', // Важно для получения CSS как строки
+        transformResponse: [(data) => data] // Предотвращает парсинг JSON
+      });
+
+      if (typeof response.data === 'string' && response.data.trim() !== '') {
+        console.log(`[apiService] Successfully fetched theme CSS for ${hostname}`);
+        return response.data;
+      } else {
+        console.warn(`[apiService] getThemeCss: Received empty or non-string response for ${hostname}.css. Data:`, response.data);
+        // Не бросаем ошибку, чтобы App.vue мог попробовать кэш, если API вернул 200, но с пустым телом
+        return null; 
+      }
+    } catch (error) {
+      console.error(`[apiService] Error fetching theme CSS for ${hostname}.css:`, error.message);
+      if (error.response && error.response.status === 404) {
+        console.warn(`[apiService] Theme CSS not found (404) for ${hostname}.css`);
+      }
+      // Бросаем ошибку, чтобы App.vue обработал ее (например, загрузкой из кэша)
       throw error;
     }
   }
