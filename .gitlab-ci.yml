@@ -1,0 +1,90 @@
+variables:
+  VERSION_ID: '3.1.$CI_PIPELINE_ID'
+
+stages:
+  - build
+  # - test
+  - staging
+  - production
+
+
+###########################
+######### build ###########
+###########################
+
+# сборка афиши
+build stage-and-screen-theme:
+  image: node:18.15.0-alpine
+  stage: build
+  only:
+    changes:
+      - src/**/*
+      - .gitlab-ci.yml
+      - index.html
+      - package.json
+  artifacts:
+    paths:
+      - node_modules
+      - package.json
+  before_script:
+    - sed "s/0.0.0/${VERSION_ID}/g" package.json > package2.json && mv package2.json package.json
+    - apk add build-base python3 python3-dev py-pip jpeg-dev libpng-dev libjpeg-turbo-dev
+  script:
+    - yarn install
+    - yarn build
+  # when: manual
+
+
+#############################
+######### staging ###########
+#############################
+
+
+staging stage-and-screen-theme:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: staging
+  only:
+    changes:
+      - src/**/*
+      - .gitlab-ci.yml
+      - index.html
+      - package.json
+  environment:
+    name: test
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - docker build -f "Dockerfile.test"  -t "$CI_REGISTRY_IMAGE/stage-and-screen-theme:test" .
+    - docker push "$CI_REGISTRY_IMAGE/stage-and-screen-theme:test"
+  when: manual
+
+
+############################
+######### deploy ###########
+############################
+
+production stage-and-screen-theme:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: production
+  dependencies:
+    - build stage-and-screen-theme
+  only:
+    changes:
+      - src/**/*
+      - .gitlab-ci.yml
+      - index.html
+      - package.json
+  environment:
+    name: production
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/stage-and-screen-theme:prod" .
+    - docker push "$CI_REGISTRY_IMAGE/stage-and-screen-theme:prod"
+  when: manual
+
+
