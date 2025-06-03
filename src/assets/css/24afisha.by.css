@@ -2,9 +2,9 @@
   /* Default Fallback Theme Variables */
 
   --theme-main-color: #007bff;     /* Default Blue - used for primary elements, links, accents */
-  --theme-background-color: #ffffff; /* Default White - main page background */
-  --theme-text-color: #5cc048;       /* Default Dark Gray - general text */
-  --theme-button-color: #007bff;     /* Default Blue - for primary buttons background */
+  --theme-background-color: #4b812693; /* Default White - main page background */
+  --theme-text-color: #154e4b;       /* Default Dark Gray - general text */
+  --theme-button-color: #60aa00;     /* Default Blue - for primary buttons background */
   /* 
     For button text color, you might need another variable or have the dynamic theme 
     provide --theme-button-text-color if buttons can vary significantly.

@@ -6094,7 +6094,7 @@ div ~ :last-child .progress-layout2:before {
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(76, 24, 100, 0.8);
+  background: var(--theme-background-color);
   opacity: 0;
   visibility: hidden;
   -webkit-transition: all 0.5s ease-out;
@@ -6223,7 +6223,7 @@ div ~ :last-child .progress-layout2:before {
   height: 100%;
   width: 200%;
   z-index: 2;
-  background: rgba(76, 24, 100, 0.8);
+  background: var(--theme-background-color);
   -webkit-transform: rotate(8deg);
   -moz-transform: rotate(8deg);
   -ms-transform: rotate(8deg);
