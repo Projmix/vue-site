@@ -70,7 +70,7 @@ onMounted(() => {
                   <a :href="logoItem.href" :target="logoItem.target || '_self'" :title="logoItem.title" class="footer-widget-logo d-block">
                     <img :src="logoItem.image" 
                          :alt="logoItem.title || 'logo'"
-                         style="width: 100%; height: auto; object-fit: contain; display: block;">
+                         style="height: auto; object-fit: contain; display: block;">
                   </a>
                 </div>
               </div>

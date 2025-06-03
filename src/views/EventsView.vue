@@ -48,11 +48,6 @@ export default {
       try {
         const result = await apiService.getCategoryEvents(categorySlug.value);
         
-        categorySlug: categorySlug.value,
-        categoryInfo: result.categoryInfo,
-        eventsCount: result.events?.length || 0,
-      });
-
         if (!result.events || result.events.length === 0) {
           errorMsg.value = 'В этой категории пока нет доступных событий.';
         } else {

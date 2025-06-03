@@ -603,7 +603,7 @@ body main {
 }
 
 .kp-rating .kp-value {
-  color: var(--theme-text-color:);
+  color: var(--theme-text-color);
   font-weight: 700;
   font-size: 1.08em;
   margin-right: 0.15em;

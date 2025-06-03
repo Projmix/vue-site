@@ -142,14 +142,14 @@ function handleStickyHeader() {
 </template>
 
 <style>
-  .eventalk-main-menu {
+  /* .eventalk-main-menu {
     padding-right: 22%;
-  }
+  } */
 
   
   /* Sticky header styling */
   .main-menu-area{
-    background-color: rgba(17, 17, 17, 0.9)
+    background-color: var(--theme-main-color);
   }
   .main-menu-area.stick {
     position: fixed;

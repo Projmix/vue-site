@@ -2715,6 +2715,18 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   -o-transition: all 1s ease-out;
   transition: all 1s ease-out;
 }
+@media (min-width: 1100px) and (max-width: 1400px){
+  .eventalk-main-menu nav > ul > li > a {
+    font-size: 14px;
+    padding: 40px 10px;
+  }
+}
+@media (min-width: 700px) and (max-width: 1100px){
+    .eventalk-main-menu nav > ul > li > a {
+      font-size: 12px;
+      padding: 40px 8px;
+    }
+}
 @media (min-width: 992px) and (max-width: 1199px) {
   .eventalk-main-menu nav > ul > li > a {
     padding: 40px 9px;
