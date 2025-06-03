@@ -161,7 +161,7 @@ function handleStickyHeader() {
     transition: all 0.3s ease-in-out;
   }
   header{
-    padding-top: 107px;
+    padding-top: 105px;
   }
 
   /* FOUC Prevention: Initially hide the main menu wrapper */

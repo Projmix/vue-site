@@ -53,26 +53,33 @@ export default {
         } else {
           
           // Преобразуем данные для EventCard
-          allEvents.value = result.events.map(eventFromApiService => {
-            // eventFromApiService - это уже объект performance, который мы получили от apiService
-            // Он был взят из eventsMap, куда мы клали item.performance
+          // eventFromApiService is now the full item { performance: {}, sessions: [], services: [] }
+          allEvents.value = result.events.map(fullEventItem => {
+            if (!fullEventItem.performance) {
+              console.error('[EventsView] המרה נכשלה: fullEventItem חסר מאפיין performance', fullEventItem);
+              return { // Return a valid empty-ish structure to avoid further errors
+                id: Date.now() + Math.random(), // Temporary unique ID
+                name: 'שגיאה בנתונים',
+                image: {},
+                sessions: [],
+                services: [],
+                types: []
+              };
+            }
             return {
-              id: eventFromApiService.id,
-              name: eventFromApiService.name,
-              image: eventFromApiService.image,
-              minPrice: eventFromApiService.minPrice,
-              maxPrice: eventFromApiService.maxPrice,
-              // Сессии и услуги для EventCard должны браться с того же уровня, 
-              // на котором они были в исходном item из sync/data.
-              // Однако, apiService.getCategoryEvents сейчас возвращает только отфильтрованные performance объекты.
-              // Нам нужно либо модифицировать apiService, чтобы он возвращал весь item, 
-              // либо EventCard должен уметь работать только с данными performance.
-              // Пока предположим, что EventCard ожидает sessions/services на том же уровне, что и id, name.
-              // Это потребует доработки в apiService или EventCard.
-              // Для временного исправления ошибки, если sessions/services не являются частью eventFromApiService:
-              sessions: eventFromApiService.sessions || [], // Это поле может отсутствовать в eventFromApiService
-              services: eventFromApiService.services || [], // Это поле может отсутствовать в eventFromApiService
-              types: eventFromApiService.types || [],
+              id: fullEventItem.performance.id,
+              name: fullEventItem.performance.name,
+              image: fullEventItem.performance.image,
+              minPrice: fullEventItem.performance.minPrice,
+              maxPrice: fullEventItem.performance.maxPrice,
+              sessions: fullEventItem.sessions || [], 
+              services: fullEventItem.services || [], 
+              types: fullEventItem.performance.types || [],
+              // Include any other fields EventCard might need from fullEventItem.performance
+              // For example:
+              // duration: fullEventItem.performance.duration,
+              // minAge: fullEventItem.performance.minAge,
+              // description: fullEventItem.performance.shortDescription || fullEventItem.performance.description,
             };
           });
 
@@ -251,6 +258,11 @@ export default {
     padding: 40px 0;
     font-size: 1.2rem;
     color: #666;
+    min-height: calc(100vh - 400px); /* Adjust 400px based on header/footer/other fixed heights */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 /* Адаптация */
@@ -324,6 +336,10 @@ export default {
     padding: 1rem 1.5rem;
     border-radius: 0.5rem;
     margin-bottom: 2rem;
+    min-height: calc(100vh - 400px); /* Adjust 400px based on header/footer/other fixed heights */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .alert-danger {
@@ -335,10 +351,14 @@ export default {
 .no-events-message {
     grid-column: 1 / -1;
     text-align: center;
-    padding: 3rem 0;
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
+    padding: 40px 0;
+    font-size: 1.2rem;
+    color: #666;
+    min-height: calc(100vh - 400px); /* Adjust 400px based on header/footer/other fixed heights */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .no-events-message p {
