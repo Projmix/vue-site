@@ -1971,7 +1971,7 @@ button:hover {
   position: relative;
 }
 .overlay-primary80:before {
-  background-color: rgba(76, 24, 100, 0.8);
+  background-color: var(--theme-background-color);
   content: "";
   height: 100%;
   width: 100%;
@@ -2401,7 +2401,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   padding-left: 0;
 }
 #scrollUp {
-  background-color: rgba(76, 24, 100, 0.8);
+  background-color: var(--theme-background-color);
   bottom: 5px;
   color: #ffffff;
   display: block;
@@ -2412,7 +2412,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   text-decoration: none;
   width: 50px;
   z-index: 99999;
-  border: 2px solid #4c1864;
+  border: 2px solid color-mix(in srgb, var(--theme-background-color) 90%, black);
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   -ms-border-radius: 4px;
@@ -6462,7 +6462,7 @@ div ~ :last-child .progress-layout2:before {
   left: 0;
   right: 0;
   margin: 0 auto;
-  background-color: rgba(76, 24, 100, 0.8);
+  background-color: var(--theme-background-color);
 }
 .comingsoon-page .comingsoon-content-wrap {
   height: 100%;
