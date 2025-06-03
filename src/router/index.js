@@ -35,7 +35,6 @@ const router = createRouter({
       name: 'news-single',
       component: () => import('../views/SingleBlogView.vue')
     },
-    // About route (to match site_menu API)
     // Custom page routes - must be before the catchall but after specific routes
     {
       path: '/:slug',
@@ -45,7 +44,7 @@ const router = createRouter({
       beforeEnter: (to, from, next) => {
         const reservedPaths = [
           'event', 'news', 'post', 'posts',
-          'objects', 'object', 'page'
+          'page'  // Removed 'objects' and 'object' from reserved paths
         ];
         // Check if the route is a reserved path
         if (reservedPaths.includes(to.params.slug)) {
@@ -65,16 +64,6 @@ const router = createRouter({
       path: '/posts',
       name: 'posts',
       redirect: '/news'
-    },
-    {
-      path: '/objects',
-      name: 'objects',
-      component: () => import('../views/ObjectsView.vue')
-    },
-    {
-      path: '/object/:id',
-      name: 'object',
-      component: () => import('../views/ObjectView.vue')
     },
     {
       path: '/page/:slug',

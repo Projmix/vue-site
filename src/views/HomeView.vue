@@ -16,274 +16,284 @@ import { useRouter, useRoute } from 'vue-router';
 export default {
   name: "Home",
   components: {
-    headerSection,
-    footerSection,
-    Splide,
-    SplideSlide,
-    EventCard,
-    NewsCard,
+  headerSection,
+  footerSection,
+  Splide,
+  SplideSlide,
+  EventCard,
+  NewsCard,
   },
   setup(props) {
-    const route = useRoute();
-    let nivoInitialized = false;
-    const layoutStore = useLayoutStore();
-    const router = useRouter();
-    const background = computed(() => layoutStore.getBackground);
-    const logo = computed(() => layoutStore.getLogo);
-    const logo2 = computed(() => layoutStore.getLogo2);
-    
-    const siteSlider = computed(() => {
-        const slides = layoutStore.getSiteSlider;
-        return slides;
+  const route = useRoute();
+  let nivoInitialized = false;
+  const layoutStore = useLayoutStore();
+  const router = useRouter();
+  const logo = computed(() => layoutStore.getSiteHeaderLogo);
+  const background = computed(() => layoutStore.getBackground);
+  
+  const siteSlider = computed(() => {
+    const slides = layoutStore.getSiteSlider;
+    return slides;
+  });
+  
+  const hasSliderData = computed(() => layoutStore.getHasSliderData);
+  
+  // События по категориям из layoutStore, фильтруем только непустые
+  const eventsByCategory = computed(() => {
+    const allCategories = layoutStore.getEventsByCategory;
+    // Фильтруем непустые категории
+    const nonEmptyCategories = {};
+    Object.entries(allCategories).forEach(([slug, category]) => {
+    if (category.events && category.events.length > 0) {
+      nonEmptyCategories[slug] = category;
+    }
     });
-    
-    const hasSliderData = computed(() => layoutStore.getHasSliderData);
-    
-    // События по категориям из layoutStore, фильтруем только непустые
-    const eventsByCategory = computed(() => {
-      const allCategories = layoutStore.getEventsByCategory;
-      // Фильтруем непустые категории
-      const nonEmptyCategories = {};
-      Object.entries(allCategories).forEach(([slug, category]) => {
-        if (category.events && category.events.length > 0) {
-          nonEmptyCategories[slug] = category;
-        }
-      });
-      return nonEmptyCategories;
-    });
-    
-    // Проверка наличия событий в любой категории
-    const hasAnyEvents = computed(() => layoutStore.getHasAnyEvents);
+    return nonEmptyCategories;
+  });
+  
+  // Проверка наличия событий в любой категории
+  const hasAnyEvents = computed(() => layoutStore.getHasAnyEvents);
 
-    const newsItems = ref([]);
-    const newsLoading = ref(true);
-    const generalLoading = ref(true); // Общий лоадер для страницы
-    const loading = generalLoading;
+  const newsItems = ref([]);
+  const newsLoading = ref(true);
+  const generalLoading = ref(true); // Общий лоадер для страницы
+  const loading = computed(() => layoutStore.eventsLoading || !layoutStore.isInitialDataLoaded);
 
-    // Функция для загрузки новостей
-    const fetchNews = async () => {
-      newsLoading.value = true;
+  // Функция для загрузки новостей
+  const fetchNews = async () => {
+    newsLoading.value = true;
+    try {
+    const result = await apiService.getPosts({ page: 1, perPage: 6 });
+    newsItems.value = result.posts || [];
+    } catch (error) {
+    console.error("Ошибка загрузки новостей:", error);
+    newsItems.value = [];
+    } finally {
+    newsLoading.value = false;
+    }
+  };
+
+  // Загрузка только новостей, категории и события через layoutStore
+  const loadAllData = async () => {
+    generalLoading.value = true;
+    
+    try {
+    // Wait for the layout to be loaded from props.layoutLoaded first
+    await props.layoutLoaded;
+    
+    // Проверяем, есть ли события и загружены ли данные
+    // Избегаем дублирующих запросов, если события уже загружены в layoutStore
+    if (Object.keys(layoutStore.eventsByCategory).length === 0 && !layoutStore.eventsLoading) {
+      console.log('[HomeView] События не загружены, загружаем их');
       try {
-        const result = await apiService.getPosts({ page: 1, perPage: 6 });
-        newsItems.value = result.posts || [];
+      const events = await apiService.getEventsWithSessionsByCategory();
+      layoutStore.eventsByCategory = events;
       } catch (error) {
-        console.error("Ошибка загрузки новостей:", error);
-        newsItems.value = [];
-      } finally {
-        newsLoading.value = false;
+      console.error('[HomeView] Ошибка загрузки событий:', error);
       }
-    };
+    } else {
+      console.log('[HomeView] События уже загружены или загружаются через layoutStore');
+    }
+    
+    // Загружаем новости
+    await fetchNews();
+    } catch (error) {
+    console.error('[HomeView] Error loading data:', error);
+    } finally {
+    generalLoading.value = false;
+    }
+  };
 
-    // Загрузка только новостей, категории и события через layoutStore
-    const loadAllData = async () => {
-      generalLoading.value = true;
-      
-      try {
-        // Wait for the layout to be loaded from props.layoutLoaded first
-        await props.layoutLoaded;
-        
-        // Проверяем, есть ли события и загружены ли данные
-        // Избегаем дублирующих запросов, если события уже загружены в layoutStore
-        if (Object.keys(layoutStore.eventsByCategory).length === 0 && !layoutStore.eventsLoading) {
-          console.log('[HomeView] События не загружены, загружаем их');
-          try {
-            const events = await apiService.getEventsWithSessionsByCategory();
-            layoutStore.eventsByCategory = events;
-          } catch (error) {
-            console.error('[HomeView] Ошибка загрузки событий:', error);
-          }
-        } else {
-          console.log('[HomeView] События уже загружены или загружаются через layoutStore');
-        }
-        
-        // Загружаем новости
-        await fetchNews();
-      } catch (error) {
-        console.error('[HomeView] Error loading data:', error);
-      } finally {
-        generalLoading.value = false;
-      }
-    };
+  const initNivoSlider = () => {
 
-    const initNivoSlider = () => {
+    if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
+    console.warn('[HomeView initNivoSlider] jQuery or Nivo Slider not loaded yet. Retrying in 200ms...');
+    setTimeout(initNivoSlider, 200);
+    return;
+    }
 
-      if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
-        console.warn('[HomeView initNivoSlider] jQuery or Nivo Slider not loaded yet. Retrying in 200ms...');
-        setTimeout(initNivoSlider, 200);
-        return;
-      }
+    const sliderElement = window.$('#ensign-nivoslider-3');
 
-      const sliderElement = window.$('#ensign-nivoslider-3');
+    if (sliderElement.length === 0) {
+    console.warn('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 NOT found in DOM by jQuery. Exiting.');
+    return;
+    }
 
-      if (sliderElement.length === 0) {
-        console.warn('[HomeView initNivoSlider] Nivo Slider element #ensign-nivoslider-3 NOT found in DOM by jQuery. Exiting.');
-        return;
-      }
+    // Clean up any existing slider instance and related elements
+    if (nivoInitialized && sliderElement.data('nivoslider')) { 
+    try {
+      sliderElement.data('nivoslider').destroy();
+    } catch (e) {
+      console.warn('[HomeView initNivoSlider] Error destroying existing Nivo slider instance:', e);
+    }
+    }
+    
+    // Important: Clean up ALL Nivo-related elements
+    sliderElement.removeClass('nivoSlider').empty();
+    window.$('.nivo-controlNav, .nivo-directionNav, .nivo-box, .nivo-slice, .nivo-caption').remove();
+    window.$('.slider-direction').hide(); // Hide all direction elements
 
-      // Clean up any existing slider instance and related elements
-      if (nivoInitialized && sliderElement.data('nivoslider')) { 
-        try {
-          sliderElement.data('nivoslider').destroy();
-        } catch (e) {
-          console.warn('[HomeView initNivoSlider] Error destroying existing Nivo slider instance:', e);
-        }
-      }
-      
-      // Important: Clean up ALL Nivo-related elements
-      sliderElement.removeClass('nivoSlider').empty();
-      window.$('.nivo-controlNav, .nivo-directionNav, .nivo-box, .nivo-slice, .nivo-caption').remove();
-      window.$('.slider-direction').hide(); // Hide all direction elements
-
-      // Re-populate images
-      siteSlider.value.forEach((slide, index) => {
-        if (slide && slide.href) {
-          sliderElement.append(
-            `<img src="${slide.href}" alt="slider" title="#slider-direction-${index + 1}" style="display:none;" />`
-          );
-        }
-      });
-
-      // Initialize with modified options
-      sliderElement.nivoSlider({
-        effect: 'fold',
-        slices: 15,
-        boxCols: 8,
-        boxRows: 4,
-        animSpeed: 1000,
-        pauseTime: 5000,
-        startSlide: 0,
-        directionNav: true,
-        controlNav: true,
-        controlNavThumbs: false,
-        pauseOnHover: true,
-        manualAdvance: false,
-        prevText: 'Prev',
-        nextText: 'Next',
-        randomStart: false,
-        beforeChange: function(){
-          window.$('.slider-direction').hide();
-        },
-        afterChange: function(){
-          // Show current direction element after change
-          const currentSlide = window.$('.nivo-main-image').attr('src');
-          const currentIndex = sliderElement.find('img').index(sliderElement.find(`img[src="${currentSlide}"]`));
-          window.$(`#slider-direction-${currentIndex + 1}`).show();
-        },
-        afterLoad: function(){
-          window.$('.nivo-controlNav a.nivo-control').text('');
-          // Show first slide direction element
-          window.$('#slider-direction-1').show();
-        }
-      });
-      nivoInitialized = true;
-    };
-
-    const navigateToSlideUrl = (url) => {
-      if (!url) return;
-      if (url.startsWith('http')) {
-        window.open(url, '_blank');
-      } else {
-        router.push(url);
-      }
-    };
-
-    onMounted(async () => {
-      console.log('[HomeView] Component mounted');
-      if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
-        layoutStore.loadExternalScripts(); 
-      }
-      await loadAllData(); 
+    // Re-populate images
+    siteSlider.value.forEach((slide, index) => {
+    if (slide && slide.href) {
+      sliderElement.append(
+      `<img src="${slide.href}" alt="slider" title="#slider-direction-${index + 1}" style="display:none;" />`
+      );
+    }
     });
 
-    watch(
-      () => siteSlider.value,
-      (newSlides) => {
-        
-        if (newSlides && newSlides.length > 0) {
-          nextTick(() => {
+    // Initialize with modified options
+    sliderElement.nivoSlider({
+    effect: 'fold',
+    slices: 15,
+    boxCols: 8,
+    boxRows: 4,
+    animSpeed: 1000,
+    pauseTime: 5000,
+    startSlide: 0,
+    directionNav: true,
+    controlNav: true,
+    controlNavThumbs: false,
+    pauseOnHover: true,
+    manualAdvance: false,
+    prevText: 'Prev',
+    nextText: 'Next',
+    randomStart: false,
+    beforeChange: function(){
+      window.$('.slider-direction').hide();
+    },
+    afterChange: function(){
+      // Show current direction element after change
+      const currentSlide = window.$('.nivo-main-image').attr('src');
+      const currentIndex = sliderElement.find('img').index(sliderElement.find(`img[src="${currentSlide}"]`));
+      window.$(`#slider-direction-${currentIndex + 1}`).show();
+    },
+    afterLoad: function(){
+      window.$('.nivo-controlNav a.nivo-control').text('');
+      // Show first slide direction element
+      window.$('#slider-direction-1').show();
+    }
+    });
+    nivoInitialized = true;
+  };
+
+  const navigateToSlideUrl = (url) => {
+    if (!url) return;
+    if (url.startsWith('http')) {
+    window.open(url, '_blank');
+    } else {
+    router.push(url);
+    }
+  };
+
+  onMounted(async () => {
+    console.log('[HomeView] Component mounted');
+    if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
+    layoutStore.loadExternalScripts(); 
+    }
+    await loadAllData(); 
+  });
+
+  watch(
+    () => siteSlider.value,
+    (newSlides) => {
+      // We defer to the new combined watcher below
+      // to ensure loading is false and slides are present.
+    },
+    { deep: true, immediate: false } // Set immediate to false, let the new watcher handle initial load
+  );
+
+  // New watcher for combined condition: slider data is ready AND page is not loading
+  watch(
+    () => [siteSlider.value, loading.value],
+    ([newSlides, isLoading]) => {
+      if (newSlides && newSlides.length > 0 && !isLoading) {
+        console.log('[HomeView Watcher for Slider+Loading] Conditions met. Preparing to initialize Nivo Slider.');
+        nextTick(() => {
+          // Add a small delay to ensure DOM is fully ready for Nivo
+          setTimeout(() => {
             const sliderElementExists = document.getElementById('ensign-nivoslider-3');
-
             if (sliderElementExists) {
-              if (!nivoInitialized) {
-                initNivoSlider();
-              } else {
-                  nivoInitialized = false;
-                  initNivoSlider();
-              }
+              console.log('[HomeView Watcher for Slider+Loading] Initializing/Re-initializing Nivo Slider after delay.');
+              nivoInitialized = false; // Force re-evaluation in initNivoSlider's destroy logic if needed
+              initNivoSlider();
             } else {
-              console.warn('[HomeView Watcher nextTick] Element #ensign-nivoslider-3 NOT found in DOM even after nextTick. Slider will not initialize.');
+              console.warn('[HomeView Watcher for Slider+Loading] Element #ensign-nivoslider-3 NOT found in DOM after delay. Slider will not initialize.');
             }
-          });
-        } else {
-        }
-      },
-      { deep: true, immediate: true }
-    );
-
-    onBeforeUnmount(() => {
-      if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined') {
-        try {
-          const sliderElement = window.$('#ensign-nivoslider-3');
-          if (sliderElement.length) {
-            sliderElement.nivoSlider('destroy');
-          }
-        } catch(e) {
-          console.warn("[HomeView] Error destroying Nivo Slider:", e);
-          const sliderElement = window.$('#ensign-nivoslider-3');
-          sliderElement.removeClass('nivoSlider').empty();
-          window.$('.nivo-controlNav, .nivo-directionNav, .nivo-caption').remove();
-        }
+          }, 100); // 100ms delay, can be adjusted
+        });
+      } else if (isLoading) {
+        console.log('[HomeView Watcher for Slider+Loading] Waiting: Page is still loading.');
+      } else if (!newSlides || newSlides.length === 0) {
+        console.log('[HomeView Watcher for Slider+Loading] Waiting: No slider data yet.');
       }
-      nivoInitialized = false;
-    });
+    },
+    { deep: true, immediate: true } // Immediate true to catch initial state if conditions are met
+  );
 
-    const formatDate = (date, format = 'DD MMM YYYY') => {
-      return moment(date).format(format);
-    };
-
-    // Функция для очистки текста от HTML-сущностей
-    const cleanText = (text) => {
-        if (!text) return '';
-        return text
-            .replace(/&nbsp;/g, ' ')  // Заменяем &nbsp; на обычный пробел
-            .replace(/&amp;/g, '&')   // Заменяем &amp; на &
-            .replace(/&lt;/g, '<')    // Заменяем &lt; на <
-            .replace(/&gt;/g, '>')    // Заменяем &gt; на >
-            .replace(/&quot;/g, '"')  // Заменяем &quot; на "
-            .replace(/&#39;/g, "'")   // Заменяем &#39; на '
-            .replace(/\s+/g, ' ')     // Убираем множественные пробелы
-            .trim();                  // Убираем пробелы в начале и конце
-    };
-
-    // Add route watcher
-    watch(
-      () => route.name,
-      (newRouteName) => {
-        if (newRouteName === 'home') {
-          console.log('[HomeView] Route changed to home, reloading data');
-          loadAllData();
-        }
+  onBeforeUnmount(() => {
+    if (typeof window.$ !== 'undefined' && typeof window.$.fn.nivoSlider !== 'undefined') {
+    try {
+      const sliderElement = window.$('#ensign-nivoslider-3');
+      if (sliderElement.length) {
+      sliderElement.nivoSlider('destroy');
       }
-    );
+    } catch(e) {
+      console.warn("[HomeView] Error destroying Nivo Slider:", e);
+      const sliderElement = window.$('#ensign-nivoslider-3');
+      sliderElement.removeClass('nivoSlider').empty();
+      window.$('.nivo-controlNav, .nivo-directionNav, .nivo-caption').remove();
+    }
+    }
+    nivoInitialized = false;
+  });
 
-    return {
-      layoutStore,
-      background,
-      logo,
-      logo2,
-      hasSliderData,
-      siteSlider,
-      eventsByCategory,
-      hasAnyEvents,
-      newsItems,
-      newsLoading,
-      generalLoading,
-      loading,
-      formatDate,
-      moment,
-      navigateToSlideUrl,
-      cleanText,
-    };
+  const formatDate = (date, format = 'DD MMM YYYY') => {
+    return moment(date).format(format);
+  };
+
+  // Функция для очистки текста от HTML-сущностей
+  const cleanText = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/&nbsp;/g, ' ')  // Заменяем &nbsp; на обычный пробел
+      .replace(/&amp;/g, '&')   // Заменяем &amp; на &
+      .replace(/&lt;/g, '<')    // Заменяем &lt; на <
+      .replace(/&gt;/g, '>')    // Заменяем &gt; на >
+      .replace(/&quot;/g, '"')  // Заменяем &quot; на "
+      .replace(/&#39;/g, "'")   // Заменяем &#39; на '
+      .replace(/\s+/g, ' ')     // Убираем множественные пробелы
+      .trim();                  // Убираем пробелы в начале и конце
+  };
+
+  // Add route watcher
+  watch(
+    () => route.name,
+    (newRouteName) => {
+    if (newRouteName === 'home') {
+      console.log('[HomeView] Route changed to home, reloading data');
+      loadAllData();
+    }
+    }
+  );
+
+  return {
+    layoutStore,
+    background,
+    logo,
+    hasSliderData,
+    siteSlider,
+    eventsByCategory,
+    hasAnyEvents,
+    newsItems,
+    newsLoading,
+    generalLoading,
+    loading,
+    formatDate,
+    moment,
+    navigateToSlideUrl,
+    cleanText,
+  };
   },
   props: ['layoutLoaded'],
 };
@@ -291,134 +301,134 @@ export default {
 
 <template>
   <main>
-    <!--preloading-->
-    <div id="preloader" v-if="loading">
-      <img class="logo" :src="logo2" alt="" width="119" height="58">
-      <div id="status">
-        <span></span>
-        <span></span>
-      </div>
+  <!--preloading-->
+  <div id="preloader" v-if="loading">
+    <img class="logo" :src="logo" alt="Загрузка..." width="119" height="58" :style="{ objectFit: 'contain' }">
+    <div id="status">
+    <span></span>
+    <span></span>
     </div>
+  </div>
 
-    <headerSection />
+  <headerSection />
 
-    <!-- Slider Area Start Here -->
-    <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
-      <div class="bend niceties preview-1">
-        <div id="ensign-nivoslider-3" class="slides">
-          <template v-for="(slide, index) in siteSlider" :key="`slide-img-${index}`">
-            <img
-              v-if="slide && slide.href"
-              :src="slide.href"
-              alt="slider"
-              :title="`#slider-direction-${index + 1}`" 
-              style="display:none;" />
-          </template>
-        </div>
-        
-        <template v-for="(slide, index) in siteSlider" :key="`caption-content-${index}`">
-          <div
-            v-if="slide && slide.href"
-            :id="`slider-direction-${index + 1}`"
-            :class="['t-cn', 'slider-direction', `slide-${index + 1}`]"
-            style="display: none;"
-          >
-            <div class='slider-content s-tb'>
-              <div class='title-container s-tb-c title-light'>
-                <div class='container text-left'>
-                  <div class='slider-big-text first-line'>
-                    <p>{{ cleanText(slide.title) }}</p>
-                  </div>
-                  
-                  <div v-if="slide.buttonText" class='slider-btn-area forth-line margin-t-30'>
-                    <a :href="slide.url || '#'" 
-                       class='btn-ghost color-yellow' 
-                       :target="slide.url && slide.url.startsWith('http') ? '_blank' : '_self'">
-                      {{ slide.buttonText }}
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-    <!-- Slider Area End Here -->
-
-    <!-- Блок с событиями по категориям -->
-    <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
-      <div class="container text-center">
-        <h2>Нет актуального расписания</h2>
-      </div>
+  <!-- Slider Area Start Here -->
+  <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
+    <div class="bend niceties preview-1">
+    <div id="ensign-nivoslider-3" class="slides">
+      <template v-for="(slide, index) in siteSlider" :key="`slide-img-${index}`">
+      <img
+        v-if="slide && slide.href"
+        :src="slide.href"
+        alt="slider"
+        :title="`#slider-direction-${index + 1}`" 
+        style="display:none;" />
+      </template>
     </div>
     
-    <section v-for="(category, slug) in eventsByCategory" :key="slug"
-      class="section-space-default bg-light overlay-icon-layout4">
-      <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
-        <div class="section-heading title-black color-dark all-category text-left">
-            <h2>{{ category.name }}</h2>
-            <router-link :to="`/afisha/${slug}`"
-              class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
-              Все события
-            </router-link>
-        </div>
-
-        <div class="row menu-list">
-          <template v-if="category.loading">
-            <div class="col-12">
-              <p>Загрузка событий...</p>
-            </div>
-          </template>
-          <template v-else-if="category.error">
-            <div class="col-12">
-              <p>Не удалось загрузить события.</p>
-            </div>
-          </template>
-          <template v-else-if="category.events && category.events.length">
-            <div v-for="event in category.events" :key="event.id"
-              class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
-              <EventCard :event="event" />
-            </div>
-          </template>
-          <template v-else>
-            <div class="col-12">
-              <p>В данной категории пока нет событий.</p>
-            </div>
-          </template>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Раздел новостей -->
-    <section class="news-section section-space-default-less30 bg-light">
-      <div class="container">
-        <div class="section-heading-container">
-          <div class="section-heading title-black color-dark text-left">
-            <h2>Последние новости</h2>
+    <template v-for="(slide, index) in siteSlider" :key="`caption-content-${index}`">
+      <div
+      v-if="slide && slide.href"
+      :id="`slider-direction-${index + 1}`"
+      :class="['t-cn', 'slider-direction', `slide-${index + 1}`]"
+      style="display: none;"
+      >
+      <div class='slider-content s-tb'>
+        <div class='title-container s-tb-c title-light'>
+        <div class='container text-left'>
+          <div class='slider-big-text first-line'>
+          <p>{{ cleanText(slide.title) }}</p>
           </div>
-          <div class="see-all-button">
-            <router-link :to="{ name: 'posts' }" class="btn-fill border-radius-5 size-md color-yellow">
-              Все новости
-            </router-link>
+          
+          <div v-if="slide.buttonText" class='slider-btn-area forth-line margin-t-30'>
+          <a :href="slide.url || '#'" 
+             class='btn-ghost color-yellow' 
+             :target="slide.url && slide.url.startsWith('http') ? '_blank' : '_self'">
+            {{ slide.buttonText }}
+          </a>
           </div>
         </div>
-
-        <div v-if="newsLoading" class="text-center p-5">
-          <p>Загрузка новостей...</p>
-        </div>
-        
-        <div v-else-if="newsItems.length" class="news-grid home-grid">
-          <NewsCard v-for="post in newsItems" :key="post.id" :post="post" />
-        </div>
-        
-        <div v-else class="text-center p-5">
-          <p>Нет новостей</p>
         </div>
       </div>
-    </section>
-    <footerSection />
+      </div>
+    </template>
+    </div>
+  </div>
+  <!-- Slider Area End Here -->
+
+  <!-- Блок с событиями по категориям -->
+  <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
+    <div class="container text-center">
+    <h2>Нет актуального расписания</h2>
+    </div>
+  </div>
+  
+  <section v-for="(category, slug) in eventsByCategory" :key="slug"
+    class="section-space-default bg-light overlay-icon-layout4">
+    <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
+    <div class="section-heading title-black color-dark all-category text-left">
+      <h2>{{ category.name }}</h2>
+      <router-link :to="`/afisha/${slug}`"
+        class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
+        Все события
+      </router-link>
+    </div>
+
+    <div class="row menu-list">
+      <template v-if="category.loading">
+      <div class="col-12">
+        <p>Загрузка событий...</p>
+      </div>
+      </template>
+      <template v-else-if="category.error">
+      <div class="col-12">
+        <p>Не удалось загрузить события.</p>
+      </div>
+      </template>
+      <template v-else-if="category.events && category.events.length">
+      <div v-for="event in category.events" :key="event.id"
+        class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
+        <EventCard :event="event" />
+      </div>
+      </template>
+      <template v-else>
+      <div class="col-12">
+        <p>В данной категории пока нет событий.</p>
+      </div>
+      </template>
+    </div>
+
+    </div>
+  </section>
+
+  <!-- Раздел новостей -->
+  <section class="news-section section-space-default-less30 bg-light">
+    <div class="container">
+    <div class="section-heading-container">
+      <div class="section-heading title-black color-dark text-left">
+      <h2>Последние новости</h2>
+      </div>
+      <div class="see-all-button">
+      <router-link :to="{ name: 'posts' }" class="btn-fill border-radius-5 size-md color-yellow">
+        Все новости
+      </router-link>
+      </div>
+    </div>
+
+    <div v-if="newsLoading" class="text-center p-5">
+      <p>Загрузка новостей...</p>
+    </div>
+    
+    <div v-else-if="newsItems.length" class="news-grid home-grid">
+      <NewsCard v-for="post in newsItems" :key="post.id" :post="post" />
+    </div>
+    
+    <div v-else class="text-center p-5">
+      <p>Нет новостей</p>
+    </div>
+    </div>
+  </section>
+  <footerSection />
 
   </main>
 </template>
@@ -430,8 +440,8 @@ body main {
   padding-right: 40px;
 
   @media only screen and (max-width: 575px) {
-    padding-left: 0;
-    padding-right: 0;
+  padding-left: 0;
+  padding-right: 0;
   }
 }
 
@@ -499,23 +509,23 @@ body main {
 /* Адаптация для мобильных устройств */
 @media (max-width: 991px) {
   .home-grid {
-    grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   }
 
   .section-heading-container {
-    flex-direction: column;
-    align-items: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
   }
 
   .see-all-button {
-    margin-left: 0;
-    margin-top: 15px;
+  margin-left: 0;
+  margin-top: 15px;
   }
 }
 
 @media (max-width: 767px) {
   .home-grid {
-    grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   }
 }
 
@@ -537,6 +547,9 @@ body main {
 
 #preloader .logo {
   margin-bottom: 20px;
+  max-width: 179px; /* Match header logo max width */
+  height: auto; /* Let height adjust automatically */
+  object-fit: contain;
 }
 
 #status {
@@ -575,11 +588,11 @@ body main {
 
   0%,
   100% {
-    transform: scale(0);
+  transform: scale(0);
   }
 
   50% {
-    transform: scale(1);
+  transform: scale(1);
   }
 }
 
@@ -628,32 +641,32 @@ body main {
 }
 
 @media (max-width: 1200px) {
-    .row.menu-list {
-        max-width: 1140px;
+  .row.menu-list {
+    max-width: 1140px;
   }
 }
   @media (max-width: 992px) {
-    .row.menu-list {
-        max-width: 960px;
-    }
+  .row.menu-list {
+    max-width: 960px;
+  }
 }
 @media (max-width: 768px) {
   .row.menu-list {
-        max-width: 720px;
-    }
+    max-width: 720px;
+  }
 }
 @media (max-width: 576px) {
   .row.menu-list {
-        max-width: 350px;
-    }
+    max-width: 350px;
+  }
   .section-heading.title-black.color-dark.all-category.text-left{
-    padding-right: 0px;
-    padding-left: 0px;
+  padding-right: 0px;
+  padding-left: 0px;
   }
   .loadmore-four-item.btn-fill{
-    padding-right: 2px;
-    padding-left: 2px;
-    border-radius: 2px;
+  padding-right: 2px;
+  padding-left: 2px;
+  border-radius: 2px;
   }
 }
 
@@ -690,6 +703,11 @@ body main {
   max-width: none;
 
 }
+.news-section .container .btn-fill.color-yellow:hover {
+  background-color: transparent;
+  color: black;
+}
+
 .news-section .container .see-all-button{
   margin-top: 0px;
 }
@@ -792,46 +810,46 @@ body main {
 /* Responsive styles */
 @media (max-width: 991px) {
   :global(.slider-content .container.text-left) {
-    padding-left: 60px;
-    min-height: 180px !important;
+  padding-left: 60px;
+  min-height: 180px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 25px !important;
+  font-size: 25px !important;
   }
   :global(.btn-ghost.color-yellow) {
-    padding: 10px 25px;
+  padding: 10px 25px;
   }
 }
 
 @media (max-width: 767px) {
   :global(.slider-content .container.text-left) {
-    padding-left: 40px;
-    min-height: 150px !important;
+  padding-left: 40px;
+  min-height: 150px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 20px !important;
+  font-size: 20px !important;
   }
   :global(.btn-ghost.color-yellow) {
-    padding: 8px 20px;
-    font-size: 1.9rem;
+  padding: 8px 20px;
+  font-size: 1.9rem;
   }
 }
 
 @media (max-width: 575px) {
   :global(.slider-content .container.text-left) {
-    padding-left: 20px;
-    padding-right: 15px;
-    min-height: 120px !important;
+  padding-left: 20px;
+  padding-right: 15px;
+  min-height: 120px !important;
   }
   :global(.slider-big-text.first-line p) {
-    font-size: 15px !important;
+  font-size: 15px !important;
   }
   :global(.btn-ghost.color-yellow) {
-    padding: 8px 15px;
-    font-size: 1.85rem;
+  padding: 8px 15px;
+  font-size: 1.85rem;
   }
   :global(.slider-btn-area.forth-line.margin-t-30) {
-    margin-top: 15px !important;
+  margin-top: 15px !important;
   }
 }
 
@@ -847,5 +865,8 @@ body main {
 :global(.nivo-caption .slider-direction:not(:first-child)) {
   display: none !important;
 }
-
+.section-space-default .btn-fill.color-yellow:hover {
+  background-color: transparent;
+  color: black;
+}
 </style>
