@@ -772,9 +772,8 @@ body main {
 
 :global(.btn-ghost.color-yellow) {
   padding: 12px 30px;
-  background-color: transparent;
   border: 2px solid #fad03b;
-  color: #fad03b !important;
+  color: var(--theme-text-color) !important;
   font-weight: 600;
   text-transform: uppercase;
   border-radius: 4px;

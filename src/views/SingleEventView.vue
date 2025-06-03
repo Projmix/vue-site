@@ -363,11 +363,11 @@ onMounted(fetchEventData);
   flex-shrink: 0; /* Prevent shrinking */
 }
 .date-item:hover {
-  border-color: #fad03b;
+  border-color: var(--theme-button-color);
 }
 .date-item.active {
-  border-color: #fad03b;
-  background-color: #fad03b;
+  border-color: var(--theme-button-color);
+  background-color: var(--theme-button-color);
   color: #000;
 }
 .date-day {
@@ -423,7 +423,7 @@ onMounted(fetchEventData);
   text-align: center;
 }
 .session-time-btn:hover {
-  border-color: #fad03b;
+  border-color: var(--theme-button-color);
   transform: translateY(-2px);
 }
 .session-time-btn .time {
@@ -456,7 +456,7 @@ onMounted(fetchEventData);
 .spinner-border {
   width: 3rem;
   height: 3rem;
-  color: #fad03b;
+  color: var(--theme-text-color);
 }
 
 /* Styles for Services and Products */

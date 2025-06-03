@@ -136,6 +136,6 @@ onMounted(fetchPostData);
 .spinner-border {
   width: 3rem;
   height: 3rem;
-  color: #fad03b;
+  color: var(--theme-text-color);
 }
 </style>

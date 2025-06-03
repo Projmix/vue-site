@@ -139,7 +139,7 @@ export default {
 .blog-layout3 .item-date-wrap .item-date {
   text-align: center;
   padding: 8px 20px 7px;
-  background-color: #fad03b;
+  background-color: var(--theme-button-color);
   color: #111111;
   font-size: 24px;
   line-height: 1.3;
@@ -157,7 +157,7 @@ export default {
   height: 100%;
   width: 100%;
   z-index: -1;
-  background-color: #d5ae26;
+  background-color: color-mix(in srgb, var(--theme-button-color) 90%, black);
   top: 5px;
   left: 5px;
   -webkit-transition: all 0.5s ease-out;

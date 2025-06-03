@@ -95,11 +95,11 @@ export default {
   transition: color 0.2s;
 }
 .speaker-layout3 .title a:hover {
-  color: #fad03b;
+  color: var(--theme-text-color);
 }
 .speaker-layout3 .title-light {
   font-size: 0.98rem;
-  color: #fad03b;
+  color: var(--theme-text-color);
   margin-bottom: 0;
   font-weight: 400;
 }
@@ -131,7 +131,7 @@ export default {
 }
 .speaker-layout3 .item-social a:hover {
   background: #fff;
-  color: #fad03b;
+  color: var(--theme-text-color);
 }
 
 @media (max-width: 991px) {

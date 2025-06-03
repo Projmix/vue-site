@@ -235,7 +235,7 @@ export default {
 }
 
 .btn-paginate-active {
-  background-color: #fad03b;
+  background-color: var(--theme-button-color);
   color: #111;
   font-weight: bold;
 }
