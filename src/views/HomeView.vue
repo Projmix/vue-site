@@ -206,26 +206,53 @@ export default {
   // New watcher for combined condition: slider data is ready AND page is not loading
   watch(
     () => [siteSlider.value, loading.value],
-    ([newSlides, isLoading]) => {
-      if (newSlides && newSlides.length > 0 && !isLoading) {
-        console.log('[HomeView Watcher for Slider+Loading] Conditions met. Preparing to initialize Nivo Slider.');
-        nextTick(() => {
-          // Add a small delay to ensure DOM is fully ready for Nivo
-          setTimeout(() => {
-            const sliderElementExists = document.getElementById('ensign-nivoslider-3');
-            if (sliderElementExists) {
-              console.log('[HomeView Watcher for Slider+Loading] Initializing/Re-initializing Nivo Slider after delay.');
-              nivoInitialized = false; // Force re-evaluation in initNivoSlider's destroy logic if needed
-              initNivoSlider();
-            } else {
-              console.warn('[HomeView Watcher for Slider+Loading] Element #ensign-nivoslider-3 NOT found in DOM after delay. Slider will not initialize.');
-            }
-          }, 100); // 100ms delay, can be adjusted
-        });
+    (newValues, oldValues) => {
+      const [newSlides, isLoading] = newValues;
+      const oldSlides = oldValues ? oldValues[0] : undefined;
+      // const oldIsLoading = oldValues ? oldValues[1] : undefined; // Not strictly used by current logic but kept for potential future use
+
+      const slidesArePopulated = newSlides && newSlides.length > 0;
+      // Determine if slide data has actually changed.
+      const slidesActuallyChanged = oldSlides === undefined || JSON.stringify(newSlides) !== JSON.stringify(oldSlides);
+
+      if (slidesArePopulated && !isLoading) {
+        // Initialize/Re-initialize Nivo if:
+        // 1. It's not already initialized OR
+        // 2. The slide data itself has actually changed.
+        if (!nivoInitialized || slidesActuallyChanged) {
+          console.log(`[HomeView Watcher for Slider+Loading] Conditions met for Nivo init/re-init. nivoInitialized: ${nivoInitialized}, slidesActuallyChanged: ${slidesActuallyChanged}`);
+          nextTick(() => {
+            // Add a small delay to ensure DOM is fully ready for Nivo
+            setTimeout(() => {
+              const sliderElementExists = document.getElementById('ensign-nivoslider-3');
+              if (sliderElementExists) {
+                console.log('[HomeView Watcher for Slider+Loading] Initializing/Re-initializing Nivo Slider after delay.');
+                initNivoSlider();
+              } else {
+                console.warn('[HomeView Watcher for Slider+Loading] Element #ensign-nivoslider-3 NOT found in DOM after delay. Slider will not initialize.');
+              }
+            }, 100); // 100ms delay, can be adjusted
+          });
+        } else {
+          console.log(`[HomeView Watcher for Slider+Loading] Slides populated, not loading, but Nivo already initialized and slides are the same. No re-init needed.`);
+        }
       } else if (isLoading) {
         console.log('[HomeView Watcher for Slider+Loading] Waiting: Page is still loading.');
-      } else if (!newSlides || newSlides.length === 0) {
-        console.log('[HomeView Watcher for Slider+Loading] Waiting: No slider data yet.');
+      } else if (!slidesArePopulated) {
+        console.log('[HomeView Watcher for Slider+Loading] Waiting: No slider data yet. Cleaning up Nivo if it was initialized.');
+        if (nivoInitialized) { // If Nivo was up but slides are now gone
+            try {
+                const sliderElement = window.$('#ensign-nivoslider-3');
+                if (sliderElement.length && sliderElement.data('nivoslider')) {
+                    sliderElement.nivoSlider('destroy');
+                }
+                sliderElement.removeClass('nivoSlider').empty(); // Ensure it's emptied
+                window.$('.nivo-controlNav, .nivo-directionNav, .nivo-box, .nivo-slice, .nivo-caption').remove();
+            } catch(e) {
+                console.warn("[HomeView Watcher] Error destroying Nivo Slider when slides disappeared:", e);
+            }
+            nivoInitialized = false;
+        }
       }
     },
     { deep: true, immediate: true } // Immediate true to catch initial state if conditions are met
@@ -245,7 +272,6 @@ export default {
       window.$('.nivo-controlNav, .nivo-directionNav, .nivo-caption').remove();
     }
     }
-    nivoInitialized = false;
   });
 
   const formatDate = (date, format = 'DD MMM YYYY') => {
