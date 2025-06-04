@@ -115,7 +115,7 @@ export default {
       </div>
 
       <!-- Wrapper for main content, shown only when not loading and no error -->
-      <div v-if="!loading && !error">
+      <div class="hero-wrapper" v-if="!loading && !error">
           <template v-if="page && page.content && Object.keys(page).length > 0">
         <div class="hero common-hero" :style="{ 'background': background }">
           <div class="container">
@@ -168,6 +168,11 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
+.container.error-container {
+  min-height: 50vh;
+}
+.hero-wrapper{
+  min-height: 50vh;
+}
 
 </style>
