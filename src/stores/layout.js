@@ -315,7 +315,7 @@ export const useLayoutStore = defineStore("layout", {
                             title: item.title,
                             buttonText: item.buttonText,
                             url: item.url,
-                            href: item.image['1300x560']
+                            href: item.image.original
                         }));
                         console.log('[fetchLayout] Slider data processed.');
                     } else {
@@ -363,19 +363,48 @@ export const useLayoutStore = defineStore("layout", {
 
                 const organizerEventIds = await apiService.getOrganizerEventIds();
                 const categorizedEvents = {};
+                
+                // Keep track of event IDs added from arenaHomeData to avoid duplicates
+                const addedEventIdsFromArena = new Set();
+
                 if (arenaHomeData && arenaHomeData.data && arenaHomeData.data.performances) {
+                    // Log to see if event 3793627 is present in any of the raw category event lists (can be removed later)
                     arenaHomeData.data.performances.forEach(category => {
-                        if (category.slug === 'top') return; // Skip only if slug is 'top'                  
+                        const eventExistsInCategory = category.events?.some(event => Number(event.id) === 3793627);
+                        if (eventExistsInCategory) {
+                            console.log(`[fetchLayout DEBUG] Event ID 3793627 FOUND in raw events list of category: '${category.name}' (slug: ${category.slug}) from arenaHomeData.`);
+                        }
+                    });
+
+                    arenaHomeData.data.performances.forEach(category => {
+                        if (category.slug === 'top') return;                
                         const filteredEvents = category.events?.filter(event => {
-                            const hasSessions = event.sessions && event.sessions.length > 0;
-                            const isInOrganizerList = event.id && organizerEventIds.has(event.id);
-                            if(!event.id) console.warn(`[fetchLayout] Event in category ${category.name} is missing an ID:`, event);
-                            // Detailed per-event logs can be noisy; keep them commented unless debugging specific event issues.
-                            // if(event.id && !isInOrganizerList) console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} NOT in organizer list.`);
-                            // if(event.id && isInOrganizerList && !hasSessions && event.type !== 'service') console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} IS in organizer list BUT has NO sessions (and not a service).`);
+                            const originalEventId = event.id;
+                            const eventName = event.name; 
+                            let numEventId = null;
+
+                            if (originalEventId !== undefined && originalEventId !== null) {
+                                numEventId = Number(originalEventId);
+                                if (isNaN(numEventId)) {
+                                    // console.warn(`[fetchLayout] Event '${eventName || 'N/A'}' in category '${category.name}' has an ID ('${originalEventId}') that is not a parseable number. Skipping.`);
+                                    return false; 
+                                }
+                            } else {
+                                // console.warn(`[fetchLayout] Event '${eventName || 'N/A'}' in category '${category.name}' is missing an ID. Skipping.`);
+                                return false; 
+                            }
                             
+                            const isInOrganizerList = organizerEventIds.has(numEventId);
+                            const hasSessions = Array.isArray(event.sessions) && event.sessions.length > 0;
                             const isServiceFromArena = event.type === 'service';
-                            return isInOrganizerList && (hasSessions || isServiceFromArena);
+
+                            // console.log(`[Filter DEBUG] Event ID: ${numEventId}, Name: '${eventName || 'N/A'}', InList: ${isInOrganizerList}, HasSessions: ${hasSessions}, Type: '${event.type}', IsServiceArena: ${isServiceFromArena}, Kept: ${isInOrganizerList && (hasSessions || isServiceFromArena)}`);
+
+                            const shouldKeep = isInOrganizerList && (hasSessions || isServiceFromArena);
+                            if (shouldKeep) {
+                                addedEventIdsFromArena.add(numEventId);
+                            }
+                            return shouldKeep;
                         }) || [];
                         
                         if (filteredEvents.length > 0) {
@@ -386,13 +415,101 @@ export const useLayoutStore = defineStore("layout", {
                                 loading: false,
                                 error: false
                             };
+                            // console.log(`[fetchLayout] Category: ${category.name} (slug: ${category.slug}) POPULATED with ${filteredEvents.length} events from arenaHomeData. First event ID if exists: ${filteredEvents[0]?.id}`);
                         } else {
-                            console.log(`[fetchLayout] Category: ${category.name} has NO events after filtering.`);
+                            // console.log(`[fetchLayout] Category: ${category.name} (from arenaHomeData) has NO events after filtering.`);
                         }
                     });
                 } else {
                     console.warn('[fetchLayout] arenaHomeData.data.performances is missing or empty. arenaHomeData:', arenaHomeData);
                 }
+
+                // --- Enhancement: Add organizer-specific events not found in arenaHomeData ---
+                try {
+                    const organizerEventsMap = await apiService.getOrganizerEventsMap(); // Map<eventId, orgEventItem>
+                    console.log(`[fetchLayout - OrgEnhance] Fetched organizerEventsMap. Size: ${organizerEventsMap.size}`);
+
+                    organizerEventsMap.forEach((orgEventItem, orgEventIdNum) => {
+                        const eventPerformance = orgEventItem.performance;
+
+                        if (!eventPerformance || typeof eventPerformance.id === 'undefined') {
+                            console.warn(`[fetchLayout - OrgEnhance] Skipping org event (ID: ${orgEventIdNum}) due to missing performance data:`, orgEventItem);
+                            return;
+                        }
+                        
+                        // Check if this organizer event should be displayed based on its own data
+                        const orgHasSessions = Array.isArray(orgEventItem.sessions) && orgEventItem.sessions.length > 0;
+                        // Use eventPerformance.type from sync data. Fallback to checking services array if type is not 'service'.
+                        const orgIsService = eventPerformance.type === 'service' || 
+                                           (!orgHasSessions && Array.isArray(orgEventItem.services) && orgEventItem.services.length > 0);
+
+                        if (orgHasSessions || orgIsService) { // If the event is "active"
+                            // Check if already added from arenaHomeData or by a previous iteration for another category
+                            let alreadyInCategorizedEvents = false;
+                            for (const catSlug in categorizedEvents) {
+                                if (categorizedEvents[catSlug].events.some(e => Number(e.id) === orgEventIdNum)) {
+                                    alreadyInCategorizedEvents = true;
+                                    break;
+                                }
+                            }
+                            // Also check against addedEventIdsFromArena just in case (though the above loop should cover it)
+                            if(addedEventIdsFromArena.has(orgEventIdNum)){
+                                alreadyInCategorizedEvents = true;
+                            }
+
+
+                            if (!alreadyInCategorizedEvents) {
+                                if (eventPerformance.types && eventPerformance.types.length > 0) {
+                                    eventPerformance.types.forEach(type => {
+                                        if (type.slug === 'top') return;
+
+                                        if (!categorizedEvents[type.slug]) {
+                                            categorizedEvents[type.slug] = {
+                                                name: type.name,
+                                                slug: type.slug,
+                                                events: [],
+                                                loading: false,
+                                                error: false
+                                            };
+                                            console.log(`[fetchLayout - OrgEnhance] Created category '${type.name}' (slug: ${type.slug}) for organizer event ID: ${orgEventIdNum}.`);
+                                        }
+                                        
+                                        // Ensure we don't add duplicate if processing multi-category event multiple times here
+                                        if (!categorizedEvents[type.slug].events.some(e => Number(e.id) === orgEventIdNum)) {
+                                            const eventToAdd = {
+                                                id: orgEventIdNum,
+                                                name: eventPerformance.name,
+                                                image: eventPerformance.image || eventPerformance.images, // EventCard uses event.image?.['800x500'] || event.image?.original
+                                                sessions: orgEventItem.sessions, // For potential display of session info/count
+                                                type: eventPerformance.type || (orgIsService ? 'service' : 'performance'), // Ensure type is set
+                                                // Add any other fields required by EventCard.vue, derived from eventPerformance or orgEventItem
+                                                // Example: shortDescription: eventPerformance.shortDescription,
+                                                // Example: ageLimit: eventPerformance.ageLimit,
+                                            };
+
+                                            if (categorizedEvents[type.slug].events.length < 8) {
+                                                categorizedEvents[type.slug].events.push(eventToAdd);
+                                                console.log(`[fetchLayout - OrgEnhance] Added org event '${eventPerformance.name}' (ID: ${orgEventIdNum}) to category '${type.name}'. Cat events: ${categorizedEvents[type.slug].events.length}`);
+                                            } else {
+                                                 console.log(`[fetchLayout - OrgEnhance] Category '${type.name}' is full (8 events). Org event '${eventPerformance.name}' (ID: ${orgEventIdNum}) not added.`);
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    console.warn(`[fetchLayout - OrgEnhance] Org event '${eventPerformance.name}' (ID: ${orgEventIdNum}) has no 'types' (categories). Cannot assign.`);
+                                }
+                            } else {
+                                // console.log(`[fetchLayout - OrgEnhance] Org event '${eventPerformance.name}' (ID: ${orgEventIdNum}) was already added or found in arenaHomeData.`);
+                            }
+                        } else {
+                             // console.log(`[fetchLayout - OrgEnhance] Org event '${eventPerformance.name}' (ID: ${orgEventIdNum}) is not active (no sessions or service). Skipping.`);
+                        }
+                    });
+                } catch (e) {
+                    console.error('[fetchLayout - OrgEnhance] Error processing direct organizer events:', e);
+                }
+                // --- End of Enhancement ---
+
                 this.eventsByCategory = categorizedEvents;
             } catch (error) {
                 console.error('[fetchLayout] Error processing and filtering events for homepage from arenaHomeData:', error);

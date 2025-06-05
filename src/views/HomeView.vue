@@ -24,6 +24,13 @@ export default {
   NewsCard,
   },
   setup(props) {
+  useHead({
+    title: 'Главная страница',
+    meta: [
+      { name: 'description', content: 'Добро пожаловать на главную страницу нашего сайта.' } // You can customize this description
+    ]
+  });
+
   const route = useRoute();
   let nivoInitialized = false;
   const layoutStore = useLayoutStore();
@@ -78,29 +85,27 @@ export default {
     generalLoading.value = true;
     
     try {
-    // Wait for the layout to be loaded from props.layoutLoaded first
-    await props.layoutLoaded;
-    
-    // Проверяем, есть ли события и загружены ли данные
-    // Избегаем дублирующих запросов, если события уже загружены в layoutStore
-    if (Object.keys(layoutStore.eventsByCategory).length === 0 && !layoutStore.eventsLoading) {
-      console.log('[HomeView] События не загружены, загружаем их');
-      try {
-      const events = await apiService.getEventsWithSessionsByCategory();
-      layoutStore.eventsByCategory = events;
-      } catch (error) {
-      console.error('[HomeView] Ошибка загрузки событий:', error);
+      // Wait for the layout to be loaded from props.layoutLoaded first
+      // This implies layoutStore.fetchLayout() has been called and completed (or handled its own errors)
+      // by the parent component or router guard that provides layoutLoaded.
+      if (props.layoutLoaded) {
+        await props.layoutLoaded;
+        console.log('[HomeView] layoutLoaded promise resolved. Event data should be in layoutStore.');
+      } else {
+        // Fallback or if layoutLoaded is not the primary mechanism for ensuring layout data
+        // We might still want to ensure fetchLayout is called if initialDataLoaded is false
+        // This depends on how App.vue or router calls fetchLayout.
+        // For now, we assume layoutStore.fetchLayout() is triggered externally (e.g. App.vue or router)
+        // and HomeView just reacts to data in layoutStore.
+        console.log('[HomeView] props.layoutLoaded not present or not awaited. Relying on layoutStore state.');
       }
-    } else {
-      console.log('[HomeView] События уже загружены или загружаются через layoutStore');
-    }
     
-    // Загружаем новости
-    await fetchNews();
+      // Загружаем новости
+      await fetchNews();
     } catch (error) {
     console.error('[HomeView] Error loading data:', error);
     } finally {
-    generalLoading.value = false;
+    generalLoading.value = false; // generalLoading может быть не нужен, если loading из store покрывает все
     }
   };
 
@@ -189,8 +194,12 @@ export default {
   onMounted(async () => {
     console.log('[HomeView] Component mounted');
     if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
-    layoutStore.loadExternalScripts(); 
+      // Consider if loadExternalScripts should also be part of layoutLoaded promise resolution
+      layoutStore.loadExternalScripts(); 
     }
+    // loadAllData теперь в основном ждет layoutLoaded и загружает новости.
+    // Основная загрузка событий категорий - ответственность fetchLayout в layoutStore,
+    // который должен быть вызван до или во время разрешения layoutLoaded.
     await loadAllData(); 
   });
 
@@ -339,7 +348,7 @@ export default {
   <headerSection />
 
   <!-- Slider Area Start Here -->
-  <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
+  <div v-if="!loading && hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
     <div class="bend niceties preview-1">
     <div id="ensign-nivoslider-3" class="slides">
       <template v-for="(slide, index) in siteSlider" :key="`slide-img-${index}`">
@@ -382,53 +391,47 @@ export default {
   </div>
   <!-- Slider Area End Here -->
 
-  <!-- Блок с событиями по категориям -->
-  <div v-if="!hasAnyEvents && !loading" class="section-space-default bg-light no-events-container">
-    <div class="container text-center">
-    <h2>Нет актуального расписания</h2>
+  <!-- Обертка для секций с категориями и сообщения об отсутствии событий -->
+  <div v-if="!loading">
+    <div v-if="hasAnyEvents" class="categories-wrapper">
+      <section v-for="(category, slug) in eventsByCategory" :key="slug"
+        class="section-space-default bg-light overlay-icon-layout4">
+        <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
+        <div class="section-heading title-black color-dark all-category text-left">
+          <h2>{{ category.name }}</h2>
+          <router-link :to="`/afisha/${slug}`"
+            class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
+            Все события
+          </router-link>
+        </div>
+
+        <div class="row menu-list">
+          <!-- category.loading and category.error might not be relevant if all loading is handled by layoutStore.eventsLoading -->
+          <template v-if="category.events && category.events.length">
+            <div v-for="event in category.events" :key="event.id"
+              class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
+              <EventCard :event="event" />
+            </div>
+          </template>
+          <template v-else>
+            <!-- Это сообщение не должно показываться, если категория отфильтрована из eventsByCategory из-за отсутствия событий -->
+            <!-- Если категория есть, но events пустой, то можно показать: -->
+            <!-- <div class="col-12"><p>В данной категории пока нет событий.</p></div> -->
+          </template>
+        </div>
+        </div>
+      </section>
+    </div>
+    <div v-else class="section-space-default bg-light no-events-container">
+      <div class="container text-center">
+      <h2>Нет актуального расписания</h2>
+      <p>Попробуйте зайти позже или проверьте другие разделы сайта.</p>
+      </div>
     </div>
   </div>
   
-  <section v-for="(category, slug) in eventsByCategory" :key="slug"
-    class="section-space-default bg-light overlay-icon-layout4">
-    <div class="container-fluid zindex-up zoom-gallery menu-list-wrapper">
-    <div class="section-heading title-black color-dark all-category text-left">
-      <h2>{{ category.name }}</h2>
-      <router-link :to="`/afisha/${slug}`"
-        class="loadmore-four-item btn-fill border-radius-5 size-lg color-yellow">
-        Все события
-      </router-link>
-    </div>
-
-    <div class="row menu-list">
-      <template v-if="category.loading">
-      <div class="col-12">
-        <p>Загрузка событий...</p>
-      </div>
-      </template>
-      <template v-else-if="category.error">
-      <div class="col-12">
-        <p>Не удалось загрузить события.</p>
-      </div>
-      </template>
-      <template v-else-if="category.events && category.events.length">
-      <div v-for="event in category.events" :key="event.id"
-        class="col-lg-3 col-md-4 col-sm-6 col-12 menu-item">
-        <EventCard :event="event" />
-      </div>
-      </template>
-      <template v-else>
-      <div class="col-12">
-        <p>В данной категории пока нет событий.</p>
-      </div>
-      </template>
-    </div>
-
-    </div>
-  </section>
-
   <!-- Раздел новостей -->
-  <section class="news-section section-space-default-less30 bg-light">
+  <section v-if="!loading" class="news-section section-space-default-less30 bg-light">
     <div class="container">
     <div class="section-heading-container">
       <div class="section-heading title-black color-dark text-left">
@@ -895,4 +898,8 @@ body main {
   background-color: transparent;
   color: black;
 }
+#fixed-type-slider .bend.niceties.preview-1, #ensign-nivoslider-3 {
+  aspect-ratio: 16 / 9; 
+  overflow: hidden;    
+  }
 </style>

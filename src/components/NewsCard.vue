@@ -3,7 +3,7 @@
   <div class="blog-layout3 overlay-gradient news-aspect">
     <div class="image-wrapper news-img-aspect">
       <img
-        :src="post.image['250x170'] || placeholderImage"
+        :src="imageUrl"
         :alt="post.title"
         class="img-fluid news-img-crop"
         @error="onImgError"
@@ -39,6 +39,20 @@ export default {
   data() {
     return {
       placeholderImage: placeholder
+    }
+  },
+  computed: {
+    imageUrl() {
+      if (this.post && this.post.image) {
+        const img = this.post.image;
+        if (img['1600x900']) return img['1600x900'];
+        if (img['800x450']) return img['800x450'];
+        if (img['400x255']) return img['400x255'];
+        if (img['380x270']) return img['380x270'];
+        if (img['250x170']) return img['250x170'];
+        if (img.original) return img.original;
+      }
+      return this.placeholderImage;
     }
   },
   methods: {
@@ -91,7 +105,7 @@ export default {
 }
 
 .news-img-aspect {
-  aspect-ratio: 1.5/1;
+  aspect-ratio: 1.8/1;
   width: 100%;
   overflow: hidden;
   position: relative;

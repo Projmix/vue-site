@@ -15,7 +15,7 @@ export default {
     footerSection
   },
   props: {
-    layoutLoaded: Promise // Пропс из App.vue
+    layoutLoaded: Promise
   },
   setup(props) {
     const layoutStore = useLayoutStore();
@@ -23,15 +23,13 @@ export default {
     const logo = computed(() => layoutStore.getLogo);
     const logo2 = computed(() => layoutStore.getLogo2);
     
-    // Состояние для новостей
     const posts = ref([]);
     const loading = ref(true);
     const error = ref(null);
     const currentPage = ref(1);
     const totalPages = ref(1);
-    const perPage = ref(9); // 9 новостей на странице согласно стандарту API
+    const perPage = ref(9);
     
-    // SEO
     useHead({
       title: 'Новости',
       meta: [
@@ -39,7 +37,6 @@ export default {
       ]
     });
     
-    // Получение общих параметров запросов API
     const getApiParams = () => ({
       lang: import.meta.env.VITE_API_LANG,
       jsonld: import.meta.env.VITE_API_JSONLD,
@@ -52,7 +49,6 @@ export default {
       page: currentPage.value
     });
     
-    // Функция загрузки новостей
     const fetchPosts = async () => {
       loading.value = true;
       error.value = null;
@@ -61,9 +57,7 @@ export default {
         const apiUrl = `${import.meta.env.VITE_API_URL}/api/v3/arena/posts`;
         const params = getApiParams();
         
-        console.log('[PostsView] Запрос новостей:', params);
         const response = await axios.get(apiUrl, { params });
-        console.log('[PostsView] Ответ API:', response.data);
         
         if (response.data) {
           posts.value = response.data.posts || [];
@@ -74,44 +68,64 @@ export default {
           error.value = 'Данные не получены';
         }
       } catch (err) {
-        console.error('[PostsView] Ошибка загрузки новостей:', err);
         error.value = `Ошибка загрузки новостей: ${err.message}`;
         posts.value = [];
         totalPages.value = 1;
       } finally {
-        // Небольшая задержка для UX
         setTimeout(() => {
           loading.value = false;
         }, 300);
       }
     };
     
-    // Обработчик изменения страницы
     const changePage = (page) => {
       currentPage.value = page;
       fetchPosts();
     };
     
-    // Форматирование даты
     const formatDate = (dateStr) => {
       if (!dateStr) return '';
-      
-      // Поддержка разных форматов даты
-      if (moment(dateStr, 'DD.MM.YYYY', true).isValid()) {
-        return moment(dateStr, 'DD.MM.YYYY').format('DD MMMM YYYY');
-      } else if (moment(dateStr).isValid()) {
-        return moment(dateStr).format('DD MMMM YYYY');
+
+      const possibleFormats = [
+        "YYYY-MM-DD HH:mm:ss",
+        "DD.MM.YYYY HH:mm:ss",
+        "YYYY-MM-DDTHH:mm:ssZ",
+        "YYYY-MM-DDTHH:mm:ss.SSSZ",
+        moment.ISO_8601,
+        "YYYY-MM-DD",
+        "DD.MM.YYYY"
+      ];
+
+      let momentDate = moment(dateStr, possibleFormats, true);
+
+      if (!momentDate.isValid()) {
+        momentDate = moment(dateStr);
       }
+
+      if (momentDate.isValid()) {
+        try {
+          const date = momentDate.toDate();
+          const formattedDate = new Intl.DateTimeFormat('ru-RU', { 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric',
+            era: undefined
+          }).format(date);
+          
+          return formattedDate.replace(' г.', '');
+        } catch (e) {
+          return momentDate.locale('ru').format('DD MMMM YYYY'); 
+        }
+      }
+      
       return dateStr;
     };
     
-    // Загрузка данных после монтирования
     onMounted(() => {
       props.layoutLoaded
         .then(() => fetchPosts())
         .catch(error => {
-          console.error("[PostsView] Ошибка ожидания layoutLoaded:", error);
-          fetchPosts(); // Пытаемся загрузить в любом случае
+          fetchPosts();
         });
     });
 
@@ -134,7 +148,6 @@ export default {
 
 <template>
   <main>
-    <!--preloading-->
     <div id="preloader" v-if="loading">
       <img class="logo" :src="logo2" alt="" width="119" height="58">
       <div id="status">
@@ -144,37 +157,31 @@ export default {
     </div>
 
     <headerSection />
-
-
     
-    <!-- Posts Section -->
     <section class="section-space-equal">
       <div class="container">
-        <!-- Сообщение об ошибке -->
         <div class="alert alert-danger" v-if="error">{{ error }}</div>
         
-        <!-- Посты -->
         <div class="row" id="no-equal-gallery" v-if="!loading && posts.length">
-          <div
-            class="col-lg-4 col-md-6 col-sm-6 col-xs-12 no-equal-item"
-            v-for="post in posts"
-            :key="post.id"
+          <router-link 
+            v-for="post in posts" 
+            :key="post.id" 
+            :to="`/post/${post.slug}`" 
+            class="col-lg-4 col-md-6 col-sm-6 col-xs-12 no-equal-item news-card-link-wrapper"
           >
             <div class="blog-layout4">
               <div class="entry-image">
                 <div class="item-image">
-                  <router-link :to="`/post/${post.slug}`">
                     <img
-                      :src="post.image['250x170'] || post.image.original"
+                      :src="post.image['1600x900'] || post.image.original"
                       class="img-responsive"
                       :alt="post.title"
                       @error="$event.target.src = '/src/assets/images/blog/blog11.jpg'"
                     />
-                  </router-link>
                 </div>
                 <div class="item-content">
                   <h3 class="title title-bold color-dark hover-primary">
-                    <router-link :to="`/post/${post.slug}`">{{ post.title }}</router-link>
+                    {{ post.title }}
                   </h3>
                   <ul class="news-meta-info">
                     <li>{{ formatDate(post.publishedAt || post.published_at) }}</li>
@@ -183,15 +190,13 @@ export default {
                 </div>
               </div>
             </div>
-          </div>
+          </router-link>
         </div>
         
-        <!-- Сообщение если новостей нет -->
         <div v-else-if="!loading && !posts.length" class="text-center py-5">
           <p>Новостей пока нет.</p>
         </div>
         
-        <!-- Пагинация -->
         <div class="pagination-container" v-if="!loading && totalPages > 1">
           <ul class="pagination">
             <li class="page-item" :class="{ disabled: currentPage === 1 }">
@@ -265,13 +270,78 @@ export default {
   margin: 0 5px;
 }
 
+.news-card-link-wrapper {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-layout4 {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #fff;
+  display: flex; 
+  flex-direction: column; 
+  height: 100%;
+}
+
+.news-card-link-wrapper:hover .blog-layout4 {
+  transform: scale(1.03);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.blog-layout4 .entry-image {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
 .img-responsive {
   width: 100%;
-  height: 240px;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: 6px 6px 0 0;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
+
+.blog-layout4 .item-content {
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  background-color: #fff;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-layout4 .item-content h3.title {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.blog-layout4 .item-content .news-meta-info {
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  color: #757575;
+  text-transform: capitalize;
+}
+
+.blog-layout4 .item-content p {
+  font-size: 1em;
+  line-height: 1.5;
+  color: #555;
+  flex-grow: 1;
+}
+
 .news-meta-info{
   font-size: 20px;
+}
+.section-space-equal{
+  min-height: 50vh;
 }
 </style>
