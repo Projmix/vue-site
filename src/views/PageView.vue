@@ -25,11 +25,11 @@ export default {
     const layoutStore = useLayoutStore();
     const background = computed(() => layoutStore.getBackground);
     const logo = computed(() => layoutStore.getLogo);
-    const logo2 = computed(() => layoutStore.getLogo2);
+    const preloaderLogo = computed(() => layoutStore.getSiteHeaderLogo);
     return {
       background,
       logo,
-      logo2,
+      preloaderLogo,
       layoutStore
     };
 
@@ -93,30 +93,27 @@ export default {
 
 <template>
   <main>
-      <!--preloading-->
-      <div id="preloader" v-if="loading">
-          <img class="logo" :src="logo2" alt="" width="119" height="58">
-          <div id="status">
-              <span></span>
-              <span></span>
-          </div>
+    <headerSection />
+
+    <div id="preloader-content-area" v-if="loading" class="page-content-area-placeholder">
+      <img class="logo" :src="preloaderLogo" alt="Загрузка..." width="119" height="58" :style="{ objectFit: 'contain' }">
+      <div id="status">
+        <span></span>
+        <span></span>
       </div>
+    </div>
 
-      <headerSection />
-
-      <!-- Error state shown only when not loading and error is present -->
-      <div v-if="!loading && error" class="container error-container">
-        <div class="row">
-          <div class="col-md-12 text-center">
-            <h2>{{ error }}</h2>
-            <router-link to="/" class="btn-fill color-yellow">Вернуться на главную</router-link>
-          </div>
+    <div v-if="!loading && error" class="container error-container page-content-area">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <h2>{{ error }}</h2>
+          <router-link to="/" class="btn-fill color-yellow">Вернуться на главную</router-link>
         </div>
       </div>
+    </div>
 
-      <!-- Wrapper for main content, shown only when not loading and no error -->
-      <div class="hero-wrapper" v-if="!loading && !error">
-          <template v-if="page && page.content && Object.keys(page).length > 0">
+    <div class="hero-wrapper page-content-area" v-if="!loading && !error">
+      <template v-if="page && page.content && Object.keys(page).length > 0">
         <div class="hero common-hero" :style="{ 'background': background }">
           <div class="container">
             <div class="row">
@@ -128,39 +125,83 @@ export default {
             </div>
           </div>
         </div>
-        <!-- blog detail section-->
         <div class="page-single">
           <div class="container">
             <div class="row">
               <div class="col-md-12 col-sm-12 col-xs-12">
-                <div class="blog-detail-ct" v-html="page.content">
-                </div>
+                <div class="blog-detail-ct" v-html="page.content"></div>
               </div>
             </div>
           </div>
         </div>
       </template>
-      
-          <!-- Show "empty content" message if page data is loaded but content is missing, or page object is empty -->
-          <template v-else>
-        <div class="container empty-content-container">
+      <template v-else>
+        <div class="container empty-content-container page-content-area-placeholder-message">
           <div class="row">
             <div class="col-md-12 text-center">
-                  <h2>{{ (page && page.title) ? page.title : 'Страница' }}</h2>
+              <h2>{{ (page && page.title) ? page.title : 'Страница' }}</h2>
               <p>Контент отсутствует</p>
             </div>
           </div>
         </div>
       </template>
-      </div>
+    </div>
 
-      <!-- Footer is shown when not loading, regardless of error state -->
-      <footerSection v-if="!loading" />
-      
-    </main>
+    <footerSection />
+  </main>
 </template>
 
 <style scoped>
+.page-content-area-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.page-content-area-placeholder .logo {
+  margin-bottom: 20px;
+}
+
+.page-content-area-placeholder #status {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.page-content-area-placeholder #status span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  background: #dd003f;
+  border-radius: 50%;
+  animation: status-load 1s infinite ease-in-out;
+}
+
+.page-content-area-placeholder #status span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.page-content-area-placeholder #status span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes status-load {
+  0%, 100% { transform: scale(0); }
+  50% { transform: scale(1); }
+}
+
+.page-content-area {
+}
+
 .error-container, .empty-content-container {
   padding: 80px 0;
   min-height: 400px;
@@ -168,6 +209,10 @@ export default {
   align-items: center;
   justify-content: center;
 }
+.empty-content-container.page-content-area-placeholder-message {
+  min-height: 50vh;
+}
+
 .container.error-container {
   min-height: 50vh;
 }
