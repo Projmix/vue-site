@@ -64,49 +64,69 @@ export default {
   const newsLoading = ref(true);
   const generalLoading = ref(true); // Общий лоадер для страницы
   const loading = computed(() => layoutStore.eventsLoading || !layoutStore.isInitialDataLoaded);
+  const error = ref(null);
+  const componentMounted = ref(false);
 
   // Функция для загрузки новостей
   const fetchNews = async () => {
+    if (!componentMounted.value) return;
+    
     newsLoading.value = true;
     try {
     const result = await apiService.getPosts({ page: 1, perPage: 6 });
-    newsItems.value = result.posts || [];
+    if (componentMounted.value) {
+      newsItems.value = result.posts || [];
+    }
     } catch (error) {
     console.error("Ошибка загрузки новостей:", error);
-    newsItems.value = [];
+    if (componentMounted.value) {
+      newsItems.value = [];
+      error.value = 'Ошибка загрузки новостей';
+    }
     } finally {
-    newsLoading.value = false;
+    if (componentMounted.value) {
+      newsLoading.value = false;
+    }
     }
   };
 
   // Загрузка только новостей, категории и события через layoutStore
   const loadAllData = async () => {
+    if (!componentMounted.value) return;
+    
     generalLoading.value = true;
+    error.value = null;
     
     try {
     // Wait for the layout to be loaded from props.layoutLoaded first
     await props.layoutLoaded;
     
     // Проверяем, есть ли события и загружены ли данные
-    // Избегаем дублирующих запросов, если события уже загружены в layoutStore
     if (Object.keys(layoutStore.eventsByCategory).length === 0 && !layoutStore.eventsLoading) {
       console.log('[HomeView] События не загружены, загружаем их');
       try {
-      const events = await apiService.getEventsWithSessionsByCategory();
-      layoutStore.eventsByCategory = events;
+      await layoutStore.fetchLayout();
       } catch (error) {
-      console.error('[HomeView] Ошибка загрузки событий:', error);
+      console.error('[HomeView] Ошибка загрузки layout:', error);
+      error.value = 'Ошибка загрузки данных';
       }
     } else {
       console.log('[HomeView] События уже загружены или загружаются через layoutStore');
     }
     
-    // Загружаем новости
-    await fetchNews();
+    // Загружаем новости только если компонент все еще смонтирован
+    if (componentMounted.value) {
+      await fetchNews();
+    }
     } catch (error) {
     console.error('[HomeView] Error loading data:', error);
+    if (componentMounted.value) {
+      error.value = 'Ошибка загрузки данных';
+    }
     } finally {
-    generalLoading.value = false;
+    if (componentMounted.value) {
+      generalLoading.value = false;
+    }
     }
   };
 
@@ -192,12 +212,13 @@ export default {
     }
   };
 
-  onMounted(async () => {
+  onMounted(() => {
     console.log('[HomeView] Component mounted');
     if (typeof window.$ === 'undefined' || typeof window.$.fn.nivoSlider === 'undefined') {
     layoutStore.loadExternalScripts(); 
     }
-    await loadAllData(); 
+    componentMounted.value = true;
+    loadAllData(); 
   });
 
   watch(
@@ -278,6 +299,7 @@ export default {
       window.$('.nivo-controlNav, .nivo-directionNav, .nivo-caption').remove();
     }
     }
+    componentMounted.value = false;
   });
 
   const formatDate = (date, format = 'DD MMM YYYY') => {
@@ -325,6 +347,8 @@ export default {
     moment,
     navigateToSlideUrl,
     cleanText,
+    error,
+    componentMounted,
   };
   },
   props: ['layoutLoaded'],
@@ -334,7 +358,7 @@ export default {
 <template>
   <main>
   <!--preloading-->
-  <div id="preloader" v-if="loading">
+  <div id="preloader" v-if="loading && !error">
     <img class="logo" :src="logo" alt="Загрузка..." width="119" height="58" :style="{ objectFit: 'contain' }">
     <div id="status">
     <span></span>
@@ -343,6 +367,15 @@ export default {
   </div>
 
   <headerSection />
+
+  <!-- Error Display -->
+  <div v-if="error" class="error-container">
+    <div class="container">
+      <div class="alert alert-danger">
+        {{ error }}
+      </div>
+    </div>
+  </div>
 
   <!-- Slider Area Start Here -->
   <div v-if="hasSliderData" class="slider-area slider-layout4 slider-direction-layout2" id="fixed-type-slider">
