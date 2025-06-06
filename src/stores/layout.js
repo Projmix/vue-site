@@ -5,18 +5,17 @@ import apiService from '../services/apiService';
 export const useLayoutStore = defineStore("layout", {
     state: () => {
       const hostname = window.location.hostname;
-      // Попытка получить кэшированный логотип при инициализации
-      let cachedLogo = null;
+      let cachedSiteLogoOnly = null;
       try {
-        const cachedLayout = localStorage.getItem('site_layout');
-        if (cachedLayout) {
-          const parsed = JSON.parse(cachedLayout);
-          if (parsed.site_logo) {
-            cachedLogo = parsed.site_logo;
+        const cachedLayoutStr = localStorage.getItem(`site_layout_logo_${hostname}`); // Specific cache for logo
+        const cachedTimeStr = localStorage.getItem(`site_layout_logo_time_${hostname}`);
+        if (cachedLayoutStr && cachedTimeStr) {
+          if (Date.now() - parseInt(cachedTimeStr) < 24 * 60 * 60 * 1000) { // 24 hours cache
+            cachedSiteLogoOnly = JSON.parse(cachedLayoutStr);
           }
         }
-      } catch (e) {
-        console.warn('[layout] Error reading cached logo:', e);
+      } catch (e) { 
+        console.warn('[layout state] Error reading cached site_logo:', e); 
       }
 
       return {
@@ -36,9 +35,9 @@ export const useLayoutStore = defineStore("layout", {
         eventsLoading: true,
         eventsByCategory: {}, // События, распределенные по категориям
         siteSlider: [], // Для хранения данных слайдера
-        objectId: null, // ID объекта для покупки билетов
-        siteHeaderLogo: cachedLogo, // Initialize with cached logo if available
-      }
+        siteHeaderLogo: cachedSiteLogoOnly, // Initialized from cache or null
+        objectId: null, // For the main object's purchase URL
+      };
     },
     getters: {
       getLayout(state) {
@@ -48,18 +47,17 @@ export const useLayoutStore = defineStore("layout", {
         return state.background;
       },
       getLogo(state) {
-        // Используем логотип из layout, если доступен, иначе fallback
+        // This getter can remain as a general purpose logo, e.g., for footer, if different from header
         const footerImages = state.layout?.site_footer_images || [];
         const logoImage = footerImages.find(img => img?.text?.toLowerCase().includes('logo'));
         return logoImage?.href || state.logo;
       },
       getCompanyLogoUrl(state) {
-        // Используем первое изображение из site_footer_images как основной логотип
         const footerImages = state.layout?.site_footer_images || [];
         if (footerImages.length > 0 && footerImages[0]?.image) {
           return footerImages[0].image;
         }
-        return state.logo; // Fallback to default logo
+        return state.logo; 
       },
       getCompanyLogoLinkDetails(state) {
         const footerImages = state.layout?.site_footer_images || [];
@@ -70,10 +68,9 @@ export const useLayoutStore = defineStore("layout", {
             title: footerImages[0].title
           };
         }
-        return { href: '/', target: '_self', title: 'Home' }; // Fallback
+        return { href: '/', target: '_self', title: 'Home' }; 
       },
       getAdditionalFooterLogos(state) {
-        // Остальные изображения из site_footer_images
         const footerImages = state.layout?.site_footer_images || [];
         if (footerImages.length > 1) {
           return footerImages.slice(1);
@@ -93,7 +90,6 @@ export const useLayoutStore = defineStore("layout", {
         return state.logo2;
       },
       filteredCategoriesData(state) {
-        // Возвращаем ВСЕ категории (события могут быть пустыми)
         const filtered = {};
         Object.entries(state.categoriesData).forEach(([slug, cat]) => {
           filtered[slug] = cat;
@@ -129,41 +125,24 @@ export const useLayoutStore = defineStore("layout", {
           category => category.events && category.events.length > 0
         );
       },
-      // New getter for the specific site_logo from the layout API
       getSiteHeaderLogo(state) {
-        // Try to get from state first
-        if (state.siteHeaderLogo) {
+        if (state.siteHeaderLogo && typeof state.siteHeaderLogo === 'string' && state.siteHeaderLogo.trim() !== '') {
+          console.log('[layout] getSiteHeaderLogo: Using state.siteHeaderLogo:', state.siteHeaderLogo);
           return state.siteHeaderLogo;
         }
-        
-        // Then try to get from layout
-        if (state.layout?.site_logo) {
-          state.siteHeaderLogo = state.layout.site_logo; // Cache it
-          // Also update cache in localStorage
-          try {
-            const cachedLayout = localStorage.getItem('site_layout');
-            if (cachedLayout) {
-              const parsed = JSON.parse(cachedLayout);
-              parsed.site_logo = state.layout.site_logo;
-              localStorage.setItem('site_layout', JSON.stringify(parsed));
-            }
-          } catch (e) {
-            console.warn('[layout] Error updating cached logo:', e);
-          }
-          return state.layout.site_logo;
+        if (state.layout?.site_logo && typeof state.layout.site_logo === 'string' && state.layout.site_logo.trim() !== '') {
+          console.log('[layout] getSiteHeaderLogo: Using state.layout.site_logo:', state.layout.site_logo);
+          return state.layout.site_logo; // Action should set state.siteHeaderLogo
         }
-        
-        // Finally, fallback to default logo
-        console.log('[layout] Using fallback logo:', state.logo);
-        return state.logo;
+        console.log('[layout] getSiteHeaderLogo: Using fallback state.logo:', state.logo);
+        return state.logo || '/src/assets/images/default_logo_placeholder.png'; // Ultimate fallback
       },
       getObjectId(state) {
         return state.objectId;
       },
       getObjectPurchaseUrl(state) {
-        console.log('[layoutStore] Getting purchase URL, objectId:', state.objectId);
-        if (!state.objectId) return '#';
-        const baseUrl = 'https://saleframe.24afisha.by';
+        if (!state.objectId) return '#'; // Return a safe link if no objectId
+        const baseUrl = 'https://saleframe.24afisha.by'; // Consider making this configurable
         return `${baseUrl}/object/${state.objectId}`;
       }
     },
@@ -302,123 +281,115 @@ export const useLayoutStore = defineStore("layout", {
         console.log('[layoutStore] Сбрасываем кэш событий');
         this.eventsByCategory = {};
         this.eventsFromObjects = [];
-        this.layoutFetchPromise = null; // Reset the layout fetch promise to ensure fresh data
-        this.initialDataLoaded = false; // Reset the initial data loaded flag
+        // Не сбрасываем layoutFetchPromise здесь, если он уже выполняется для основного layout/slider
+        // this.layoutFetchPromise = null;
+        this.initialDataLoaded = false; 
       },
       async fetchLayout() {
-        // Try to load cached layout first
-        const cachedLayout = localStorage.getItem('site_layout');
-        const cachedTime = localStorage.getItem('site_layout_time');
-        
-        if (cachedLayout && cachedTime) {
-          const cacheAge = Date.now() - parseInt(cachedTime);
-          if (cacheAge < 24 * 60 * 60 * 1000) { // 24 hours cache
-            try {
-              const parsedLayout = JSON.parse(cachedLayout);
-              this.layout = parsedLayout;
-              if (parsedLayout.site_logo) {
-                this.siteHeaderLogo = parsedLayout.site_logo;
-              }
-              console.log('[fetchLayout] Using cached layout data');
-            } catch (e) {
-              console.warn('[fetchLayout] Error parsing cached layout:', e);
-            }
-          }
-        }
+        // Section 1: Ensure basic layout, site_logo, and slider data are loaded
+        if (!this.layoutFetchPromise && !this.initialDataLoaded) { // Fetch only if not already fetching or loaded
+            this.layoutFetchPromise = new Promise(async (resolve, reject) => {
+                try {
+                    console.log('[fetchLayout] Starting to fetch core layout data...');
+                    const layoutData = await apiService.getLayout();
+                    this.layout = layoutData;
 
-        // Section 1: Ensure basic layout and slider data are loaded
-        if (!this.layout) {
-            if (!this.layoutFetchPromise) {
-                this.layoutFetchPromise = new Promise(async (resolve, reject) => {
-                    try {
-                        const layoutData = await apiService.getLayout();
-                        this.layout = layoutData;
-                        
-                        // Cache the layout data
+                    if (layoutData && layoutData.site_logo) {
+                        this.siteHeaderLogo = layoutData.site_logo;
+                        console.log('[fetchLayout] siteHeaderLogo set from API:', this.siteHeaderLogo);
                         try {
-                          localStorage.setItem('site_layout', JSON.stringify(layoutData));
-                          localStorage.setItem('site_layout_time', Date.now().toString());
+                            const hostname = window.location.hostname;
+                            localStorage.setItem(`site_layout_logo_${hostname}`, JSON.stringify(this.siteHeaderLogo));
+                            localStorage.setItem(`site_layout_logo_time_${hostname}`, Date.now().toString());
                         } catch (e) {
-                          console.warn('[fetchLayout] Error caching layout:', e);
+                            console.warn('[fetchLayout] Error caching site_logo:', e);
                         }
-
-                        // Store logo immediately when available
-                        if (layoutData.site_logo) {
-                          this.siteHeaderLogo = layoutData.site_logo;
-                        }
-
-                        const pagesHomeData = await apiService.getHomePageData();
-                        if (pagesHomeData?.data?.topSlider?.items) {
-                            this.siteSlider = pagesHomeData.data.topSlider.items.map(item => ({
-                                title: item.title,
-                                buttonText: item.buttonText,
-                                url: item.url,
-                                href: item.image['1300x560']
-                            }));
-                        } else {
-                            console.warn('[fetchLayout] No data for slider from /api/v3/pages/home');
-                            this.siteSlider = [];
-                        }
-                        resolve(); // Core data fetched
-                    } catch (error) {
-                        console.error('[fetchLayout] Error fetching core layout/slider:', error);
-                        this.siteSlider = []; // Ensure slider is empty on error
-                        reject(error);
-                    } finally {
-                        // Clear the promise regardless of outcome, so next call to fetchLayout (if layout still null)
-                        // or next full page load can re-attempt.
-                        this.layoutFetchPromise = null;
+                    } else {
+                        console.warn('[fetchLayout] site_logo not found in API response. Using cached or fallback.');
+                        // siteHeaderLogo would have been initialized from cache or defaults to null/fallback via getter
                     }
-                });
-            }
-            try {
-                await this.layoutFetchPromise; // Wait if the promise is active
-            } catch (error) {
-                // Error is logged by the promise.
-                console.warn('[fetchLayout] Proceeding after core layout/slider fetch error.');
-            }
+
+                    const pagesHomeData = await apiService.getHomePageData();
+                    if (pagesHomeData?.data?.topSlider?.items) {
+                        this.siteSlider = pagesHomeData.data.topSlider.items.map(item => ({
+                            title: item.title,
+                            buttonText: item.buttonText,
+                            url: item.url,
+                            href: item.image.original
+                        }));
+                        console.log('[fetchLayout] Slider data processed.');
+                    } else {
+                        console.warn('[fetchLayout] No data for slider from /api/v3/pages/home');
+                        this.siteSlider = [];
+                    }
+                    resolve(this.layout); // Resolve with layout data
+                } catch (error) {
+                    console.error('[fetchLayout] Error fetching core layout/slider:', error);
+                    this.siteSlider = []; // Ensure slider is empty on error
+                    // Potentially reset other critical data or set error flags
+                    reject(error);
+                } finally {
+                    this.layoutFetchPromise = null; // Allow re-fetch on subsequent calls if needed
+                }
+            });
+        }
+        
+        try {
+            // Wait for the core data if fetch was initiated
+            if (this.layoutFetchPromise) await this.layoutFetchPromise;
+        } catch (error) {
+            console.warn('[fetchLayout] Proceeding after core layout/slider fetch error was handled.');
         }
 
-        // Section 2: Handle homepage specific events
+        // Section 2: Handle homepage specific events (runs after core data or if core data was already loaded)
         const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html';
         console.log('[fetchLayout] Current path:', window.location.pathname, 'isHomePage:', isHomePage);
 
         if (isHomePage) {
             this.eventsLoading = true;
-            this.eventsByCategory = {}; // CRITICAL: Reset events for homepage to ensure fresh data
+            // this.eventsByCategory = {}; // Resetting here might be too aggressive if fetchLayout is called multiple times
+                                        // Consider resetting only if truly navigating to home (e.g., in router guard)
             try {
-                console.log('[fetchLayout] Fetching arena home data...');
+                console.log('[fetchLayout] Fetching arena home data for homepage...');
                 const arenaHomeData = await apiService.getArenaHomeEvents();
-                console.log('[fetchLayout] Full arena home data:', JSON.stringify(arenaHomeData?.data, null, 2));
+                console.log('[fetchLayout] Full arena home data for homepage:', JSON.parse(JSON.stringify(arenaHomeData?.data, null, 2)));
                 
-                // Store object ID if available (updated path to match actual response structure)
                 if (arenaHomeData?.data?.objects?.data?.[0]?.id) {
-                    const objectId = arenaHomeData.data.objects.data[0].id;
-                    console.log('[fetchLayout] Setting object ID:', objectId);
-                    this.setObjectId(objectId);
+                    this.setObjectId(arenaHomeData.data.objects.data[0].id);
+                    console.log('[fetchLayout] ObjectId set from arenaHomeData:', this.objectId);
                 } else {
-                    console.warn('[fetchLayout] Object ID path check:', {
-                        hasData: !!arenaHomeData?.data,
-                        hasObjects: !!arenaHomeData?.data?.objects,
-                        hasObjectsData: !!arenaHomeData?.data?.objects?.data,
-                        firstObject: arenaHomeData?.data?.objects?.data?.[0]
-                    });
+                    console.warn('[fetchLayout] Could not find objectId in arenaHomeData.data.objects.data[0].id');
                 }
-                const organizerEventIds = await apiService.getOrganizerEventIds();
 
+                const organizerEventIds = await apiService.getOrganizerEventIds();
                 const categorizedEvents = {};
                 if (arenaHomeData && arenaHomeData.data && arenaHomeData.data.performances) {
                     arenaHomeData.data.performances.forEach(category => {
                         if (category.slug === 'top') return; // Skip only if slug is 'top'                  
                         const filteredEvents = category.events?.filter(event => {
+                            const originalEventId = event.id;
+                            const eventName = event.name; // For logging, can be removed if not needed
+                            let numEventId = null;
+
+                            if (originalEventId !== undefined && originalEventId !== null) {
+                                numEventId = Number(originalEventId); // Convert to number
+                                if (isNaN(numEventId)) {
+                                    console.warn(`[fetchLayout] Event '${eventName || 'N/A'}' in category '${category.name}' has an ID ('${originalEventId}') that is not a parseable number. Skipping.`);
+                                    return false; 
+                                }
+                            } else {
+                                console.warn(`[fetchLayout] Event '${eventName || 'N/A'}' in category '${category.name}' is missing an ID. Skipping.`);
+                                return false; 
+                            }
+                            
+                            const isInOrganizerList = organizerEventIds.has(numEventId);
                             const hasSessions = event.sessions && event.sessions.length > 0;
-                            const isInOrganizerList = event.id && organizerEventIds.has(event.id);
-                            if(!event.id) console.warn(`[fetchLayout] Event in category ${category.name} is missing an ID:`, event);
-                            // Detailed per-event logs can be noisy; keep them commented unless debugging specific event issues.
-                            // if(event.id && !isInOrganizerList) console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} NOT in organizer list.`);
-                            // if(event.id && isInOrganizerList && !hasSessions && event.type !== 'service') console.log(`[fetchLayout] Event ID ${event.id} (Name: ${event.name}) from category ${category.name} IS in organizer list BUT has NO sessions (and not a service).`);
                             
                             const isServiceFromArena = event.type === 'service';
+
+                            // Temporary general debug log for filter conditions
+                            console.log(`[Filter DEBUG] Event ID: ${numEventId}, Name: '${eventName || 'N/A'}', InList: ${isInOrganizerList}, HasSessions: ${hasSessions}, Type: '${event.type}', IsServiceArena: ${isServiceFromArena}, Kept: ${isInOrganizerList && (hasSessions || isServiceFromArena)}`);
+
                             return isInOrganizerList && (hasSessions || isServiceFromArena);
                         }) || [];
                         
@@ -440,7 +411,7 @@ export const useLayoutStore = defineStore("layout", {
                 this.eventsByCategory = categorizedEvents;
             } catch (error) {
                 console.error('[fetchLayout] Error processing and filtering events for homepage from arenaHomeData:', error);
-                this.eventsByCategory = {}; // Ensure it's empty on error
+                this.eventsByCategory = {}; 
             } finally {
                 this.eventsLoading = false;
             }
@@ -483,6 +454,7 @@ export const useLayoutStore = defineStore("layout", {
       },
       setObjectId(id) {
         this.objectId = id;
+        console.log('[layoutStore] objectId set to:', this.objectId);
       }
     }
 });
