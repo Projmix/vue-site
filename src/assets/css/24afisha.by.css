@@ -1,9 +1,9 @@
 :root {
   /* Default Fallback Theme Variables */
 
-  --theme-main-color: #000000;     /* Default Blue - used for primary elements, links, accents */
-  --theme-background-color: #4b812693; /* Default White - main page background */
-  --theme-text-color: #fadf16;       /* Default Dark Gray - general text */
-  --theme-button-color: #fadf16;     /* Default Blue - for primary buttons background */
+  --theme-main-color: #000000;     
+  --theme-background-color: #4b812693;
+  --theme-text-color: #fadf16;       
+  --theme-button-color: #fadf16;    
 
 }

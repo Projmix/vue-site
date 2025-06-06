@@ -105,7 +105,7 @@ export default {
 }
 
 .news-img-aspect {
-  aspect-ratio: 1.8/1;
+  aspect-ratio: 16/9;
   width: 100%;
   overflow: hidden;
   position: relative;

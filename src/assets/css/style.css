@@ -2042,7 +2042,7 @@ button:hover {
   width: 100%;
   z-index: 1;
 }
-.overlay-icon-layout1 {
+/* .overlay-icon-layout1 {
   position: relative;
   overflow: hidden;
   text-align: center;
@@ -2109,8 +2109,8 @@ button:hover {
   position: relative;
   overflow: hidden;
   text-align: center;
-}
-.overlay-icon-layout4:after {
+} */
+/* .overlay-icon-layout4:after {
   content: url('img/figure/figure-icon4.png');
   height: 100%;
   width: 100%;
@@ -2125,8 +2125,8 @@ button:hover {
   right: 0;
   margin: 0 auto;
   z-index: 2;
-}
-.overlay-icon-layout5 {
+} */
+/* .overlay-icon-layout5 {
   position: relative;
   overflow: hidden;
   text-align: center;
@@ -2183,7 +2183,7 @@ button:hover {
   right: 0;
   margin: 0 auto;
   z-index: 6;
-}
+} */
 /*----------------------------------------
 1.6 Tooltip Styling
 ----------------------------------------*/
@@ -2689,7 +2689,7 @@ body > .eventalk-tooltip .eventalk-tooltip-bottom:after {
   transition: all 0.5s ease-out;
 }
 .eventalk-main-menu {
-  text-align: right;
+  text-align: center;
 }
 .eventalk-main-menu nav > ul > li {
   display: inline-block;
