@@ -67,16 +67,6 @@ const router = createRouter({
       redirect: '/news'
     },
     {
-      path: '/objects',
-      name: 'objects',
-      component: () => import('../views/ObjectsView.vue')
-    },
-    {
-      path: '/object/:id',
-      name: 'object',
-      component: () => import('../views/ObjectView.vue')
-    },
-    {
       path: '/page/:slug',
       name: 'page',
       component: () => import('../views/PageView.vue')
